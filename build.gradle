@@ -1,4 +1,4 @@
-group 'ru.spbau.mit'
+group 'org.itmo'
 version '1.0-SNAPSHOT'
 
 apply plugin: 'java'

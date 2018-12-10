@@ -17,6 +17,7 @@ public class Client {
         out.writeByte(23);
         out.writeByte(44);
         out.flush();
+        Thread.sleep(10000);
         socket.close();
     }
 }

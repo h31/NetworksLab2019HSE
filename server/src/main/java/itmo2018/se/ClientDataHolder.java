@@ -1,17 +1,23 @@
 package itmo2018.se;
 
-import com.sun.xml.internal.messaging.saaj.util.ByteInputStream;
-
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 public class ClientDataHolder {
-    private byte[] bytes;
+    private byte[] inputContent;
+    private Queue<ByteBuffer> outputContentQueue = new LinkedList<>();
+    private ClientInfo info;
     private List<Byte> bytesOfZize = new ArrayList<>(4);
     private int packageSize = -1;
     private int currentSize = 0;
+
+    public ClientDataHolder(ClientInfo info) {
+        this.info = info;
+    }
 
     public void read(ByteBuffer buffer) {
         if (packageSize == -1) {
@@ -21,11 +27,11 @@ public class ClientDataHolder {
             }
             if (bytesOfZize.size() == intSize) {
                 packageSize = bytesToInt(bytesOfZize);
-                bytes = new byte[packageSize];
+                inputContent = new byte[packageSize];
             }
         }
         while (buffer.position() < buffer.limit() && currentSize < packageSize) {
-            bytes[currentSize] = buffer.get();
+            inputContent[currentSize] = buffer.get();
             currentSize++;
         }
     }
@@ -35,13 +41,17 @@ public class ClientDataHolder {
     }
 
     public InputStream getContent() {
-        return new ByteArrayInputStream(bytes);
+        return new ByteArrayInputStream(inputContent);
     }
 
     public void reset() {
         packageSize = -1;
         currentSize = 0;
         bytesOfZize = new ArrayList<>(4);
+    }
+
+    public ClientInfo getInfo() {
+        return info;
     }
 
     private int bytesToInt(List<Byte> b) {

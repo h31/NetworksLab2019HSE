@@ -1,7 +1,10 @@
 package itmo2018.se;
 
+import sun.net.spi.nameservice.dns.DNSNameService;
+
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -12,9 +15,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 //TODO добавить обработку исключений
 public class Server {
@@ -24,19 +25,16 @@ public class Server {
 
     private Selector selector;
     private ServerSocketChannel serverSocketChannel;
-    private ClientManager clientManager = new MapClientManager();
+    private ScheduledExecutorService closer = Executors.newScheduledThreadPool(1);
 
     public void run() throws IOException {
         serverSocketChannel = ServerSocketChannel.open();
-        InetSocketAddress socketAddress = new InetSocketAddress("localhost", 8081);
+        InetSocketAddress socketAddress = new InetSocketAddress("127.0.0.1", 8081);
         serverSocketChannel.bind(socketAddress);
         selector = Selector.open();
 
         serverSocketChannel.configureBlocking(false);
         serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-        ExecutorService pool = Executors.newFixedThreadPool(8);
-        Closer closer = new Closer(clientManager);
-        pool.submit(closer);
 
         while (selector.select() > -1) {
             Set<SelectionKey> selectedKeys = selector.selectedKeys();
@@ -48,15 +46,14 @@ public class Server {
                 } else if (key.isReadable()) {
                     //TODO catch ClosedChannelException
                     SocketChannel channel = (SocketChannel) key.channel();
+                    ClientDataHolder holder = (ClientDataHolder) key.attachment();
                     ByteBuffer buffer = ByteBuffer.allocate(1024);
                     if (channel.read(buffer) == -1) {
-                        String adress = channel.getRemoteAddress().toString();
-                        clientManager.unregisterClient(adress);
+                        holder.getInfo().disconect();
+                        System.out.println(channel.getRemoteAddress() + " is closed");
                         channel.close();
-                        System.out.println(adress + " is closed");
                     }
                     buffer.flip();
-                    ClientDataHolder holder = (ClientDataHolder) key.attachment();
                     holder.read(buffer);
                     while (holder.isReady()) {
                         //holder.getContent() и отправляю в тредпул
@@ -68,18 +65,20 @@ public class Server {
                 keyIterator.remove();
             }
         }
-        pool.shutdownNow();
+//        closer.shutdownNow();
     }
 
     private void registerClient() throws IOException {
         System.out.println("Clients number:" + selector.keys().size());
         SocketChannel channel = serverSocketChannel.accept();
 
-        String adress = channel.getRemoteAddress().toString();
-        clientManager.registerClient(adress, channel);
+        byte[] ip = channel.socket().getInetAddress().getAddress();
+        short port = (short) channel.socket().getPort();
+        Future<Void> closeTask = closer.schedule(new Closer(channel), 5, TimeUnit.SECONDS);
+        ClientInfo info = new ClientInfo(ip, port, closeTask);
 
         channel.configureBlocking(false);
-        channel.register(selector, SelectionKey.OP_READ, new ClientDataHolder());
+        channel.register(selector, SelectionKey.OP_READ, new ClientDataHolder(info));
         System.out.println("new client");
     }
 }

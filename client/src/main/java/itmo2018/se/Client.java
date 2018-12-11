@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
 
 public class Client {
     public static void main(String[] args) throws IOException, InterruptedException {
-        Socket socket = new Socket("localhost", 8081);
+        Socket socket = new Socket("127.0.0.1", 8081);
         DataOutputStream out = new DataOutputStream(socket.getOutputStream());
         out.writeInt(1);
         out.writeByte(10);

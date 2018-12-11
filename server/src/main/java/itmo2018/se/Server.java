@@ -1,13 +1,7 @@
 package itmo2018.se;
 
-import sun.net.spi.nameservice.dns.DNSNameService;
-
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -26,6 +20,7 @@ public class Server {
     private Selector selector;
     private ServerSocketChannel serverSocketChannel;
     private ScheduledExecutorService closer = Executors.newScheduledThreadPool(1);
+    private FileManager fileManager = new ListFileManager();
 
     public void run() throws IOException {
         serverSocketChannel = ServerSocketChannel.open();
@@ -35,6 +30,7 @@ public class Server {
 
         serverSocketChannel.configureBlocking(false);
         serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+        ExecutorService pool = Executors.newFixedThreadPool(8);
 
         while (selector.select() > -1) {
             Set<SelectionKey> selectedKeys = selector.selectedKeys();
@@ -49,15 +45,15 @@ public class Server {
                     ClientDataHolder holder = (ClientDataHolder) key.attachment();
                     ByteBuffer buffer = ByteBuffer.allocate(1024);
                     if (channel.read(buffer) == -1) {
-                        holder.getInfo().disconect();
+                        holder.getClientInfo().disconect();
                         System.out.println(channel.getRemoteAddress() + " is closed");
                         channel.close();
                     }
                     buffer.flip();
                     holder.read(buffer);
-                    while (holder.isReady()) {
-                        //holder.getContent() и отправляю в тредпул
-                        holder.reset();
+                    while (holder.requestIsReady()) {
+                        pool.submit(new Executor(holder.getRequest(), holder, fileManager));
+                        holder.resetRequest();
                         holder.read(buffer);
                         System.out.println("package is ready");
                     }
@@ -74,8 +70,9 @@ public class Server {
 
         byte[] ip = channel.socket().getInetAddress().getAddress();
         short port = (short) channel.socket().getPort();
-        Future<Void> closeTask = closer.schedule(new Closer(channel), 5, TimeUnit.SECONDS);
-        ClientInfo info = new ClientInfo(ip, port, closeTask);
+        ClientInfo info = new ClientInfo(ip, port, channel, closer);
+
+        System.out.println(channel.socket().getLocalSocketAddress());
 
         channel.configureBlocking(false);
         channel.register(selector, SelectionKey.OP_READ, new ClientDataHolder(info));

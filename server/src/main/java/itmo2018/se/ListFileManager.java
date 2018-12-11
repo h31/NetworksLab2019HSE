@@ -13,7 +13,7 @@ public class ListFileManager implements FileManager {
         for (Iterator<ClientInfo> it = file.owners(); it.hasNext(); ) {
             ClientInfo client = it.next();
             if (!client.isOnline()) {
-                file.removeOwner(client);
+                it.remove();
             }
         }
         return file;
@@ -25,8 +25,8 @@ public class ListFileManager implements FileManager {
     }
 
     @Override
-    public void addOwner(int fileId, ClientInfo client, List<Integer> parts) {
-        files.get(fileId).addOwner(client, parts);
+    public void addOwner(int fileId, ClientInfo client) {
+        files.get(fileId).addOwner(client);
     }
 
     @Override

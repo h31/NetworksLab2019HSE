@@ -8,15 +8,16 @@ import java.util.List;
 import java.util.Queue;
 
 public class ClientDataHolder {
-    private byte[] inputContent;
-    private Queue<ByteBuffer> outputContentQueue = new LinkedList<>();
-    private ClientInfo info;
+    private byte[] request;
+    private Queue<ByteBuffer> responseQueue = new LinkedList<>();
+    private ClientInfo clientInfo;
+
     private List<Byte> bytesOfZize = new ArrayList<>(4);
     private int packageSize = -1;
     private int currentSize = 0;
 
-    public ClientDataHolder(ClientInfo info) {
-        this.info = info;
+    public ClientDataHolder(ClientInfo clientInfo) {
+        this.clientInfo = clientInfo;
     }
 
     public void read(ByteBuffer buffer) {
@@ -27,31 +28,35 @@ public class ClientDataHolder {
             }
             if (bytesOfZize.size() == intSize) {
                 packageSize = bytesToInt(bytesOfZize);
-                inputContent = new byte[packageSize];
+                request = new byte[packageSize];
             }
         }
         while (buffer.position() < buffer.limit() && currentSize < packageSize) {
-            inputContent[currentSize] = buffer.get();
+            request[currentSize] = buffer.get();
             currentSize++;
         }
     }
 
-    public boolean isReady() {
+    public boolean requestIsReady() {
         return packageSize == currentSize;
     }
 
-    public InputStream getContent() {
-        return new ByteArrayInputStream(inputContent);
+    public byte[] getRequest() {
+        return request;
     }
 
-    public void reset() {
+    public void resetRequest() {
         packageSize = -1;
         currentSize = 0;
         bytesOfZize = new ArrayList<>(4);
     }
 
-    public ClientInfo getInfo() {
-        return info;
+    public ClientInfo getClientInfo() {
+        return clientInfo;
+    }
+
+    public void addResponse(ByteBuffer response) {
+        responseQueue.add(response);
     }
 
     private int bytesToInt(List<Byte> b) {

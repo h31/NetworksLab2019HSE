@@ -20,13 +20,20 @@ public class ListFileManager implements FileManager {
     }
 
     @Override
-    public void registerFile(String name) {
-        files.add(new FileInfo(files.size(), name));
+    public int registerFile(String name, long size) {
+        int id = files.size();
+        files.add(new FileInfo(files.size(), name, size));
+        return id;
     }
 
     @Override
     public void addOwner(int fileId, ClientInfo client) {
         files.get(fileId).addOwner(client);
+    }
+
+    @Override
+    public int filesNumber() {
+        return files.size();
     }
 
     @Override

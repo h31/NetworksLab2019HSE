@@ -27,7 +27,7 @@ public class Writer implements Runnable {
     public void run() {
         try {
             while (selector.select() > -1) {
-                //TODO исправить на случай многократного чтения
+                //TODO убрать очередб, так как каждый клиент работает в блокирующем режиме
                 if (clientQueue.size() > 0) {
                     ClientDataHolder data = clientQueue.poll();
                     data.getClientInfo().getChannel().register(selector, SelectionKey.OP_WRITE, data);

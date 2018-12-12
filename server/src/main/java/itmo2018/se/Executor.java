@@ -7,13 +7,13 @@ import java.util.concurrent.Callable;
 
 public class Executor implements Callable<Void> {
     private DataInputStream content;
-    private ClientDataHolder holder;
+    private ClientDataHolder client;
     private FileManager fileManager;
     private Writer writer;
 
-    public Executor(byte[] bytes, ClientDataHolder holder, FileManager fileManager, Writer writer) {
+    public Executor(byte[] bytes, ClientDataHolder client, FileManager fileManager, Writer writer) {
         this.content = new DataInputStream(new ByteArrayInputStream(bytes));
-        this.holder = holder;
+        this.client = client;
         this.fileManager = fileManager;
         this.writer = writer;
     }
@@ -35,10 +35,8 @@ public class Executor implements Callable<Void> {
                 executeUpdate();
                 break;
         }
-//        writer.wakeup();
-//        holder.getClientInfo().getChannel().register(writer, SelectionKey.OP_WRITE, holder);
-        writer.addDataToQueue(holder);
-        writer.getSelector().wakeup();
+        //TODO переименовать dataQueue везде!!!!
+        writer.registerClient(client);
         return null;
     }
 
@@ -57,7 +55,7 @@ public class Executor implements Callable<Void> {
         ByteBuffer response = ByteBuffer.allocate(out.size());
         response.put(byteStream.toByteArray());
         response.flip();
-        holder.addResponse(response);
+        client.addResponse(response);
     }
 
     private void executeUpload() throws IOException {
@@ -72,7 +70,7 @@ public class Executor implements Callable<Void> {
         ByteBuffer response = ByteBuffer.allocate(4);
         response.putInt(id);
         response.flip();
-        holder.addResponse(response);
+        client.addResponse(response);
     }
 
     private void executeSources() throws IOException {
@@ -84,30 +82,30 @@ public class Executor implements Callable<Void> {
         ByteBuffer response = ByteBuffer.allocate(4 + file.ownersNumber() * (4 + 2));
         response.putInt(file.ownersNumber());
         for (Iterator<ClientInfo> it = file.owners(); it.hasNext(); ) {
-            ClientInfo client = it.next();
-            response.put(client.getIp());
-            response.putShort(client.getPort());
+            ClientInfo clientInfo = it.next();
+            response.put(clientInfo.getIp());
+            response.putShort(clientInfo.getPort());
         }
         response.flip();
-        holder.addResponse(response);
+        client.addResponse(response);
     }
 
     private void executeUpdate() throws IOException {
         System.out.println("update");
 
-        ClientInfo client = holder.getClientInfo();
-        client.updateCloseTask();
+        ClientInfo clientInfo = client.getClientInfo();
+        clientInfo.updateCloseTask();
         short port = content.readShort();
-        client.updateSharingPort(port);
+        clientInfo.updateSharingPort(port);
         int count = content.readInt();
         for (int i = 0; i < count; i++) {
             int fileId = content.readInt();
-            fileManager.getFile(fileId).addOwner(client);
+            fileManager.getFile(fileId).addOwner(clientInfo);
         }
 
         ByteBuffer response = ByteBuffer.allocate(1);
         response.put((byte) 1);
         response.flip();
-        holder.addResponse(response);
+        client.addResponse(response);
     }
 }

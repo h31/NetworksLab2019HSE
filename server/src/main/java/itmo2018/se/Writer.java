@@ -12,18 +12,15 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Writer implements Runnable {
     private Selector selector;
-    private Queue<ClientDataHolder> dataQueue = new ConcurrentLinkedQueue<>();
+    private Queue<ClientDataHolder> clientQueue = new ConcurrentLinkedQueue<>();
 
     public Writer(Selector selector) {
         this.selector = selector;
     }
 
-    public void addDataToQueue(ClientDataHolder data) {
-        dataQueue.add(data);
-    }
-
-    public Selector getSelector() {
-        return selector;
+    public void registerClient(ClientDataHolder client) {
+        clientQueue.add(client);
+        selector.wakeup();
     }
 
     @Override
@@ -31,9 +28,10 @@ public class Writer implements Runnable {
         try {
             while (selector.select() > -1) {
                 //исправить на случай многократного чтения
-                if (dataQueue.size() > 0) {
-                    ClientDataHolder data = dataQueue.poll();
+                if (clientQueue.size() > 0) {
+                    ClientDataHolder data = clientQueue.poll();
                     data.getClientInfo().getChannel().register(selector, SelectionKey.OP_WRITE, data);
+                    continue;
                 }
                 Set<SelectionKey> selectedKeys = selector.selectedKeys();
                 Iterator<SelectionKey> keyIterator = selectedKeys.iterator();

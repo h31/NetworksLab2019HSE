@@ -6,10 +6,11 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class ClientDataHolder {
     private byte[] request;
-    private Queue<ByteBuffer> responseQueue = new LinkedList<>();
+    private Queue<ByteBuffer> responseQueue = new ConcurrentLinkedQueue<>();
     private ClientInfo clientInfo;
 
     private List<Byte> bytesOfZize = new ArrayList<>(4);
@@ -57,6 +58,10 @@ public class ClientDataHolder {
 
     public void addResponse(ByteBuffer response) {
         responseQueue.add(response);
+    }
+
+    public ByteBuffer getResponse() {
+        return responseQueue.poll();
     }
 
     private int bytesToInt(List<Byte> b) {

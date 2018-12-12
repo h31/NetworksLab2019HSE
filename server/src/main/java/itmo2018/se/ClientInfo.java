@@ -43,9 +43,9 @@ public class ClientInfo {
         return !closeTask.isDone();
     }
 
-    public void disconect() {
-        closeTask.cancel(false);
-    }
+//    public void disconect() {
+//        closeTask.cancel(false);
+//    }
 
     @Nullable
     public short getSharingPort() {
@@ -65,13 +65,17 @@ public class ClientInfo {
                 Objects.equals(port, that.port);
     }
 
+    public SocketChannel getChannel() {
+        return channel;
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(ip, port);
     }
 
     private Future<Void> startTimer() {
-        return closeScheduled.schedule(new Closer(), 5, TimeUnit.SECONDS);
+        return closeScheduled.schedule(new Closer(), 5, TimeUnit.MINUTES);
     }
 
     private class Closer implements Callable<Void> {

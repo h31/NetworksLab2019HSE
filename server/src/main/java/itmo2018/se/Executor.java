@@ -1,7 +1,5 @@
 package itmo2018.se;
 
-import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
-
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.Iterator;
@@ -11,11 +9,13 @@ public class Executor implements Callable<Void> {
     private DataInputStream content;
     private ClientDataHolder holder;
     private FileManager fileManager;
+    private Writer writer;
 
-    public Executor(byte[] bytes, ClientDataHolder holder, FileManager fileManager) {
+    public Executor(byte[] bytes, ClientDataHolder holder, FileManager fileManager, Writer writer) {
         this.content = new DataInputStream(new ByteArrayInputStream(bytes));
         this.holder = holder;
         this.fileManager = fileManager;
+        this.writer = writer;
     }
 
     @Override
@@ -35,6 +35,10 @@ public class Executor implements Callable<Void> {
                 executeUpdate();
                 break;
         }
+//        writer.wakeup();
+//        holder.getClientInfo().getChannel().register(writer, SelectionKey.OP_WRITE, holder);
+        writer.addDataToQueue(holder);
+        writer.getSelector().wakeup();
         return null;
     }
 

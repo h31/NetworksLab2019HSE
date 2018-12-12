@@ -8,6 +8,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.*;
 
@@ -27,6 +28,11 @@ public class Server {
         InetSocketAddress socketAddress = new InetSocketAddress("127.0.0.1", 8081);
         serverSocketChannel.bind(socketAddress);
         selector = Selector.open();
+        Selector writerSelector = Selector.open();
+        Writer writer = new Writer(writerSelector);
+        Thread writerThread = new Thread(writer);
+        writerThread.setDaemon(true);
+        writerThread.start();
 
         serverSocketChannel.configureBlocking(false);
         serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
@@ -45,14 +51,14 @@ public class Server {
                     ClientDataHolder holder = (ClientDataHolder) key.attachment();
                     ByteBuffer buffer = ByteBuffer.allocate(1024);
                     if (channel.read(buffer) == -1) {
-                        holder.getClientInfo().disconect();
+//                        holder.getClientInfo().disconect();
                         System.out.println(channel.getRemoteAddress() + " is closed");
                         channel.close();
                     }
                     buffer.flip();
                     holder.read(buffer);
                     while (holder.requestIsReady()) {
-                        pool.submit(new Executor(holder.getRequest(), holder, fileManager));
+                        pool.submit(new Executor(holder.getRequest(), holder, fileManager, writer));
                         holder.resetRequest();
                         holder.read(buffer);
                         System.out.println("package is ready");

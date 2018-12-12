@@ -51,7 +51,6 @@ public class Server {
                     ClientDataHolder holder = (ClientDataHolder) key.attachment();
                     ByteBuffer buffer = ByteBuffer.allocate(1024);
                     if (channel.read(buffer) == -1) {
-//                        holder.getClientInfo().disconect();
                         System.out.println(channel.getRemoteAddress() + " is closed");
                         channel.close();
                     }

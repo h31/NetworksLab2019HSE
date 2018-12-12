@@ -27,7 +27,7 @@ public class Writer implements Runnable {
     public void run() {
         try {
             while (selector.select() > -1) {
-                //исправить на случай многократного чтения
+                //TODO исправить на случай многократного чтения
                 if (clientQueue.size() > 0) {
                     ClientDataHolder data = clientQueue.poll();
                     data.getClientInfo().getChannel().register(selector, SelectionKey.OP_WRITE, data);

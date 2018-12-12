@@ -43,10 +43,6 @@ public class ClientInfo {
         return !closeTask.isDone();
     }
 
-//    public void disconect() {
-//        closeTask.cancel(false);
-//    }
-
     @Nullable
     public short getSharingPort() {
         return sharingPort;
@@ -75,7 +71,7 @@ public class ClientInfo {
     }
 
     private Future<Void> startTimer() {
-        return closeScheduled.schedule(new Closer(), 5, TimeUnit.MINUTES);
+        return closeScheduled.schedule(new Closer(), 6, TimeUnit.MINUTES);
     }
 
     private class Closer implements Callable<Void> {

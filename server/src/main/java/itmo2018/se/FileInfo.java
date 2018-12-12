@@ -9,10 +9,14 @@ public class FileInfo {
     private Set<ClientInfo> owners = new HashSet<>();
 
     public FileInfo(int id, String name, long size, ClientInfo owner) {
+        this(id, name, size);
+        this.owners.add(owner);
+    }
+
+    public FileInfo(int id, String name, long size) {
         this.id = id;
         this.name = name;
         this.size = size;
-        this.owners.add(owner);
     }
 
     public void addOwner(ClientInfo client) {

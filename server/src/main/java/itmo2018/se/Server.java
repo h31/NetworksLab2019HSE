@@ -1,5 +1,6 @@
 package itmo2018.se;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -7,6 +8,9 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.Queue;
 import java.util.Set;
@@ -16,6 +20,15 @@ import java.util.concurrent.*;
 public class Server {
     public static void main(String[] args) throws IOException {
         new Server().run();
+    }
+
+    public Server() throws IOException {
+        File metaData = new File("metadata");
+        if (!metaData.exists()) {
+            metaData.createNewFile();
+        }
+        Files.lines(metaData.toPath()).map(it -> it.split("\t"))
+                .forEach(it -> fileManager.setFile(Integer.parseInt(it[0]), it[1], Long.parseLong(it[2])));
     }
 
     private Selector selector;

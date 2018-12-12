@@ -7,6 +7,8 @@ public interface FileManager extends Iterable<FileInfo> {
 
     int registerFile(String name, long size, ClientInfo owner);
 
+    void setFile(int id, String name, long size);
+
     void addOwner(int fileId, ClientInfo client);
 
     int filesNumber();

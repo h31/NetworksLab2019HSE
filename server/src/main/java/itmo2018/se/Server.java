@@ -48,18 +48,19 @@ public class Server {
                 } else if (key.isReadable()) {
                     //TODO catch ClosedChannelException
                     SocketChannel channel = (SocketChannel) key.channel();
-                    ClientDataHolder holder = (ClientDataHolder) key.attachment();
+                    ClientDataHolder client = (ClientDataHolder) key.attachment();
                     ByteBuffer buffer = ByteBuffer.allocate(1024);
                     if (channel.read(buffer) == -1) {
                         System.out.println(channel.getRemoteAddress() + " is closed");
+                        client.getClientInfo().disconect();
                         channel.close();
                     }
                     buffer.flip();
-                    holder.read(buffer);
-                    while (holder.requestIsReady()) {
-                        pool.submit(new Executor(holder.getRequest(), holder, fileManager, writer));
-                        holder.resetRequest();
-                        holder.read(buffer);
+                    client.read(buffer);
+                    while (client.requestIsReady()) {
+                        pool.submit(new Executor(client.getRequest(), client, fileManager, writer));
+                        client.resetRequest();
+                        client.read(buffer);
                         System.out.println("package is ready");
                     }
                 }

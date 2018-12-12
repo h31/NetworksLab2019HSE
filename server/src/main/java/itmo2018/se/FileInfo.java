@@ -8,10 +8,11 @@ public class FileInfo {
     private long size;
     private Set<ClientInfo> owners = new HashSet<>();
 
-    public FileInfo(int id, String name, long size) {
+    public FileInfo(int id, String name, long size, ClientInfo owner) {
         this.id = id;
         this.name = name;
         this.size = size;
+        this.owners.add(owner);
     }
 
     public void addOwner(ClientInfo client) {

@@ -65,6 +65,10 @@ public class ClientInfo {
         return channel;
     }
 
+    public void disconect() {
+        closeTask.cancel(false);
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(ip, port);
@@ -77,7 +81,7 @@ public class ClientInfo {
     private class Closer implements Callable<Void> {
         @Override
         public Void call() throws Exception {
-            System.out.println(channel.getRemoteAddress() + " is interupt");
+            System.out.println("channel is interupt");
             channel.close();
             return null;
         }

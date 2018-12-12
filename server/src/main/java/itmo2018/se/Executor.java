@@ -65,7 +65,7 @@ public class Executor implements Callable<Void> {
         long size = content.readLong();
 
         System.out.println(name + " " + size);
-        int id = fileManager.registerFile(name, size);
+        int id = fileManager.registerFile(name, size, client.getClientInfo());
 
         ByteBuffer response = ByteBuffer.allocate(4);
         response.putInt(id);
@@ -77,14 +77,19 @@ public class Executor implements Callable<Void> {
         System.out.println("sources");
 
         int id = content.readInt();
-
-        FileInfo file = fileManager.getFile(id);
-        ByteBuffer response = ByteBuffer.allocate(4 + file.ownersNumber() * (4 + 2));
-        response.putInt(file.ownersNumber());
-        for (Iterator<ClientInfo> it = file.owners(); it.hasNext(); ) {
-            ClientInfo clientInfo = it.next();
-            response.put(clientInfo.getIp());
-            response.putShort(clientInfo.getPort());
+        ByteBuffer response;
+        if (id < 0 || id >= fileManager.filesNumber()) {
+            response = ByteBuffer.allocate(4);
+            response.putInt(0);
+        } else {
+            FileInfo file = fileManager.getFile(id);
+            response = ByteBuffer.allocate(4 + file.ownersNumber() * (4 + 2));
+            response.putInt(file.ownersNumber());
+            for (Iterator<ClientInfo> it = file.owners(); it.hasNext(); ) {
+                ClientInfo clientInfo = it.next();
+                response.put(clientInfo.getIp());
+                response.putShort(clientInfo.getPort());
+            }
         }
         response.flip();
         client.addResponse(response);

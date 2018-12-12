@@ -10,16 +10,28 @@ import java.util.concurrent.TimeUnit;
 
 public class Client {
     public static void main(String[] args) throws IOException, InterruptedException {
-        new Client().run();
+        File workingDir;
+        if (args.length == 0) {
+            workingDir = new File(System.getProperty("user.dir"));
+        } else {
+            workingDir = new File(args[0]);
+            if (!workingDir.exists() && !workingDir.isDirectory()) {
+                System.out.println("can't find " + args[0] + " folder");
+                return;
+            }
+        }
+        new Client().run(workingDir.getAbsolutePath());
     }
 
-    public void run() throws IOException, InterruptedException {
+    public void run(String workingDir) throws IOException, InterruptedException {
+        initWorkingDir(workingDir);
+
         Socket socket = new Socket("127.0.0.1", 8081);
         final DataOutputStream out = new DataOutputStream(socket.getOutputStream());
         final DataInputStream in = new DataInputStream(socket.getInputStream());
-        Updater updater = new Updater(in, out);
+        Updater updater = new Updater(workingDir, in, out);
         ScheduledExecutorService scheduled = Executors.newScheduledThreadPool(1);
-        scheduled.scheduleAtFixedRate(updater, 0, 5, TimeUnit.SECONDS);
+        scheduled.scheduleAtFixedRate(updater, 0, 5, TimeUnit.MINUTES);
 
 
         Scanner scanner = new Scanner(System.in);
@@ -39,7 +51,17 @@ public class Client {
                         System.out.println("upload takes one argument");
                         continue;
                     }
-                    sendUpload(cmdLine[1], in, out);
+                    sendUpload(cmdLine[1], workingDir, in, out);
+                    break;
+                case "source":
+                    if (cmdLine.length != 2) {
+                        System.out.println("upload takes one argument");
+                        continue;
+                    } else if (!isPositiveInt(cmdLine[1])) {
+                        System.out.println("id must be positive integer number");
+                        continue;
+                    }
+                    sendSources(Integer.parseInt(cmdLine[1]), in, out);
                     break;
                 case "exit":
                     socket.close();
@@ -96,8 +118,32 @@ public class Client {
 //        socket.close();
     }
 
-    private void sendSources(int id, DataInputStream socketIn, DataOutputStream socketOut) {
-        
+    private void initWorkingDir(String workingDir) throws IOException {
+        System.out.println("working dir:\t" + workingDir);
+        File metaData = new File(workingDir + "/.metadata");
+        if (!metaData.exists()) {
+            metaData.createNewFile();
+        }
+    }
+
+
+    private void sendSources(int id, DataInputStream socketIn, DataOutputStream socketOut) throws IOException {
+        synchronized (socketOut) {
+            socketOut.writeInt(1 + 4);
+            socketOut.writeByte(3);
+            socketOut.writeInt(id);
+
+            int size = socketIn.readInt();
+            for (int i = 0; i < size; i++) {
+                byte ip1 = socketIn.readByte();
+                byte ip2 = socketIn.readByte();
+                byte ip3 = socketIn.readByte();
+                byte ip4 = socketIn.readByte();
+                short port = socketIn.readShort();
+                System.out.println("ip: " + ip1 + "." + ip2 + "." + ip3 + "." + ip4 +
+                        "\t port: " + port);
+            }
+        }
     }
 
     private void sendList(DataInputStream socketIn, DataOutputStream socketOut) throws IOException {
@@ -115,7 +161,7 @@ public class Client {
         }
     }
 
-    private void sendUpload(String filePath, DataInputStream socketIn, DataOutputStream socketOut) throws IOException {
+    private void sendUpload(String filePath, String workingDir, DataInputStream socketIn, DataOutputStream socketOut) throws IOException {
         File file = new File(filePath);
         if (!file.exists() || file.isDirectory()) {
             System.out.println("can't find file");
@@ -131,8 +177,16 @@ public class Client {
             socketOut.flush();
 
             int id = socketIn.readInt();
+
+            try (OutputStream metaData = new FileOutputStream(workingDir + "/.metadata")) {
+                metaData.write((id + "\t" + file.getAbsolutePath() + "\t" + -1 + "\n").getBytes());
+            }
             System.out.println("new file id: " + id);
         }
+    }
+
+    private boolean isPositiveInt(String str) {
+        return str.matches("\\d+");
     }
 }
 

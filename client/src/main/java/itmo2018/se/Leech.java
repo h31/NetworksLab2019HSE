@@ -26,8 +26,16 @@ public class Leech implements Runnable {
             DataInputStream socketIn = new DataInputStream(socket.getInputStream());
             DataOutputStream socketOut = new DataOutputStream(socket.getOutputStream());
             socketOut.writeByte(1);
-            socketOut.writeInt(4);
+            socketOut.writeInt(fileId);
             socketOut.flush();
+
+            int partsCount = socketIn.readInt();
+            for (int i = 0; i < partsCount; i++) {
+                int part = socketIn.readInt();
+                System.out.print(part + "\t");
+            }
+            System.out.println();
+            socket.close();
         } catch (IOException e) {
             System.out.println("can't connect to seeder");
         }

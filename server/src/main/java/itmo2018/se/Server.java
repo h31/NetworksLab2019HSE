@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -40,8 +41,10 @@ public class Server {
 
     public void run() throws IOException {
         serverSocketChannel = ServerSocketChannel.open();
-        InetSocketAddress socketAddress = new InetSocketAddress("localhost", 8081);
+        Socket getIp = new Socket("2ip.ru", 80);
+        InetSocketAddress socketAddress = new InetSocketAddress(getIp.getLocalAddress().getHostAddress(), 8081);
         serverSocketChannel.bind(socketAddress);
+        System.out.println("server adress: " + serverSocketChannel.socket().getLocalSocketAddress());
         selector = Selector.open();
         Selector writerSelector = Selector.open();
         Writer writer = new Writer(writerSelector);

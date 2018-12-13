@@ -1,7 +1,5 @@
 package itmo2018.se;
 
-import com.sun.istack.internal.Nullable;
-
 import java.nio.channels.SocketChannel;
 import java.util.Arrays;
 import java.util.Objects;
@@ -43,7 +41,6 @@ public class ClientInfo {
         return !closeTask.isDone();
     }
 
-    @Nullable
     public int getSharingPort() {
         return sharingPort;
     }

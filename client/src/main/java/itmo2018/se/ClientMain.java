@@ -20,11 +20,11 @@ public class ClientMain {
     }
 
     public void run(String workingDir) throws IOException {
-        initWorkingDir(workingDir);
+        MetaDataManager metaData = initWorkingDir(workingDir);
 
         Client client;
         try {
-            client = new Client(workingDir);
+            client = new Client(metaData);
         } catch (IOException e) {
             System.out.println("can't connect to server");
             return;
@@ -38,7 +38,7 @@ public class ClientMain {
         System.out.println("port: " + seederServer.getLocalPort());
         client.startUpdat(seedPort);
 
-        Seeder seeder = new Seeder(seederServer, workingDir);
+        Seeder seeder = new Seeder(seederServer, metaData);
         Thread seederThred = new Thread(seeder);
         seederThred.setDaemon(true);
         seederThred.start();
@@ -109,12 +109,13 @@ public class ClientMain {
         }
     }
 
-    private void initWorkingDir(String workingDir) throws IOException {
+    private MetaDataManager initWorkingDir(String workingDir) throws IOException {
         System.out.println("working dir:\t" + workingDir);
         File metaData = new File(workingDir + "/.metadata");
         if (!metaData.exists()) {
             metaData.createNewFile();
         }
+        return new MetaDataManager(metaData);
     }
 
     private boolean isPositiveInt(String str) {

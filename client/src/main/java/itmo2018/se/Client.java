@@ -4,8 +4,6 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -13,16 +11,16 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class Client implements Closeable {
-    private String metaData;
+    private MetaDataManager metaData;
     private Socket socket;
     private DataOutputStream socketOut;
     private DataInputStream socketIn;
     private ScheduledExecutorService scheduled;
 
 
-    public Client(String workingDir) throws IOException {
-        this.socket = new Socket("localhost", 8081);
-        this.metaData = workingDir + "/.metadata";
+    public Client(MetaDataManager metaData) throws IOException {
+        this.socket = new Socket("192.168.1.2", 8081);
+        this.metaData = metaData;
         try {
             socketOut = new DataOutputStream(socket.getOutputStream());
             socketIn = new DataInputStream(socket.getInputStream());
@@ -40,10 +38,10 @@ public class Client implements Closeable {
             int size = socketIn.readInt();
             List<InetSocketAddress> res = new ArrayList<>(size);
             for (int i = 0; i < size; i++) {
-                byte ip1 = socketIn.readByte();
-                byte ip2 = socketIn.readByte();
-                byte ip3 = socketIn.readByte();
-                byte ip4 = socketIn.readByte();
+                int ip1 = byteToInt(socketIn.readByte());
+                int ip2 = byteToInt(socketIn.readByte());
+                int ip3 = byteToInt(socketIn.readByte());
+                int ip4 = byteToInt(socketIn.readByte());
                 int port = shortToInt(socketIn.readShort());
                 InetSocketAddress address = new InetSocketAddress(ip1 + "." + ip2 + "." + ip3 + "." + ip4, port);
                 res.add(address);
@@ -86,30 +84,22 @@ public class Client implements Closeable {
             socketOut.flush();
 
             int id = socketIn.readInt();
-
-            try (OutputStream metaDataFile = new FileOutputStream(metaData)) {
-                metaDataFile.write((id + "\t" + file.getAbsolutePath() + "\t" + -1 + "\n").getBytes());
-            }
+            metaData.addNote(id, file.getAbsolutePath(), file.length());
             System.out.println("new file id: " + id);
         }
     }
 
     public void update(short seederPort) throws IOException {
         synchronized (socketOut) {
-            int filesNumber = (int) Files.lines(Paths.get(metaData)).count();
-            System.out.println("filesNumber: " + filesNumber);
-            socketOut.writeInt(1 + 2 + (filesNumber + 1) * 4);
+            int filesCount = metaData.filesCount();
+            System.out.println("filesNumber: " + filesCount);
+            socketOut.writeInt(1 + 2 + (filesCount + 1) * 4);
             socketOut.writeByte(4);
             socketOut.writeShort(seederPort);
-            socketOut.writeInt(filesNumber);
-            Files.lines(Paths.get(metaData)).map(it -> Integer.parseInt(it.split("\t")[0]))
-                    .forEach(it -> {
-                        try {
-                            socketOut.writeInt(it);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    });
+            socketOut.writeInt(filesCount);
+            for (int id : metaData.idSet()) {
+                socketOut.writeInt(id);
+            }
             socketOut.flush();
             socketIn.readByte();
         }
@@ -132,6 +122,13 @@ public class Client implements Closeable {
         if (scheduled != null) {
             scheduled.shutdownNow();
         }
+    }
+
+    private int byteToInt(byte b) {
+        if (b >= 0) {
+            return b;
+        }
+        return 128 + 128 + b;
     }
 
     private int shortToInt(short s) {

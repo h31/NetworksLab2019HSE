@@ -1,5 +1,6 @@
 package itmo2018.se;
 
+import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -8,30 +9,37 @@ import java.net.Socket;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
-public class Seeder implements Runnable {
+public class Seeder implements Runnable, Closeable {
     private ServerSocket server;
     private String metaData;
+    private ThreadPoolExecutor poolExecutor;
+    private int limitLeech = 4;
 
     public Seeder(ServerSocket server, String workingDir) {
         this.server = server;
         this.metaData = workingDir + "/.metadata";
+        poolExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(limitLeech);
     }
 
     @Override
     public void run() {
-        try {
-            int limitLeech = 4;
-            ThreadPoolExecutor poolExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(limitLeech);
-            while (true) {
+        while (true) {
+            try {
                 Socket socket = server.accept();
                 if (poolExecutor.getTaskCount() >= limitLeech) {
                     socket.close();
                 }
                 poolExecutor.submit(new Executor(socket));
+            } catch (IOException e) {
+                break;
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
+    }
+
+    @Override
+    public void close() throws IOException {
+        server.close();
+        poolExecutor.shutdownNow();
     }
 
     private class Executor implements Runnable {

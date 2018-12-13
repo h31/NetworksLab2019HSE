@@ -1,10 +1,13 @@
 package itmo2018.se;
 
 import java.io.*;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -28,26 +31,31 @@ public class Client implements Closeable {
         }
     }
 
-    public void sendSources(int id) throws IOException {
+    public List<InetSocketAddress> getSources(int id) throws IOException {
         synchronized (socketOut) {
             socketOut.writeInt(1 + 4);
             socketOut.writeByte(3);
             socketOut.writeInt(id);
 
             int size = socketIn.readInt();
+            List<InetSocketAddress> res = new ArrayList<>(size);
             for (int i = 0; i < size; i++) {
                 byte ip1 = socketIn.readByte();
                 byte ip2 = socketIn.readByte();
                 byte ip3 = socketIn.readByte();
                 byte ip4 = socketIn.readByte();
                 int port = shortToInt(socketIn.readShort());
-                System.out.println("ip: " + ip1 + "." + ip2 + "." + ip3 + "." + ip4 +
-                        "\t port: " + port);
+                InetSocketAddress address = new InetSocketAddress(ip1 + "." + ip2 + "." + ip3 + "." + ip4, port);
+                res.add(address);
+                System.out.println(address);
+//                System.out.println("ip: " + ip1 + "." + ip2 + "." + ip3 + "." + ip4 +
+//                        "\t port: " + port);
             }
+            return res;
         }
     }
 
-    public void sendList() throws IOException {
+    public void getList() throws IOException {
         synchronized (socketOut) {
             socketOut.writeInt(1);
             socketOut.writeByte(1);
@@ -62,7 +70,7 @@ public class Client implements Closeable {
         }
     }
 
-    public void sendUpload(String filePath) throws IOException {
+    public void upload(String filePath) throws IOException {
         File file = new File(filePath);
         if (!file.exists() || file.isDirectory()) {
             System.out.println("can't find file");
@@ -86,7 +94,7 @@ public class Client implements Closeable {
         }
     }
 
-    public void sendUpdate(short seederPort) throws IOException {
+    public void update(short seederPort) throws IOException {
         synchronized (socketOut) {
             int filesNumber = (int) Files.lines(Paths.get(metaData)).count();
             System.out.println("filesNumber: " + filesNumber);
@@ -107,7 +115,7 @@ public class Client implements Closeable {
         }
     }
 
-    public void startUpdater(short seedPort) {
+    public void startUpdat(short seedPort) {
         Updater updater = new Updater(seedPort);
         this.scheduled = Executors.newSingleThreadScheduledExecutor();
         scheduled.scheduleAtFixedRate(updater, 0, 5, TimeUnit.MINUTES);
@@ -121,7 +129,9 @@ public class Client implements Closeable {
     @Override
     public void close() throws IOException {
         socket.close();
-        scheduled.shutdownNow();
+        if (scheduled != null) {
+            scheduled.shutdownNow();
+        }
     }
 
     private int shortToInt(short s) {
@@ -141,7 +151,7 @@ public class Client implements Closeable {
         @Override
         public void run() {
             try {
-                sendUpdate(seederPort);
+                update(seederPort);
             } catch (IOException e) {
                 e.printStackTrace();
             }

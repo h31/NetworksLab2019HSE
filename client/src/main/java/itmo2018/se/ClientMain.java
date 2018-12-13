@@ -36,9 +36,10 @@ public class ClientMain {
 
         short seedPort = (short) seederServer.getLocalPort();
         System.out.println("port: " + seederServer.getLocalPort());
-        client.startUpdater(seedPort);
+        client.startUpdat(seedPort);
 
-        Thread seederThred = new Thread(new Seeder(seederServer, workingDir));
+        Seeder seeder = new Seeder(seederServer, workingDir);
+        Thread seederThred = new Thread(seeder);
         seederThred.setDaemon(true);
         seederThred.start();
 
@@ -47,19 +48,29 @@ public class ClientMain {
             String[] cmdLine = scanner.nextLine().split(" +");
             try {
                 switch (cmdLine[0]) {
+                    case "download":
+                        if (cmdLine.length != 2) {
+                            System.out.println("download takes one argument");
+                            continue;
+                        } else if (!isPositiveInt(cmdLine[1])) {
+                            System.out.println("id must be positive integer number");
+                            continue;
+                        }
+                        new Leech(Integer.parseInt(cmdLine[1]), client, workingDir).run();
+                        break;
                     case "list":
                         if (cmdLine.length != 1) {
                             System.out.println("list not takes arguments");
                             continue;
                         }
-                        client.sendList();
+                        client.getList();
                         break;
                     case "upload":
                         if (cmdLine.length != 2) {
                             System.out.println("upload takes one argument");
                             continue;
                         }
-                        client.sendUpload(cmdLine[1]);
+                        client.upload(cmdLine[1]);
                         break;
                     case "source":
                         if (cmdLine.length != 2) {
@@ -69,14 +80,14 @@ public class ClientMain {
                             System.out.println("id must be positive integer number");
                             continue;
                         }
-                        client.sendSources(Integer.parseInt(cmdLine[1]));
+                        client.getSources(Integer.parseInt(cmdLine[1]));
                         break;
                     case "update":
                         if (cmdLine.length != 1) {
                             System.out.println("update not takes arguments");
                             continue;
                         }
-                        client.sendUpdate(seedPort);
+                        client.update(seedPort);
                         break;
                     case "exit":
                         if (cmdLine.length != 1) {
@@ -84,6 +95,7 @@ public class ClientMain {
                             continue;
                         }
                         client.close();
+                        seeder.close();
                         return;
                     default:
                         System.out.println(cmdLine[0] + " is unknow command");
@@ -91,6 +103,7 @@ public class ClientMain {
             } catch (IOException e) {
                 System.out.println("connection aborted");
                 client.close();
+                seeder.close();
                 return;
             }
         }

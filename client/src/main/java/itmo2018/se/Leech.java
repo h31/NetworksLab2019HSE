@@ -8,17 +8,20 @@ import java.net.Socket;
 
 public class Leech implements Runnable {
     private String metaData;
-    private InetSocketAddress address;
+    private int fileId;
+    private Client client;
 
-    public Leech(InetSocketAddress address, String workingDir) {
+    public Leech(int fileId, Client client, String workingDir) {
+        this.fileId = fileId;
+        this.client = client;
         this.metaData = workingDir + "/.metadata";
-        this.address = address;
     }
 
     @Override
     public void run() {
         try {
             Socket socket = new Socket();
+            InetSocketAddress address = client.getSources(fileId).get(0);
             socket.connect(address);
             DataInputStream socketIn = new DataInputStream(socket.getInputStream());
             DataOutputStream socketOut = new DataOutputStream(socket.getOutputStream());

@@ -13,7 +13,7 @@ repositories {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'itmo2018.se.Client'
+        attributes 'Main-Class': 'itmo2018.se.ClientMain'
     }
 }
 

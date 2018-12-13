@@ -13,8 +13,8 @@ import java.util.concurrent.TimeUnit;
 public class ClientInfo {
     private Future<Void> closeTask;
     private byte[] ip;
-    private short port;
-    private short sharingPort;
+    private int port;
+    private int sharingPort;
     private ScheduledExecutorService closeScheduled;
     private SocketChannel channel;
 
@@ -30,7 +30,7 @@ public class ClientInfo {
         return ip;
     }
 
-    public short getPort() {
+    public int getPort() {
         return port;
     }
 
@@ -44,11 +44,11 @@ public class ClientInfo {
     }
 
     @Nullable
-    public short getSharingPort() {
+    public int getSharingPort() {
         return sharingPort;
     }
 
-    public void updateSharingPort(short port) {
+    public void updateSharingPort(int port) {
         this.sharingPort = port;
     }
 

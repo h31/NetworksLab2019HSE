@@ -2,99 +2,33 @@ package itmo2018.se;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.Scanner;
+import java.net.SocketAddress;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-
-public class Client {
-    public static void main(String[] args) throws IOException {
-        File workingDir;
-        if (args.length == 0) {
-            workingDir = new File(System.getProperty("user.dir"));
-        } else {
-            workingDir = new File(args[0]);
-            if (!workingDir.exists() && !workingDir.isDirectory()) {
-                System.out.println("can't find " + args[0] + " folder");
-                return;
-            }
-        }
-        new Client().run(workingDir.getAbsolutePath());
-    }
-
-    public void run(String workingDir) throws IOException {
-        initWorkingDir(workingDir);
-
-        Socket socket = new Socket("127.0.0.1", 8081);
-        final DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-        final DataInputStream in = new DataInputStream(socket.getInputStream());
-        Updater updater = new Updater(workingDir, in, out);
-        ScheduledExecutorService scheduled = Executors.newScheduledThreadPool(1);
-        scheduled.scheduleAtFixedRate(updater, 0, 5, TimeUnit.MINUTES);
+public class Client implements Closeable {
+    private String metaData;
+    private Socket socket;
+    private DataOutputStream socketOut;
+    private DataInputStream socketIn;
+    private ScheduledExecutorService scheduled;
 
 
-        Scanner scanner = new Scanner(System.in);
-
-        while (true) {
-            String[] cmdLine = scanner.nextLine().split(" +");
-            switch (cmdLine[0]) {
-                case "list":
-                    if (cmdLine.length != 1) {
-                        System.out.println("list not takes arguments");
-                        continue;
-                    }
-                    sendList(in, out);
-                    break;
-                case "upload":
-                    if (cmdLine.length != 2) {
-                        System.out.println("upload takes one argument");
-                        continue;
-                    }
-                    sendUpload(cmdLine[1], workingDir, in, out);
-                    break;
-                case "source":
-                    if (cmdLine.length != 2) {
-                        System.out.println("source takes one argument");
-                        continue;
-                    } else if (!isPositiveInt(cmdLine[1])) {
-                        System.out.println("id must be positive integer number");
-                        continue;
-                    }
-                    sendSources(Integer.parseInt(cmdLine[1]), in, out);
-                    break;
-                case "update":
-                    if (cmdLine.length != 1) {
-                        System.out.println("update not takes arguments");
-                        continue;
-                    }
-                    updater.run();
-                    break;
-                case "exit":
-                    if (cmdLine.length != 1) {
-                        System.out.println("exit not takes arguments");
-                        continue;
-                    }
-                    socket.close();
-                    scheduled.shutdownNow();
-                    return;
-                default:
-                    System.out.println(cmdLine[0] + " is unknow command");
-            }
-
+    public Client(String workingDir) throws IOException {
+        this.socket = new Socket("localhost", 8081);
+        this.metaData = workingDir + "/.metadata";
+        try {
+            socketOut = new DataOutputStream(socket.getOutputStream());
+            socketIn = new DataInputStream(socket.getInputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
-    private void initWorkingDir(String workingDir) throws IOException {
-        System.out.println("working dir:\t" + workingDir);
-        File metaData = new File(workingDir + "/.metadata");
-        if (!metaData.exists()) {
-            metaData.createNewFile();
-        }
-    }
-
-
-    private void sendSources(int id, DataInputStream socketIn, DataOutputStream socketOut) throws IOException {
+    public void sendSources(int id) throws IOException {
         synchronized (socketOut) {
             socketOut.writeInt(1 + 4);
             socketOut.writeByte(3);
@@ -106,14 +40,14 @@ public class Client {
                 byte ip2 = socketIn.readByte();
                 byte ip3 = socketIn.readByte();
                 byte ip4 = socketIn.readByte();
-                short port = socketIn.readShort();
+                int port = shortToInt(socketIn.readShort());
                 System.out.println("ip: " + ip1 + "." + ip2 + "." + ip3 + "." + ip4 +
                         "\t port: " + port);
             }
         }
     }
 
-    private void sendList(DataInputStream socketIn, DataOutputStream socketOut) throws IOException {
+    public void sendList() throws IOException {
         synchronized (socketOut) {
             socketOut.writeInt(1);
             socketOut.writeByte(1);
@@ -128,7 +62,7 @@ public class Client {
         }
     }
 
-    private void sendUpload(String filePath, String workingDir, DataInputStream socketIn, DataOutputStream socketOut) throws IOException {
+    public void sendUpload(String filePath) throws IOException {
         File file = new File(filePath);
         if (!file.exists() || file.isDirectory()) {
             System.out.println("can't find file");
@@ -145,15 +79,72 @@ public class Client {
 
             int id = socketIn.readInt();
 
-            try (OutputStream metaData = new FileOutputStream(workingDir + "/.metadata")) {
-                metaData.write((id + "\t" + file.getAbsolutePath() + "\t" + -1 + "\n").getBytes());
+            try (OutputStream metaDataFile = new FileOutputStream(metaData)) {
+                metaDataFile.write((id + "\t" + file.getAbsolutePath() + "\t" + -1 + "\n").getBytes());
             }
             System.out.println("new file id: " + id);
         }
     }
 
-    private boolean isPositiveInt(String str) {
-        return str.matches("\\d+");
+    public void sendUpdate(short seederPort) throws IOException {
+        synchronized (socketOut) {
+            int filesNumber = (int) Files.lines(Paths.get(metaData)).count();
+            System.out.println("filesNumber: " + filesNumber);
+            socketOut.writeInt(1 + 2 + (filesNumber + 1) * 4);
+            socketOut.writeByte(4);
+            socketOut.writeShort(seederPort);
+            socketOut.writeInt(filesNumber);
+            Files.lines(Paths.get(metaData)).map(it -> Integer.parseInt(it.split("\t")[0]))
+                    .forEach(it -> {
+                        try {
+                            socketOut.writeInt(it);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    });
+            socketOut.flush();
+            socketIn.readByte();
+        }
+    }
+
+    public void startUpdater(short seedPort) {
+        Updater updater = new Updater(seedPort);
+        this.scheduled = Executors.newSingleThreadScheduledExecutor();
+        scheduled.scheduleAtFixedRate(updater, 0, 5, TimeUnit.MINUTES);
+    }
+
+    public SocketAddress getSocketLocalAdress() {
+        return socket.getLocalSocketAddress();
+    }
+
+
+    @Override
+    public void close() throws IOException {
+        socket.close();
+        scheduled.shutdownNow();
+    }
+
+    private int shortToInt(short s) {
+        if (s >= 0) {
+            return s;
+        }
+        return 32768 + 32768 + s;
+    }
+
+    private class Updater implements Runnable {
+        short seederPort;
+
+        Updater(short seederPort) {
+            this.seederPort = seederPort;
+        }
+
+        @Override
+        public void run() {
+            try {
+                sendUpdate(seederPort);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
-

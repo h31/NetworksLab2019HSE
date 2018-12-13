@@ -35,7 +35,6 @@ public class Executor implements Callable<Void> {
                 executeUpdate();
                 break;
         }
-        //TODO переименовать dataQueue везде!!!!
         writer.registerClient(client);
         return null;
     }
@@ -88,7 +87,7 @@ public class Executor implements Callable<Void> {
             for (Iterator<ClientInfo> it = file.owners(); it.hasNext(); ) {
                 ClientInfo clientInfo = it.next();
                 response.put(clientInfo.getIp());
-                response.putShort(clientInfo.getPort());
+                response.putShort((short) clientInfo.getSharingPort());
             }
         }
         response.flip();
@@ -100,8 +99,8 @@ public class Executor implements Callable<Void> {
 
         ClientInfo clientInfo = client.getClientInfo();
         clientInfo.updateCloseTask();
-        short port = content.readShort();
-        clientInfo.updateSharingPort(port);
+        int port = shortToInt(content.readShort());
+        client.getClientInfo().updateSharingPort(port);
         int count = content.readInt();
         for (int i = 0; i < count; i++) {
             int fileId = content.readInt();
@@ -112,5 +111,12 @@ public class Executor implements Callable<Void> {
         response.put((byte) 1);
         response.flip();
         client.addResponse(response);
+    }
+
+    private int shortToInt(short s) {
+        if (s >= 0) {
+            return s;
+        }
+        return 32768 + 32768 + s;
     }
 }

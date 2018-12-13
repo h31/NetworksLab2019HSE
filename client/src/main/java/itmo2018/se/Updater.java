@@ -11,11 +11,13 @@ public class Updater implements Runnable {
     private final DataInputStream socketIn;
     private final DataOutputStream socketOut;
     private Path metaData;
+    private short seederPort;
 
-    public Updater(String workingDir, DataInputStream socketIn, DataOutputStream socketOut) {
+    public Updater(String workingDir, short seederPort, DataInputStream socketIn, DataOutputStream socketOut) {
         this.socketIn = socketIn;
         this.socketOut = socketOut;
         this.metaData = Paths.get(workingDir + "/.metadata");
+        this.seederPort = seederPort;
     }
 
     @Override
@@ -26,7 +28,7 @@ public class Updater implements Runnable {
                 System.out.println("filesNumber: " + filesNumber);
                 socketOut.writeInt(1 + 2 + (filesNumber + 1) * 4);
                 socketOut.writeByte(4);
-                socketOut.writeShort(0);
+                socketOut.writeShort(seederPort);
                 socketOut.writeInt(filesNumber);
                 Files.lines(metaData).map(it -> Integer.parseInt(it.split("\t")[0]))
                         .forEach(it -> {

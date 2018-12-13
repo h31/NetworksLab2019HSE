@@ -2,7 +2,9 @@ package itmo2018.se;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -38,7 +40,7 @@ public class Server {
 
     public void run() throws IOException {
         serverSocketChannel = ServerSocketChannel.open();
-        InetSocketAddress socketAddress = new InetSocketAddress("127.0.0.1", 8081);
+        InetSocketAddress socketAddress = new InetSocketAddress("localhost", 8081);
         serverSocketChannel.bind(socketAddress);
         selector = Selector.open();
         Selector writerSelector = Selector.open();
@@ -91,7 +93,7 @@ public class Server {
         short port = (short) channel.socket().getPort();
         ClientInfo info = new ClientInfo(ip, port, channel, closer);
 
-        System.out.println(channel.socket().getLocalSocketAddress());
+        System.out.println(channel.socket().getRemoteSocketAddress());
 
         channel.configureBlocking(false);
         channel.register(selector, SelectionKey.OP_READ, new ClientDataHolder(info));

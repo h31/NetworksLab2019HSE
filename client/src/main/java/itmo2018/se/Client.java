@@ -46,25 +46,26 @@ public class Client implements Closeable {
                 InetSocketAddress address = new InetSocketAddress(ip1 + "." + ip2 + "." + ip3 + "." + ip4, port);
                 res.add(address);
                 System.out.println(address);
-//                System.out.println("ip: " + ip1 + "." + ip2 + "." + ip3 + "." + ip4 +
-//                        "\t port: " + port);
             }
             return res;
         }
     }
 
-    public void getList() throws IOException {
+    public List<MetaDataNote> getList() throws IOException {
         synchronized (socketOut) {
             socketOut.writeInt(1);
             socketOut.writeByte(1);
 
             int count = socketIn.readInt();
+            List<MetaDataNote> result = new ArrayList<>();
             for (int i = 0; i < count; i++) {
                 int fileId = socketIn.readInt();
                 String fileName = socketIn.readUTF();
                 long fileSize = socketIn.readLong();
+                result.add(new MetaDataNote(fileId, fileName, fileSize));
                 System.out.println(fileId + "\t" + fileName + "\t" + fileSize);
             }
+            return result;
         }
     }
 
@@ -84,7 +85,7 @@ public class Client implements Closeable {
             socketOut.flush();
 
             int id = socketIn.readInt();
-            metaData.addNote(id, file.getAbsolutePath(), file.length());
+            metaData.addReadyNote(id, file.getAbsolutePath(), file.length());
             System.out.println("new file id: " + id);
         }
     }

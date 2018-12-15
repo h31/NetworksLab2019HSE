@@ -25,7 +25,7 @@ public class ListFileManager implements FileManager {
     public int registerFile(String name, long size, ClientInfo owner) {
         int id = files.size();
         files.add(new FileInfo(id, name, size, owner));
-        try (OutputStream metaData = new FileOutputStream("metadata")) {
+        try (OutputStream metaData = new FileOutputStream("metadata", true)) {
             metaData.write((id + "\t" + name + "\t" + size + "\n").getBytes());
         } catch (Exception e) {
             System.out.println("can't write id to metadata file");

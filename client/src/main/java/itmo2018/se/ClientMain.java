@@ -29,7 +29,6 @@ public class ClientMain {
             System.out.println("can't connect to server");
             return;
         }
-//        Socket tmp = new Socket("vk.com", 80);
         ServerSocket seederServer = new ServerSocket();
         seederServer.bind(client.getSocketLocalAdress());
         seederServer.setReceiveBufferSize(1024);
@@ -39,9 +38,9 @@ public class ClientMain {
         client.startUpdat(seedPort);
 
         Seeder seeder = new Seeder(seederServer, metaData);
-        Thread seederThred = new Thread(seeder);
-        seederThred.setDaemon(true);
-        seederThred.start();
+        Thread seederThread = new Thread(seeder);
+        seederThread.setDaemon(true);
+        seederThread.start();
 
         Scanner scanner = new Scanner(System.in);
         while (true) {
@@ -56,7 +55,8 @@ public class ClientMain {
                             System.out.println("id must be positive integer number");
                             continue;
                         }
-                        new Leech(Integer.parseInt(cmdLine[1]), client, workingDir).run();
+                        //TODO добавить пул личей
+                        new Leech(Integer.parseInt(cmdLine[1]), client, metaData).run();
                         break;
                     case "list":
                         if (cmdLine.length != 1) {

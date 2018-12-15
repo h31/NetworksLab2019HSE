@@ -16,12 +16,6 @@ public class MetaDataNote implements Iterable<Integer> {
         this.id = id;
         this.name = name;
         this.size = size;
-        this.parts = new HashSet<>();
-        int partSize = 1024 * 1024 * 5;
-        int partsCount = (int) ((size - 1) / partSize + 1);
-        for (int i = 0; i < partsCount; i++) {
-            parts.add(i);
-        }
         this.finish = true;
     }
 
@@ -44,7 +38,17 @@ public class MetaDataNote implements Iterable<Integer> {
         return size;
     }
 
+    public Set<Integer> getParts() {
+        if (parts == null) {
+            initParts();
+        }
+        return parts;
+    }
+
     public int partsCount() {
+        if (parts == null) {
+            initParts();
+        }
         return parts.size();
     }
 
@@ -59,5 +63,14 @@ public class MetaDataNote implements Iterable<Integer> {
     @Override
     public Iterator<Integer> iterator() {
         return parts.iterator();
+    }
+
+    private void initParts() {
+        this.parts = new HashSet<>();
+        int partSize = 1024 * 1024 * 5;
+        int partsCount = (int) ((size - 1) / partSize + 1);
+        for (int i = 0; i < partsCount; i++) {
+            parts.add(i);
+        }
     }
 }

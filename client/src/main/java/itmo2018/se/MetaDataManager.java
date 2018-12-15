@@ -2,7 +2,6 @@ package itmo2018.se;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -21,9 +20,16 @@ public class MetaDataManager {
         this.filesCount = (int) Files.lines(file.toPath()).count();
     }
 
-    public void addNote(int id, String name, long size) throws IOException {
-        try (OutputStream writer = new FileOutputStream(file)) {
+    public void addReadyNote(int id, String name, long size) throws IOException {
+        try (OutputStream writer = new FileOutputStream(file, true)) {
             writer.write((id + "\t" + name + "\t" + size + "\t" + -1 + "\n").getBytes());
+        }
+        filesCount++;
+    }
+
+    public void addNote(int id, String name, long size) throws IOException {
+        try (OutputStream writer = new FileOutputStream(file, true)) {
+            writer.write((id + "\t" + name + "\t" + size + "\n").getBytes());
         }
         filesCount++;
     }
@@ -32,9 +38,9 @@ public class MetaDataManager {
         long partSize = 1024L * 1024L * 5;
         int partsCount = (int) ((size - 1) / partSize + 1);
         if (parts.size() == partsCount) {
-            addNote(id, name, size);
+            addReadyNote(id, name, size);
         } else {
-            try (OutputStream writer = new FileOutputStream(file)) {
+            try (OutputStream writer = new FileOutputStream(file, true)) {
                 writer.write((id + "\t" + name + "\t" + size).getBytes());
                 for (int part : parts) {
                     writer.write(("\t" + part).getBytes());
@@ -108,7 +114,7 @@ public class MetaDataManager {
                 .collect(Collectors.toSet());
     }
 
-    private void finishCollectParts(int id) throws IOException {
+    public void finishCollectParts(int id) throws IOException {
         List<String> lines = Files.lines(file.toPath()).collect(Collectors.toList());
         try (OutputStream writer = new FileOutputStream(file, false)) {
             for (String line : lines) {

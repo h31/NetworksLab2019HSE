@@ -39,6 +39,10 @@ public class FileInfo {
         return owners.size();
     }
 
+    public boolean hasOwner(ClientInfo clientInfo) {
+        return owners.contains(clientInfo);
+    }
+
     public Iterator<ClientInfo> owners() {
         return owners.iterator();
     }

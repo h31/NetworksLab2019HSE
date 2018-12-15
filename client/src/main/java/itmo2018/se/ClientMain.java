@@ -56,7 +56,7 @@ public class ClientMain {
                             continue;
                         }
                         //TODO добавить пул личей
-                        new Leech(Integer.parseInt(cmdLine[1]), client, metaData).run();
+                        new Leech(Integer.parseInt(cmdLine[1]), client, metaData, seedPort).run();
                         break;
                     case "list":
                         if (cmdLine.length != 1) {

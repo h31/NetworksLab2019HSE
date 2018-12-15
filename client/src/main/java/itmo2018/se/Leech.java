@@ -19,11 +19,13 @@ public class Leech implements Runnable {
     private Client client;
     private ThreadPoolExecutor downloadPool = (ThreadPoolExecutor) Executors.newFixedThreadPool(8);
     private final Object mutex = new Object();
+    private short ownSeederPort;
 
-    public Leech(int fileId, Client client, MetaDataManager metaData) {
+    public Leech(int fileId, Client client, MetaDataManager metaData, short ownSeederPort) {
         this.fileId = fileId;
         this.client = client;
         this.metaData = metaData;
+        this.ownSeederPort = ownSeederPort;
     }
 
     @Override
@@ -72,6 +74,7 @@ public class Leech implements Runnable {
             } else {
                 System.out.println("not possible to download the whole file because there are no seeders");
             }
+            client.update(ownSeederPort);
         } catch (IOException e) {
             System.out.println("can't connect to seeder");
         } catch (InterruptedException e) {

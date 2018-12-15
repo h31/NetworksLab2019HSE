@@ -2,6 +2,7 @@ package itmo2018.se;
 
 import java.io.*;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.concurrent.Callable;
 
@@ -82,10 +83,15 @@ public class Executor implements Callable<Void> {
             response.putInt(0);
         } else {
             FileInfo file = fileManager.getFile(id);
-            response = ByteBuffer.allocate(4 + file.ownersNumber() * (4 + 2));
-            response.putInt(file.ownersNumber());
+            int ownersNumber = file.hasOwner(client.getClientInfo()) ?
+                    file.ownersNumber() - 1 : file.ownersNumber();
+            response = ByteBuffer.allocate(4 + ownersNumber * (4 + 2));
+            response.putInt(ownersNumber);
             for (Iterator<ClientInfo> it = file.owners(); it.hasNext(); ) {
                 ClientInfo clientInfo = it.next();
+                if (client.getClientInfo().equals(clientInfo)) {
+                    continue;
+                }
                 response.put(clientInfo.getIp());
                 response.putShort((short) clientInfo.getSharingPort());
             }

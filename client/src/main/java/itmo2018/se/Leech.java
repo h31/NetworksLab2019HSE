@@ -66,6 +66,11 @@ public class Leech implements Runnable {
                 }
                 Thread.sleep(20000);
                 finish = (int) neededParts.values().stream().filter(it -> it.status == DownloadStatus.FINISH).count();
+                owners = client.getSources(fileId);
+                System.out.println("=================================================");
+                System.out.println("active count: " + downloadPool.getActiveCount());
+                System.out.println("finish: " + finish + "\t" + "neededSize: " + neededParts.size());
+                System.out.println("=================================================");
             } while (downloadPool.getActiveCount() > 0 && finish < neededParts.size());
 
             if (finish == neededParts.size()) {

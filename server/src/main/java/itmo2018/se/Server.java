@@ -68,13 +68,17 @@ public class Server {
                     SocketChannel channel = (SocketChannel) key.channel();
                     ClientDataHolder client = (ClientDataHolder) key.attachment();
                     ByteBuffer buffer = ByteBuffer.allocate(1024);
-                    if (channel.read(buffer) == -1) {
-                        System.out.println(channel.getRemoteAddress() + " is closed");
-                        client.getClientInfo().disconect();
-                        channel.close();
+                    try {
+                        if (channel.read(buffer) == -1) {
+                            System.out.println(channel.getRemoteAddress() + " is closed");
+                            client.getClientInfo().disconect();
+                            channel.close();
+                        }
+                        buffer.flip();
+                        client.read(buffer);
+                    } catch (IOException e) {
+                        System.out.println("client is already disconect");
                     }
-                    buffer.flip();
-                    client.read(buffer);
                     while (client.requestIsReady()) {
                         pool.submit(new Executor(client.getRequest(), client, fileManager, writer));
                         client.resetRequest();

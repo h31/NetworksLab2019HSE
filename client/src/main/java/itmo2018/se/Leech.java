@@ -62,7 +62,9 @@ public class Leech implements Runnable {
             int finish;
             do {
                 for (InetSocketAddress owner : owners) {
-                    downloadPool.submit(new Downloader(owner, fileInfo, neededParts, writer));
+                    if (downloadPool.getActiveCount() < downloadPool.getMaximumPoolSize()) {
+                        downloadPool.submit(new Downloader(owner, fileInfo, neededParts, writer));
+                    }
                 }
                 Thread.sleep(20000);
                 finish = (int) neededParts.values().stream().filter(it -> it.status == DownloadStatus.FINISH).count();
@@ -116,6 +118,7 @@ public class Leech implements Runnable {
                 for (Map.Entry<Integer, PartHolder> neededPart : neededParts.entrySet()) {
                     int partNumber = neededPart.getKey();
                     if (!userParts.contains(partNumber)) {
+                        System.out.println("have not part!!!!");
                         continue;
                     }
                     PartHolder partHolder = neededPart.getValue();
@@ -142,6 +145,7 @@ public class Leech implements Runnable {
             } catch (IOException e) {
                 System.out.println("seeder " + address + " is busy");
             } finally {
+                System.out.println("finish leech!!!!!");
                 synchronized (mutex) {
                     mutex.notify();
                 }

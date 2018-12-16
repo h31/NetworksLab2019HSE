@@ -35,6 +35,7 @@ public class Leech implements Runnable {
             MetaDataNote note = metaData.getNote(fileId);
             if (note != null && !note.existFile()) {
                 metaData.deleteNote(fileId);
+                note = null;
             }
             List<InetSocketAddress> owners = client.getSources(fileId);
             if (owners.size() == 0) {
@@ -74,15 +75,15 @@ public class Leech implements Runnable {
                 metaData.finishCollectParts(fileId);
                 System.out.println("finish download file " + fileInfo.getName());
             } else {
-                System.out.println("not possible to download the whole file because there are no seeders");
+                System.out.println("not possible to download the whole file because there are no active seeders");
             }
             client.update(ownSeederPort);
         } catch (IOException e) {
             System.out.println("can't connect to seeder");
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            //interupt
         } finally {
-            downloadPool.shutdown();
+            downloadPool.shutdownNow();
             if (writer != null) {
                 writer.interrupt();
             }
@@ -125,10 +126,9 @@ public class Leech implements Runnable {
                             }
                         }
                         try {
-                            byte[] bytes = download(socket, partNumber);
-                            partHolder.content = bytes;
+                            partHolder.content = download(socket, partNumber);
                             writer.addPart(partHolder);
-                        } catch (IOException e) {
+                        } catch (Exception e) {
                             partHolder.status = DownloadStatus.WAITING;
                             return;
                         }
@@ -184,12 +184,8 @@ public class Leech implements Runnable {
             this.fileInfo = fileInfo;
         }
 
-        void addPart(PartHolder partHolder) {
-            try {
-                queue.put(partHolder);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+        void addPart(PartHolder partHolder) throws InterruptedException {
+            queue.put(partHolder);
         }
 
         @Override

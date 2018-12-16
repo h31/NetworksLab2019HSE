@@ -27,7 +27,6 @@ public class Writer implements Runnable {
     public void run() {
         try {
             while (selector.select() > -1) {
-                //TODO убрать очередб, так как каждый клиент работает в блокирующем режиме
                 if (clientQueue.size() > 0) {
                     ClientDataHolder data = clientQueue.poll();
                     data.getClientInfo().getChannel().register(selector, SelectionKey.OP_WRITE, data);
@@ -42,7 +41,6 @@ public class Writer implements Runnable {
                         ClientDataHolder responceQueue = (ClientDataHolder) key.attachment();
                         ByteBuffer responce = responceQueue.getResponse();
                         if (responce != null) {
-                            System.out.println("Send responce!!!!");
                             channel.write(responce);
                         } else {
                             key.cancel();

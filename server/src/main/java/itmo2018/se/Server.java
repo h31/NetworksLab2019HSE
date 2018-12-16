@@ -2,9 +2,7 @@ package itmo2018.se;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -12,14 +10,10 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Iterator;
-import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.*;
 
-//TODO добавить обработку исключений
 public class Server {
     public static void main(String[] args) throws IOException {
         new Server().run();
@@ -84,13 +78,11 @@ public class Server {
                         pool.submit(new Executor(client.getRequest(), client, fileManager, writer));
                         client.resetRequest();
                         client.read(buffer);
-                        System.out.println("package is ready");
                     }
                 }
                 keyIterator.remove();
             }
         }
-//        closer.shutdownNow();
     }
 
     private void registerClient() throws IOException {

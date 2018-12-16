@@ -10,23 +10,27 @@ public class ClientMain {
     public static void main(String[] args) throws IOException {
         File workingDir;
         if (args.length == 0) {
+            System.out.println("lack of tracker host and working directory");
+            return;
+        } else if (args.length == 1) {
             workingDir = new File(System.getProperty("user.dir"));
         } else {
-            workingDir = new File(args[0]);
+            workingDir = new File(args[1]);
             if (!workingDir.exists() && !workingDir.isDirectory()) {
-                System.out.println("can't find " + args[0] + " folder");
+                System.out.println("can't find " + args[1] + " folder");
                 return;
             }
         }
-        new ClientMain().run(workingDir.getAbsolutePath());
+        String host = args[0];
+        new ClientMain().run(host, workingDir.getAbsolutePath());
     }
 
-    public void run(String workingDir) throws IOException {
+    public void run(String trackerHost, String workingDir) throws IOException {
         MetaDataManager metaData = initWorkingDir(workingDir);
 
         Client client;
         try {
-            client = new Client(metaData);
+            client = new Client(trackerHost, metaData);
         } catch (IOException e) {
             System.out.println("can't connect to server");
             return;
@@ -36,7 +40,6 @@ public class ClientMain {
         seederServer.setReceiveBufferSize(1024);
 
         short seedPort = (short) seederServer.getLocalPort();
-        System.out.println("port: " + seederServer.getLocalPort());
         client.startUpdat(seedPort);
 
         Seeder seeder = new Seeder(seederServer, metaData, client);
@@ -83,7 +86,7 @@ public class ClientMain {
                             System.out.println("id must be positive integer number");
                             continue;
                         }
-                        client.getSources(Integer.parseInt(cmdLine[1]));
+                        client.printSource(Integer.parseInt(cmdLine[1]));
                         break;
                     case "update":
                         if (cmdLine.length != 1) {
@@ -108,7 +111,7 @@ public class ClientMain {
                 System.out.println("connection aborted");
                 client.close();
                 seeder.close();
-                leechPool.shutdownNow();
+                leechPool.shutdown();
                 return;
             }
         }

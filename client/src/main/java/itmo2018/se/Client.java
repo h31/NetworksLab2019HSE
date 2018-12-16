@@ -17,9 +17,9 @@ public class Client implements Closeable {
     private DataInputStream socketIn;
     private ScheduledExecutorService scheduled;
 
-
-    public Client(MetaDataManager metaData) throws IOException {
-        this.socket = new Socket("192.168.1.2", 8081);
+    //"192.168.1.2"
+    public Client(String host, MetaDataManager metaData) throws IOException {
+        this.socket = new Socket(host, 8081);
         this.metaData = metaData;
         try {
             socketOut = new DataOutputStream(socket.getOutputStream());
@@ -45,9 +45,15 @@ public class Client implements Closeable {
                 int port = shortToInt(socketIn.readShort());
                 InetSocketAddress address = new InetSocketAddress(ip1 + "." + ip2 + "." + ip3 + "." + ip4, port);
                 res.add(address);
-                System.out.println(address);
             }
             return res;
+        }
+    }
+
+    public void printSource(int id) throws IOException {
+        List<InetSocketAddress> adresses = getSources(id);
+        for (InetSocketAddress address : adresses) {
+            System.out.println(address);
         }
     }
 

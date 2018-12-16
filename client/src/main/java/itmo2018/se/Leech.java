@@ -52,9 +52,9 @@ public class Leech implements Runnable {
                 parts = note.getParts();
             }
 
-            Map<Integer, PartInfo> neededParts = SetUtils.difference(fileInfo.getParts(), parts)
+            Map<Integer, PartHolder> neededParts = SetUtils.difference(fileInfo.getParts(), parts)
                     .stream().collect(Collectors.toConcurrentMap(Function.identity(),
-                            it -> new PartInfo(it, DownloadStatus.WAITING)));
+                            it -> new PartHolder(it, DownloadStatus.WAITING)));
 
             writer = new FileWriter(fileInfo);
             writer.start();
@@ -70,6 +70,7 @@ public class Leech implements Runnable {
                 System.out.println("=================================================");
                 System.out.println("active count: " + downloadPool.getActiveCount());
                 System.out.println("finish: " + finish + "\t" + "neededSize: " + neededParts.size());
+                System.out.println("owners size: " + owners.size());
                 System.out.println("=================================================");
             } while (downloadPool.getActiveCount() > 0 && finish < neededParts.size());
 
@@ -94,11 +95,11 @@ public class Leech implements Runnable {
 
     private class Downloader implements Runnable {
         InetSocketAddress address;
-        final Map<Integer, PartInfo> neededParts;
+        final Map<Integer, PartHolder> neededParts;
         MetaDataNote fileInfo;
         FileWriter writer;
 
-        Downloader(InetSocketAddress address, MetaDataNote fileInfo, Map<Integer, PartInfo> neededParts,
+        Downloader(InetSocketAddress address, MetaDataNote fileInfo, Map<Integer, PartHolder> neededParts,
                    FileWriter writer) {
             this.address = address;
             this.neededParts = neededParts;
@@ -112,17 +113,17 @@ public class Leech implements Runnable {
                 socket.connect(address);
                 Set<Integer> userParts = getStat(socket);
 
-                for (Map.Entry<Integer, PartInfo> neededPart : neededParts.entrySet()) {
+                for (Map.Entry<Integer, PartHolder> neededPart : neededParts.entrySet()) {
                     int partNumber = neededPart.getKey();
                     if (!userParts.contains(partNumber)) {
                         continue;
                     }
-                    PartInfo partInfo = neededPart.getValue();
-                    if (partInfo.status == DownloadStatus.WAITING) {
+                    PartHolder partHolder = neededPart.getValue();
+                    if (partHolder.status == DownloadStatus.WAITING) {
                         synchronized (neededParts) {
-                            partInfo = neededParts.get(partNumber);
-                            if (partInfo.status == DownloadStatus.WAITING) {
-                                partInfo.status = DownloadStatus.IN_PROGRESS;
+                            partHolder = neededParts.get(partNumber);
+                            if (partHolder.status == DownloadStatus.WAITING) {
+                                partHolder.status = DownloadStatus.IN_PROGRESS;
                             } else {
                                 continue;
                             }
@@ -130,10 +131,10 @@ public class Leech implements Runnable {
                         try {
                             byte[] bytes = download(socket, partNumber);
                             System.out.println("download part " + partNumber);
-                            partInfo.content = bytes;
-                            writer.addPart(partInfo);
+                            partHolder.content = bytes;
+                            writer.addPart(partHolder);
                         } catch (IOException e) {
-                            partInfo.status = DownloadStatus.WAITING;
+                            partHolder.status = DownloadStatus.WAITING;
                             return;
                         }
                     }
@@ -182,15 +183,15 @@ public class Leech implements Runnable {
 
     private class FileWriter extends Thread {
         MetaDataNote fileInfo;
-        BlockingQueue<PartInfo> queue = new LinkedBlockingQueue<>();
+        BlockingQueue<PartHolder> queue = new LinkedBlockingQueue<>();
 
         FileWriter(MetaDataNote fileInfo) {
             this.fileInfo = fileInfo;
         }
 
-        void addPart(PartInfo partInfo) {
+        void addPart(PartHolder partHolder) {
             try {
-                queue.put(partInfo);
+                queue.put(partHolder);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -210,13 +211,13 @@ public class Leech implements Runnable {
             try (RandomAccessFile accessfile = new RandomAccessFile(file, "rw")) {
                 while (!this.isInterrupted() || queue.size() > 0) {
                     //TODO переделать queue
-                    PartInfo partInfo = queue.take();
+                    PartHolder partHolder = queue.take();
 
-                    accessfile.seek(partSize * partInfo.number);
-                    accessfile.write(partInfo.content);
+                    accessfile.seek(partSize * partHolder.number);
+                    accessfile.write(partHolder.content);
 
-                    metaData.addPart(fileInfo.getId(), partInfo.number);
-                    partInfo.status = DownloadStatus.FINISH;
+                    metaData.addPart(fileInfo.getId(), partHolder.number);
+                    partHolder.status = DownloadStatus.FINISH;
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -230,12 +231,12 @@ public class Leech implements Runnable {
         WAITING, IN_PROGRESS, FINISH
     }
 
-    private class PartInfo {
+    private class PartHolder {
         int number;
         volatile byte[] content;
         volatile DownloadStatus status;
 
-        PartInfo(int number, DownloadStatus status) {
+        PartHolder(int number, DownloadStatus status) {
             this.number = number;
             this.status = status;
         }

@@ -1,5 +1,7 @@
 package itmo2018.se;
 
+import itmo2018.se.SingletonFileReader.FileHolder;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -42,7 +44,7 @@ public class Seeder implements Runnable, Closeable {
 
     private class Executor implements Runnable {
         Socket socket;
-        RandomAccessFile file = null;
+        FileHolder file = null;
 
         Executor(Socket socket) {
             this.socket = socket;
@@ -63,7 +65,10 @@ public class Seeder implements Runnable, Closeable {
                         }
                     }
                 } catch (IOException e) {
+                    System.out.println("+++++++++++++++++++++++++");
+                    e.printStackTrace();
                     System.out.println("leech disconected");
+                    System.out.println("+++++++++++++++++++++++++");
                 }
                 try {
                     socket.close();
@@ -102,14 +107,14 @@ public class Seeder implements Runnable, Closeable {
 
             MetaDataNote note = metaData.getNote(id);
             if (file == null) {
-                file = new RandomAccessFile(note.getName(), "r");
+                file = SingletonFileReader.getFile(note.getName());
             }
             long defaultPartSize = 1024 * 1024 * 5;
-            file.seek(defaultPartSize * part);
             int partSize = (int) (file.length() - defaultPartSize * part > defaultPartSize ?
                     defaultPartSize : file.length() - defaultPartSize * part);
             byte[] bytes = new byte[partSize];
-             file.read(bytes);
+//            file.seek(defaultPartSize * part);
+            file.read(defaultPartSize * part, bytes);
 
             socketOut.writeInt(partSize);
             socketOut.write(bytes);

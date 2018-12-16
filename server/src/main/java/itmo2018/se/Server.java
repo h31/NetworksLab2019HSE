@@ -72,11 +72,13 @@ public class Server {
                         if (channel.read(buffer) == -1) {
                             System.out.println(channel.getRemoteAddress() + " is closed");
                             client.getClientInfo().disconect();
+                            key.cancel();
                             channel.close();
                         }
                         buffer.flip();
                         client.read(buffer);
                     } catch (IOException e) {
+                        key.cancel();
                         System.out.println("client is already disconect");
                     }
                     while (client.requestIsReady()) {

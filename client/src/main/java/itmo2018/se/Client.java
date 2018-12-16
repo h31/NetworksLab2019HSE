@@ -51,6 +51,13 @@ public class Client implements Closeable {
         }
     }
 
+    public void printList() throws IOException {
+        List<MetaDataNote> notes = getList();
+        for (MetaDataNote note : notes) {
+            System.out.println(note.getId() + "\t" + note.getName() + "\t" + note.getSize());
+        }
+    }
+
     public List<MetaDataNote> getList() throws IOException {
         synchronized (socketOut) {
             socketOut.writeInt(1);
@@ -63,7 +70,6 @@ public class Client implements Closeable {
                 String fileName = socketIn.readUTF();
                 long fileSize = socketIn.readLong();
                 result.add(new MetaDataNote(fileId, fileName, fileSize));
-                System.out.println(fileId + "\t" + fileName + "\t" + fileSize);
             }
             return result;
         }
@@ -93,7 +99,6 @@ public class Client implements Closeable {
     public void update(short seederPort) throws IOException {
         synchronized (socketOut) {
             int filesCount = metaData.filesCount();
-            System.out.println("filesNumber: " + filesCount);
             socketOut.writeInt(1 + 2 + (filesCount + 1) * 4);
             socketOut.writeByte(4);
             socketOut.writeShort(seederPort);

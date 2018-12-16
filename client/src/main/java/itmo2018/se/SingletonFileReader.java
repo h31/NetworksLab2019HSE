@@ -1,9 +1,6 @@
 package itmo2018.se;
 
-import java.io.Closeable;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -14,7 +11,8 @@ public class SingletonFileReader {
     private SingletonFileReader() {
     }
 
-    public static FileHolder getFile(String path) throws FileNotFoundException {
+    public static FileHolder getFile(File file) throws FileNotFoundException {
+        String path = file.getAbsolutePath();
         if (!files.containsKey(path)) {
             synchronized (files) {
                 if (!files.containsKey(path)) {

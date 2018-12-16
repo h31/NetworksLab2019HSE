@@ -35,7 +35,6 @@ public class Leech implements Runnable {
             MetaDataNote note = metaData.getNote(fileId);
             if (note != null && !note.existFile()) {
                 metaData.deleteNote(fileId);
-                System.out.println("name: " + note.getName());
             }
             List<InetSocketAddress> owners = client.getSources(fileId);
             if (owners.size() == 0) {
@@ -69,11 +68,6 @@ public class Leech implements Runnable {
                 Thread.sleep(20000);
                 finish = (int) neededParts.values().stream().filter(it -> it.status == DownloadStatus.FINISH).count();
                 owners = client.getSources(fileId);
-                System.out.println("=================================================");
-                System.out.println("active count: " + downloadPool.getActiveCount());
-                System.out.println("finish: " + finish + "\t" + "neededSize: " + neededParts.size());
-                System.out.println("owners size: " + owners.size());
-                System.out.println("=================================================");
             } while (downloadPool.getActiveCount() > 0 && finish < neededParts.size());
 
             if (finish == neededParts.size()) {
@@ -118,7 +112,6 @@ public class Leech implements Runnable {
                 for (Map.Entry<Integer, PartHolder> neededPart : neededParts.entrySet()) {
                     int partNumber = neededPart.getKey();
                     if (!userParts.contains(partNumber)) {
-                        System.out.println("have not part!!!!");
                         continue;
                     }
                     PartHolder partHolder = neededPart.getValue();
@@ -133,7 +126,6 @@ public class Leech implements Runnable {
                         }
                         try {
                             byte[] bytes = download(socket, partNumber);
-                            System.out.println("download part " + partNumber);
                             partHolder.content = bytes;
                             writer.addPart(partHolder);
                         } catch (IOException e) {
@@ -143,9 +135,8 @@ public class Leech implements Runnable {
                     }
                 }
             } catch (IOException e) {
-                System.out.println("seeder " + address + " is busy");
+                //seeder is busy
             } finally {
-                System.out.println("finish leech!!!!!");
                 synchronized (mutex) {
                     mutex.notify();
                 }
@@ -214,12 +205,9 @@ public class Leech implements Runnable {
             }
             try (RandomAccessFile accessfile = new RandomAccessFile(file, "rw")) {
                 while (!this.isInterrupted() || queue.size() > 0) {
-                    //TODO переделать queue
                     PartHolder partHolder = queue.take();
-
                     accessfile.seek(partSize * partHolder.number);
                     accessfile.write(partHolder.content);
-
                     metaData.addPart(fileInfo.getId(), partHolder.number);
                     partHolder.status = DownloadStatus.FINISH;
                 }

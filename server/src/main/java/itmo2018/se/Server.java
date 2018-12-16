@@ -64,7 +64,6 @@ public class Server {
                 if (key.isAcceptable()) {
                     registerClient();
                 } else if (key.isReadable()) {
-                    //TODO catch ClosedChannelException
                     SocketChannel channel = (SocketChannel) key.channel();
                     ClientDataHolder client = (ClientDataHolder) key.attachment();
                     ByteBuffer buffer = ByteBuffer.allocate(1024);

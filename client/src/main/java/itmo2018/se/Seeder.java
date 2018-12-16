@@ -12,12 +12,14 @@ public class Seeder implements Runnable, Closeable {
     private ServerSocket server;
     private MetaDataManager metaData;
     private ThreadPoolExecutor poolExecutor;
+    private Client client;
     private int limitLeech = 4;
 
-    public Seeder(ServerSocket server, MetaDataManager metaData) {
+    public Seeder(ServerSocket server, MetaDataManager metaData, Client client) {
         this.server = server;
         this.metaData = metaData;
-        poolExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(limitLeech);
+        this.poolExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(limitLeech);
+        this.client = client;
     }
 
     @Override
@@ -52,7 +54,6 @@ public class Seeder implements Runnable, Closeable {
 
         @Override
         public void run() {
-            System.out.println("run seeder");
             while (true) {
                 try (DataInputStream socketIn = new DataInputStream(socket.getInputStream());
                      DataOutputStream socketOut = new DataOutputStream(socket.getOutputStream())) {
@@ -65,10 +66,7 @@ public class Seeder implements Runnable, Closeable {
                         }
                     }
                 } catch (IOException e) {
-                    System.out.println("+++++++++++++++++++++++++");
-                    e.printStackTrace();
-                    System.out.println("leech disconected");
-                    System.out.println("+++++++++++++++++++++++++");
+                    //disconnect leech
                 }
                 try {
                     socket.close();
@@ -103,17 +101,23 @@ public class Seeder implements Runnable, Closeable {
             int id = socketIn.readInt();
             int part = socketIn.readInt();
 
-            System.out.println("needed part: " + part);
-
             MetaDataNote note = metaData.getNote(id);
             if (file == null) {
-                file = SingletonFileReader.getFile(note.getName());
+                File neededFile = new File(note.getName());
+                if (!neededFile.exists()) {
+                    metaData.deleteNote(id);
+                    client.update((short) server.getLocalPort());
+                    socketOut.writeInt(0);
+                    socketOut.flush();
+                    socket.close();
+                    return;
+                }
+                file = SingletonFileReader.getFile(neededFile);
             }
             long defaultPartSize = 1024 * 1024 * 5;
             int partSize = (int) (file.length() - defaultPartSize * part > defaultPartSize ?
                     defaultPartSize : file.length() - defaultPartSize * part);
             byte[] bytes = new byte[partSize];
-//            file.seek(defaultPartSize * part);
             file.read(defaultPartSize * part, bytes);
 
             socketOut.writeInt(partSize);

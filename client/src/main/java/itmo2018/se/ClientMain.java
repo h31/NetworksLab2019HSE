@@ -3,6 +3,8 @@ package itmo2018.se;
 import java.io.*;
 import java.net.ServerSocket;
 import java.util.Scanner;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ClientMain {
     public static void main(String[] args) throws IOException {
@@ -37,10 +39,12 @@ public class ClientMain {
         System.out.println("port: " + seederServer.getLocalPort());
         client.startUpdat(seedPort);
 
-        Seeder seeder = new Seeder(seederServer, metaData);
+        Seeder seeder = new Seeder(seederServer, metaData, client);
         Thread seederThread = new Thread(seeder);
         seederThread.setDaemon(true);
         seederThread.start();
+
+        ExecutorService leechPool = Executors.newFixedThreadPool(4);
 
         Scanner scanner = new Scanner(System.in);
         while (true) {
@@ -55,15 +59,14 @@ public class ClientMain {
                             System.out.println("id must be positive integer number");
                             continue;
                         }
-                        //TODO добавить пул личей
-                        new Leech(Integer.parseInt(cmdLine[1]), client, metaData, seedPort).run();
+                        leechPool.submit(new Leech(Integer.parseInt(cmdLine[1]), client, metaData, seedPort));
                         break;
                     case "list":
                         if (cmdLine.length != 1) {
                             System.out.println("list not takes arguments");
                             continue;
                         }
-                        client.getList();
+                        client.printList();
                         break;
                     case "upload":
                         if (cmdLine.length != 2) {
@@ -96,6 +99,7 @@ public class ClientMain {
                         }
                         client.close();
                         seeder.close();
+                        leechPool.shutdownNow();
                         return;
                     default:
                         System.out.println(cmdLine[0] + " is unknow command");
@@ -104,6 +108,7 @@ public class ClientMain {
                 System.out.println("connection aborted");
                 client.close();
                 seeder.close();
+                leechPool.shutdownNow();
                 return;
             }
         }

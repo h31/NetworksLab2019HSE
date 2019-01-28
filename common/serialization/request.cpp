@@ -9,6 +9,7 @@ RequestSerializer::RequestSerializer(const request::Request *request)
 std::shared_ptr<uint8_t[]> RequestSerializer::serialize() {
     serializer.write(messageSize);
     serializer.write(request->getRequestType());
+    serializer.write(request->getAuthor());
     request->accept(this);
     return buffer;
 }
@@ -28,26 +29,27 @@ RequestDeserializer::RequestDeserializer(const uint8_t *buffer) : deserializer(b
 
 std::shared_ptr<request::Request> RequestDeserializer::parseRequest() {
     request::RequestType type = deserializer.parseRequestType();
+    std::string author = deserializer.parseString();
     switch (type) {
         case request::SEND_EMAIL:
-            return parseSendEmailRequest();
+            return parseSendEmailRequest(author);
         case request::CHECK_EMAIL:
-            return parseCheckEmailRequest();
+            return parseCheckEmailRequest(author);
         case request::GET_EMAIL:
-            return parseGetEmailRequest();
+            return parseGetEmailRequest(author);
     }
 }
 
-std::shared_ptr<request::SendEmailRequest> RequestDeserializer::parseSendEmailRequest() {
+std::shared_ptr<request::SendEmailRequest> RequestDeserializer::parseSendEmailRequest(const std::string &author) {
     model::Email email = deserializer.parseEmail();
-    return std::make_shared<request::SendEmailRequest>(email);
+    return std::make_shared<request::SendEmailRequest>(author, email);
 }
 
-std::shared_ptr<request::CheckEmailRequest> RequestDeserializer::parseCheckEmailRequest() {
-    return std::make_shared<request::CheckEmailRequest>();
+std::shared_ptr<request::CheckEmailRequest> RequestDeserializer::parseCheckEmailRequest(const std::string &author) {
+    return std::make_shared<request::CheckEmailRequest>(author);
 }
 
-std::shared_ptr<request::GetEmailRequest> RequestDeserializer::parseGetEmailRequest() {
+std::shared_ptr<request::GetEmailRequest> RequestDeserializer::parseGetEmailRequest(const std::string &author) {
     uint32_t id = deserializer.parseUInt32();
-    return std::make_shared<request::GetEmailRequest>(id);
+    return std::make_shared<request::GetEmailRequest>(author, id);
 }

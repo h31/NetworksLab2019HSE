@@ -37,9 +37,9 @@ namespace serialization {
         std::shared_ptr<request::Request> parseRequest();
 
     private:
-        std::shared_ptr<request::SendEmailRequest> parseSendEmailRequest();
-        std::shared_ptr<request::CheckEmailRequest> parseCheckEmailRequest();
-        std::shared_ptr<request::GetEmailRequest> parseGetEmailRequest();
+        std::shared_ptr<request::SendEmailRequest> parseSendEmailRequest(const std::string &author);
+        std::shared_ptr<request::CheckEmailRequest> parseCheckEmailRequest(const std::string &author);
+        std::shared_ptr<request::GetEmailRequest> parseGetEmailRequest(const std::string &author);
     };
 }
 

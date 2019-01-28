@@ -6,12 +6,14 @@
 namespace model {
     class Email {
     private:
-        std::string theme;
-        std::string body;
-        std::string author;
-        std::string recipient;
+        const std::string theme;
+        const std::string body;
+        const std::string author;
+        const std::string recipient;
 
     public:
+        Email() = default;
+
         Email(const std::string &theme, const std::string &body, const std::string &author, const std::string &recipient);
 
         const std::string &getTheme() const;

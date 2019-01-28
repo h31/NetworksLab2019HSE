@@ -13,7 +13,7 @@ namespace serialization {
     public:
         explicit ResponseSerializer(const response::Response *response);
 
-        std::shared_ptr<uint8_t[]> serialize();
+        std::pair<uint32_t, std::shared_ptr<uint8_t[]>> serialize();
 
     private:
         void visitEmptyResponseBody(const response::EmptyResponseBody *responseBody) override;

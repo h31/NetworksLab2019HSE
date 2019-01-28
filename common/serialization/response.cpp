@@ -6,11 +6,11 @@ using namespace serialization;
 ResponseSerializer::ResponseSerializer(const response::Response *response)
     : response(response), messageSize(getSize(*response) + 4), buffer(new uint8_t[messageSize]), serializer(buffer.get()) {}
 
-std::shared_ptr<uint8_t[]> ResponseSerializer::serialize() {
+std::pair<uint32_t, std::shared_ptr<uint8_t[]>> ResponseSerializer::serialize() {
     serializer.write(messageSize);
     serializer.write(response->getStatus());
     response->getResponseBody().accept(this);
-    return buffer;
+    return std::make_pair(messageSize, buffer);
 }
 
 void ResponseSerializer::visitEmptyResponseBody(const response::EmptyResponseBody *responseBody) {}
@@ -60,7 +60,7 @@ std::shared_ptr<response::Response> ResponseDeserializer::parseResponse(request:
     } else {
         responseBody = parseErrorResponseBody();
     }
-    return std::make_shared<response::Response>(status, responseBody);
+    return std::make_shared<response::Response>(responseBody.get());
 }
 
 std::unique_ptr<response::EmptyResponseBody> ResponseDeserializer::parseEmptyResponseBody() {

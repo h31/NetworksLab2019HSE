@@ -16,12 +16,15 @@ namespace request {
     class Request {
     private:
         RequestType requestType;
+        const std::string author;
 
     protected:
-        explicit Request(RequestType _requestType);
+        Request(RequestType requestType, std::string author);
 
     public:
         RequestType getRequestType() const;
+
+        const std::string &getAuthor() const;
 
         virtual void accept(RequestVisitor *visitor) const = 0;
 
@@ -32,7 +35,7 @@ namespace request {
     private:
         model::Email email;
     public:
-        explicit SendEmailRequest(const model::Email &email);
+        SendEmailRequest(std::string author, const model::Email &email);
 
         const model::Email &getEmail() const;
 
@@ -41,7 +44,7 @@ namespace request {
 
     class CheckEmailRequest : public Request {
     public:
-        CheckEmailRequest();
+        CheckEmailRequest(std::string author);
 
         void accept(RequestVisitor *visitor) const override;
     };
@@ -50,7 +53,7 @@ namespace request {
     private:
         uint32_t id;
     public:
-        explicit GetEmailRequest(uint32_t id);
+        GetEmailRequest(std::string author, uint32_t id);
 
         uint32_t getId() const;
 

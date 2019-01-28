@@ -2,8 +2,8 @@
 #define COMMON_SERIALIZATION_PRIMITIVE_H
 
 #include <string>
-#include <model/response.h>
-#include <model/request.h>
+#include "model/response.h"
+#include "model/request.h"
 
 namespace serialization {
     class DataSerializer {

@@ -1,7 +1,6 @@
 #ifndef SERVER_EMAILWITHINFO_H
 #define SERVER_EMAILWITHINFO_H
 
-
 #include <model/model.h>
 
 class EmailWithInfo {

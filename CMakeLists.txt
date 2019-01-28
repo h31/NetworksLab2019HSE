@@ -11,5 +11,3 @@ find_package(TBB)
 add_subdirectory(client)
 add_subdirectory(common)
 add_subdirectory(server)
-
-message(${TBB_IMPORTED_TARGETS})

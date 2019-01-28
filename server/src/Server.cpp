@@ -1,13 +1,7 @@
-#include "Server.h"
-
-#include <unistd.h>
-#include <stdio.h>
-#include <sys/socket.h>
-#include <stdlib.h>
+#include "../include/Server.h"
 #include <netinet/in.h>
-#include <string.h>
-#include <serialization/request.h>
-#include <serialization/response.h>
+#include "serialization/request.h"
+#include "serialization/response.h"
 
 using namespace model;
 using namespace request;

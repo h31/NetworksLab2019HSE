@@ -1,4 +1,4 @@
-#include "size_collector.h"
+#include <serialization/size_collector.h>
 
 using namespace serialization;
 

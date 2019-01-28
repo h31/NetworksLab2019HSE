@@ -31,6 +31,8 @@ namespace model {
         std::string author;
         std::string theme;
     public:
+        EmailInfo() = default;
+
         EmailInfo(uint32_t id, const std::string &author, const std::string &theme);
 
         uint32_t getId() const;

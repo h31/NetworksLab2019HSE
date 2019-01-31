@@ -13,6 +13,7 @@
 #include <vector>
 #include "socket_opening_exception.h"
 #include "binding_exception.h"
+#include "product.h"
 
 
 class server {
@@ -21,7 +22,9 @@ class server {
         const uint16_t PORT;
         boost::thread *main_thread = nullptr;
         std::vector<boost::thread *> clients;
-        boost::mutex clients_mutex;
+        boost::mutex clients_vector;
+        int current_id = 0;
+        std::map<int, product> products;
 
         void client_accept_cycle(int server_socket_fd);
 

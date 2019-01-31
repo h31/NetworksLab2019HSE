@@ -12,6 +12,6 @@ find_package (Threads)
 find_package (Boost COMPONENTS ${BOOST_COMPONENTS} REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
-add_executable(server src/server.cpp include/server.h include/socket_opening_exception.h include/binding_exception.h)
+add_executable(server src/server.cpp include/server.h include/socket_opening_exception.h include/binding_exception.h src/socket_io.cpp include/socket_io.h include/socket_reading_exception.h include/socket_writing_exception.h include/product.h)
 
 target_link_libraries (server ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES})

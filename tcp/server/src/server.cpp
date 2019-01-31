@@ -1,11 +1,11 @@
 #include "../include/server.h"
 
 
+void server::client_accept_cycle(int server_socket_fd) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
-void server::client_accept_cycle(int server_socket_fd) {
     while (true) {
-        clients_mutex.lock();
+        clients_vector.lock();
         boost::this_thread::interruption_point();
 
         struct sockaddr_in client_address{};
@@ -16,10 +16,10 @@ void server::client_accept_cycle(int server_socket_fd) {
             clients.push_back(client_thread);
         }
 
-        clients_mutex.unlock();
+        clients_vector.unlock();
     }
-}
 #pragma clang diagnostic pop
+}
 
 void server::request_response_cycle() {
 
@@ -48,12 +48,12 @@ void server::start() {
 }
 
 void server::stop() {
-    clients_mutex.lock();
+    clients_vector.lock();
     main_thread->interrupt();
     for (auto client : clients) {
         client->interrupt();
     }
-    clients_mutex.unlock();
+    clients_vector.unlock();
 
     main_thread->join();
     for (auto client : clients) {

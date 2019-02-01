@@ -22,13 +22,13 @@ class server {
         const uint16_t PORT;
         boost::thread *main_thread = nullptr;
         std::vector<boost::thread *> clients;
-        boost::mutex clients_vector;
-        int current_id = 0;
-        std::map<int, product> products;
+        boost::mutex clients_vector_access;
+        std::vector<product> products;
+        boost::shared_mutex products_access;
 
         void client_accept_cycle(int server_socket_fd);
 
-        void request_response_cycle();
+        void request_response_cycle(int client_socket_fd);
 
     public:
         explicit server(uint16_t port);

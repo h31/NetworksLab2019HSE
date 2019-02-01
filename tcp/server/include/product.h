@@ -1,3 +1,6 @@
+#include <utility>
+
+
 #ifndef SERVER_PRODUCT_H
 #define SERVER_PRODUCT_H
 
@@ -7,8 +10,12 @@
 struct product {
     public:
         std::string name;
-        int price;
-        int amount;
+        size_t price;
+        size_t amount;
+
+        product(std::string name,
+                size_t price,
+                size_t amount) : name(std::move(name)), price(price), amount(amount) {}
 };
 
 #endif //SERVER_PRODUCT_H

@@ -96,3 +96,25 @@ struct pstp_payment_response {
 
     pstp_response_header header;
 };
+
+#pragma pack(0)
+
+struct pstp_ask_for_payment_response {
+    explicit pstp_ask_for_payment_response(uint8_t code)
+            : header({ASK_FOR_PAYMENT, code, 0}) {}
+
+    pstp_response_header header;
+};
+
+#pragma pack(0)
+
+struct pstp_confirm_payment_response {
+    explicit pstp_confirm_payment_response(uint8_t code)
+            : header({CONFIRM_PAYMENT, code, 0}) {}
+
+    pstp_response_header header;
+};
+
+// TODO get_requests_for_payments_response
+
+// TODO get_payment_results_response

@@ -3,7 +3,7 @@ project(server)
 set(CMAKE_CXX_STANDARD 17)
 
 set(SOURCE_FILES
-        src/main.cpp)
+        src/main.cpp include/response.hpp)
 
 include_directories(include)
 

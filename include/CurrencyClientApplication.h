@@ -6,8 +6,16 @@
 #define NETWORKSLAB2019HSE_CURRENCYCLIENTAPPLICATION_H
 
 
-class CurrencyClientApplication {
+#include "Client.h"
 
+class CurrencyClientApplication {
+public:
+    void run();
+
+private:
+    Client client = Client();
+
+    void printUsage();
 };
 
 

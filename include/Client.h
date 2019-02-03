@@ -7,7 +7,8 @@
 
 
 class Client {
-
+public:
+    std::vector<Currency> list();
 };
 
 

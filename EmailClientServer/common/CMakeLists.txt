@@ -1,4 +1,4 @@
-project(common)
+project(EmailCommon)
 
 add_library(${PROJECT_NAME}
         src/model/request.cpp
@@ -10,11 +10,10 @@ add_library(${PROJECT_NAME}
         src/serialization/size_collector.cpp
         src/communication/communication.cpp
 )
-add_library(common::lib ALIAS ${PROJECT_NAME})
 
 target_include_directories( ${PROJECT_NAME}
     PUBLIC ${PROJECT_SOURCE_DIR}/include
 )
 
-add_executable(common-test test/main.cpp)
-target_link_libraries(common-test common)
+add_executable(EmailCommonTest test/main.cpp)
+target_link_libraries(EmailCommonTest ${PROJECT_NAME})

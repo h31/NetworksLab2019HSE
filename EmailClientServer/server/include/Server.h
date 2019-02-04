@@ -16,7 +16,7 @@ private:
 public:
     explicit Server(uint16_t port);
 
-    void run_server();
+    void runServer();
 
 private:
     class Worker : request::RequestVisitor {
@@ -26,7 +26,7 @@ private:
         Server &server;
 
     public:
-        explicit Worker(int socket, uint32_t clientId, Server &server);
+        Worker(int socket, uint32_t clientId, Server &server);
 
         void operator() ();
 

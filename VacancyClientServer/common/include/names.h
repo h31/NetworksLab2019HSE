@@ -1,0 +1,22 @@
+#ifndef VACANCY_COMMON_NAMES_H
+#define VACANCY_COMMON_NAMES_H
+
+#define JSON_NAME(name, body) const char * const name = #body;
+
+JSON_NAME(REQUEST_TYPE, requestType)
+JSON_NAME(SPECIALITY, speciality)
+JSON_NAME(SPECIALITY_ID, specialityId)
+JSON_NAME(SUCCESS, success)
+JSON_NAME(ID, id)
+JSON_NAME(VACANCY, vacancy)
+JSON_NAME(SPECIALITIES, specialities)
+JSON_NAME(COMPANY, company)
+JSON_NAME(POSITION, position)
+JSON_NAME(MIN_AGE, minAge)
+JSON_NAME(MAX_AGE, maxAge)
+JSON_NAME(SALARY, salary)
+JSON_NAME(AGE, age)
+JSON_NAME(VACANCIES, vacancies)
+JSON_NAME(CAUSE, cause)
+
+#endif //VACANCY_COMMON_NAMES_H

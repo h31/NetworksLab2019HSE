@@ -9,7 +9,7 @@ ResponseSerializer::ResponseSerializer(const response::Response *response)
     , buffer(new uint8_t[messageSize + INT_SIZE])
     , serializer(buffer.get()) {}
 
-communication::encoded_message ResponseSerializer::serialize() {
+util::encoded_message ResponseSerializer::serialize() {
     serializer.write(messageSize);
     serializer.write(response->getStatus());
     response->getResponseBody().accept(this);

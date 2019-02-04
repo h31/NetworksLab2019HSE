@@ -2,6 +2,7 @@
 #include <model/model.h>
 
 #include "model/model.h"
+#include "../../../../VacancyClientServer/common/include/model.h"
 
 using namespace model;
 

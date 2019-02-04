@@ -1,9 +1,8 @@
-#include "Server.h"
+#include <Server.h>
 
 #define PORT 4567
 
 int main(int argc, char const *argv[]) {
-    Server server(PORT);
+    vacancy::Server server(PORT);
     server.runServer();
 }
-

@@ -23,7 +23,7 @@ void checkSendEmailRequest() {
     Email email(theme, body, author, recipient);
     SendEmailRequest request(author, email);
     RequestSerializer serializer(&request);
-    const communication::encoded_message &message = serializer.serialize();
+    const util::encoded_message &message = serializer.serialize();
     RequestDeserializer deserializer(message.second.get(), INT_SIZE);
     const auto &pReceivedRequest = deserializer.parseRequest();
     const auto *receivedRequest = cast<SendEmailRequest>(pReceivedRequest.get());
@@ -33,7 +33,7 @@ void checkSendEmailRequest() {
 void checkCheckEmailRequest() {
     CheckEmailRequest request(author);
     RequestSerializer serializer(&request);
-    const communication::encoded_message &message = serializer.serialize();
+    const util::encoded_message &message = serializer.serialize();
     RequestDeserializer deserializer(message.second.get(), INT_SIZE);
     const auto &pReceivedRequest = deserializer.parseRequest();
     const auto *receivedRequest = cast<CheckEmailRequest>(pReceivedRequest.get());
@@ -43,7 +43,7 @@ void checkCheckEmailRequest() {
 void checkGetEmailRequest() {
     GetEmailRequest request(author, id);
     RequestSerializer serializer(&request);
-    const communication::encoded_message &message = serializer.serialize();
+    const util::encoded_message &message = serializer.serialize();
     RequestDeserializer deserializer(message.second.get(), INT_SIZE);
     const auto &pReceivedRequest = deserializer.parseRequest();
     const auto *receivedRequest = cast<GetEmailRequest>(pReceivedRequest.get());
@@ -54,7 +54,7 @@ void checkSendResponse() {
     auto body = make_shared<EmptyResponseBody>();
     Response response(body);
     ResponseSerializer serializer(&response);
-    const communication::encoded_message &message = serializer.serialize();
+    const util::encoded_message &message = serializer.serialize();
     ResponseDeserializer deserializer(message.second.get(), INT_SIZE);
     const shared_ptr<Response> &receivedResponse = deserializer.parseSendEmailResponse();
     cout << "SendEmailResponse: " << (response == *receivedResponse.get() ? "OK" : "FAIL") << endl;
@@ -65,7 +65,7 @@ void checkCheckResponse() {
     auto body = make_shared<EmailInfosResponseBody>(infos);
     Response response(body);
     ResponseSerializer serializer(&response);
-    const communication::encoded_message &message = serializer.serialize();
+    const util::encoded_message &message = serializer.serialize();
     ResponseDeserializer deserializer(message.second.get(), INT_SIZE);
     const shared_ptr<Response> &receivedResponse = deserializer.parseCheckEmailResponse();
     cout << "CheckEmailResponse: " << (response == *receivedResponse.get() ? "OK" : "FAIL") << endl;
@@ -76,7 +76,7 @@ void checkGetResponse() {
     auto body = make_shared<EmailResponseBody>(email);
     Response response(body);
     ResponseSerializer serializer(&response);
-    const communication::encoded_message &message = serializer.serialize();
+    const util::encoded_message &message = serializer.serialize();
     ResponseDeserializer deserializer(message.second.get(), INT_SIZE);
     const shared_ptr<Response> &receivedResponse = deserializer.parseGetEmailResponse();
     cout << "GetEmailResponse: " << (response == *receivedResponse.get() ? "OK" : "FAIL") << endl;
@@ -86,7 +86,7 @@ void checkErrorResponse() {
     auto body = make_shared<ErrorResponseBody>("it's an error");
     Response response(body);
     ResponseSerializer serializer(&response);
-    const communication::encoded_message &message = serializer.serialize();
+    const util::encoded_message &message = serializer.serialize();
     ResponseDeserializer deserializer(message.second.get(), INT_SIZE);
     const shared_ptr<Response> &receivedResponse = deserializer.parseSendEmailResponse();
     cout << "ErrorEmailResponse: " << (response == *receivedResponse.get() ? "OK" : "FAIL") << endl;

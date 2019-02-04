@@ -17,7 +17,7 @@ namespace serialization {
     public:
         explicit RequestSerializer(const request::Request *request);
 
-        communication::encoded_message serialize();
+        util::encoded_message serialize();
 
     private:
         void visitSendEmailRequest(const request::SendEmailRequest *request) override;

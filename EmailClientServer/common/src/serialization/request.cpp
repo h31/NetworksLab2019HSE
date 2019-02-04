@@ -9,7 +9,7 @@ RequestSerializer::RequestSerializer(const request::Request *request)
     , buffer(new uint8_t[messageSize + INT_SIZE])
     , serializer(buffer.get()) {}
 
-communication::encoded_message RequestSerializer::serialize() {
+util::encoded_message RequestSerializer::serialize() {
     serializer.write(messageSize);
     serializer.write(request->getRequestType());
     serializer.write(request->getAuthor());

@@ -13,7 +13,7 @@
 #include <string.h>
 #include <unistd.h>
 
-using namespace communication;
+using namespace util;
 using namespace model;
 using namespace request;
 using namespace response;

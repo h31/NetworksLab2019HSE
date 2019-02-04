@@ -28,15 +28,15 @@
 #### Запрос
 
 - `uint32_t requestType = 2`
-- `uint32_t id`
 - `VacancyInfo vacancy`
 
 Где `VacancyInfo`:
+- `int32_t specialityId`
 - `string company`
 - `string position` (должность)
-- `uint32_t minAge`
-- `uint32_t maxAge`
-- `uint32_t salary`
+- `int32_t minAge`
+- `int32_t maxAge`
+- `int32_t salary`
 
 #### Ответ
 
@@ -82,9 +82,9 @@
 В данном запросе все занчения по-умолчанию (кроме поля `requestType`) означают, что пользователь не ввёл данные для этого поля
 
 - `uint32_t requestType = 5`
-- `uint32_t id = -1` (id специальности)
-- `uint32_t age = -1`
-- `uint32_t salary = -1`
+- `int32_t specialityId = -1`
+- `int32_t age = -1`
+- `int32_t salary = -1`
 
 #### Ответ
 

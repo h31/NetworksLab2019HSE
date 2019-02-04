@@ -7,7 +7,7 @@
 #include "model/response.h"
 
 
-namespace communication {
+namespace util {
     using encoded_message = std::pair<uint32_t, std::shared_ptr<uint8_t[]>>;
 
     uint32_t readMessageSize(int socket);

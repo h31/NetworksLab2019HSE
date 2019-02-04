@@ -14,7 +14,7 @@ namespace serialization {
     public:
         explicit ResponseSerializer(const response::Response *response);
 
-        communication::encoded_message serialize();
+        util::encoded_message serialize();
 
     private:
         void visitEmptyResponseBody(const response::EmptyResponseBody *responseBody) override;

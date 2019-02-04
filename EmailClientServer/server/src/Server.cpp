@@ -1,4 +1,3 @@
-#include "Server.h"
 #include <netinet/in.h>
 #include <Server.h>
 #include <iostream>
@@ -8,7 +7,7 @@
 #include "serialization/response.h"
 #include "communication/communication.h"
 
-using namespace communication;
+using namespace util;
 using namespace std;
 using namespace model;
 using namespace request;
@@ -17,7 +16,7 @@ using namespace serialization;
 
 Server::Server(uint16_t port) : port(port), clientIdCounter(0), idCounter(0), emails() {}
 
-void Server::run_server() {
+void Server::runServer() {
     int serverFd, clientSocket;
     ssize_t valread;
     struct sockaddr_in address;
@@ -122,4 +121,6 @@ void Server::Worker::visitGetEmailRequest(const GetEmailRequest *request) {
         responseBody = make_shared<ErrorResponseBody>(msg);
     }
     sendResponse(socket, make_unique<Response>(responseBody));
+
+#undef ERROR_MESSAGE
 }

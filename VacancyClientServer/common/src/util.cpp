@@ -14,7 +14,9 @@ nlohmann::json util::receiveMessage(int socket) {
     unique_ptr<char[]> messageBuffer(new char[messageSize]);
     readFromSocket(socket, messageBuffer.get(), messageSize);
     string message(messageBuffer.get(), messageSize);
+#ifdef DEBUG
     cout << messageSize << ": " << message << endl;
+#endif
     try {
         return json::parse(message);
     } catch (json::parse_error &exception) {
@@ -26,7 +28,9 @@ void util::sendMessage(int socket, const json &message) {
     string stringMessage = message.dump();
     auto size = static_cast<uint32_t>(stringMessage.size());
     auto sizeBuffer = encodeNumber(size);
+#ifdef DEBUG
     cout << size << ": " << stringMessage << endl;
+#endif
     writeToSocket(socket, sizeBuffer.get(), INT_SIZE);
     writeToSocket(socket, stringMessage.c_str(), size);
 }

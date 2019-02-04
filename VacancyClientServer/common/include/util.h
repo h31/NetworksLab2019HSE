@@ -6,6 +6,8 @@
 #include <memory>
 #include "json.hpp"
 
+//#define DEBUG
+
 namespace util {
     const uint32_t INT_SIZE = 4;
 

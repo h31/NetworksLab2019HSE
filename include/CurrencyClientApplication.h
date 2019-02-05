@@ -12,8 +12,12 @@ class CurrencyClientApplication {
 public:
     void run();
 
+    CurrencyClientApplication(const std::string &host, uint16_t portno);
+
 private:
-    Client client = Client();
+    std::string host;
+    uint16_t portno;
+    Client client = Client(host, portno);
 
     void printUsage();
 };

@@ -3,13 +3,16 @@
 //
 
 #include <include/CurrencyClientApplication.h>
-#include <string>
 #include <iostream>
 
-#include "include/CurrencyClientApplication.h"
-
-int main() {
-    CurrencyClientApplication().run();
+int main(int argc, char *argv[]) {
+    if (argc < 3) {
+        fprintf(stderr, "usage: .%s <hostname> <port>\n", argv[0]);
+        return 0;
+    }
+    std::string hostname = argv[1];
+    auto portno = static_cast<uint16_t>(strtol(argv[2], nullptr, 10));
+    CurrencyClientApplication(hostname, portno).run();
     return 0;
 }
 
@@ -22,7 +25,12 @@ void CurrencyClientApplication::run() {
         std::cout << ">";
         std::cin >> command;
         if (command == "list") {
-
+            auto currencies = client.list();
+            std::cout << "RESPONSE:\n";
+            for (const auto &currency : currencies) {
+                std::cout << currency.get_name() << " " << currency.get_absolute_change() <<
+                          " " << currency.get_relative_change() << "\n";
+            }
         } else if (command == "exit") {
             toExit = true;
         }
@@ -39,3 +47,6 @@ void CurrencyClientApplication::printUsage() {
     << "exit - to exit client application\n"
     << "\n";
 }
+
+CurrencyClientApplication::CurrencyClientApplication(const std::string &host, uint16_t portno) : host(host),
+                                                                                                 portno(portno) {}

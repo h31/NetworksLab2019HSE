@@ -6,6 +6,7 @@
 #include <atomic>
 #include <model.h>
 #include <json.hpp>
+#include <set>
 
 namespace vacancy {
     struct WrappedVacancyInfo {
@@ -24,11 +25,14 @@ namespace vacancy {
         std::atomic_uint32_t clientIdCounter;
         tbb::concurrent_unordered_map<int32_t, model::SpecialityInfo> specialities;
         tbb::concurrent_unordered_map<int32_t, WrappedVacancyInfo> vacancies;
+        std::set<int> sockets;
 
     public:
         explicit Server(uint16_t port);
 
         void runServer();
+
+        void shutdown();
 
     private:
         class Worker {

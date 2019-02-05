@@ -14,23 +14,24 @@ using namespace request;
 using namespace response;
 using namespace serialization;
 
-Server::Server(uint16_t port) : port(port), clientIdCounter(0), idCounter(0), emails() {}
+Server::Server(uint16_t port) : port(port), clientIdCounter(0), idCounter(0), emails(), sockets() {}
 
 void Server::runServer() {
-    int serverFd, clientSocket;
+    int serverSocket, clientSocket;
     ssize_t valread;
     struct sockaddr_in address;
     int opt = 1;
     int addrlen = sizeof(address);
 
     // Creating socket file descriptor
-    if ((serverFd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+    if ((serverSocket = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
         perror("socket failed");
         exit(EXIT_FAILURE);
     }
+    sockets.insert(serverSocket);
 
     // Forcefully attaching socket to the port 8080
-    if (setsockopt(serverFd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+    if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
         perror("setsockopt");
         exit(EXIT_FAILURE);
     }
@@ -38,11 +39,11 @@ void Server::runServer() {
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons(port);
 
-    if (bind(serverFd, (struct sockaddr *)&address, sizeof(address)) < 0) {
+    if (bind(serverSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
         perror("bind failed");
         exit(EXIT_FAILURE);
     }
-    if (listen(serverFd, 3) < 0) {
+    if (listen(serverSocket, 3) < 0) {
         perror("listen");
         exit(EXIT_FAILURE);
     }
@@ -50,17 +51,24 @@ void Server::runServer() {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
     while (true) {
-        if ((clientSocket = accept(serverFd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
+        if ((clientSocket = accept(serverSocket, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
             perror("accept");
             continue;
         }
         uint32_t clientId = clientIdCounter++;
         cout << "Client " << clientId << " connected" << endl;
+        sockets.insert(clientSocket);
         Worker worker(clientSocket, clientId, *this);
         thread thr(worker);
         thr.detach();
     }
 #pragma clang diagnostic pop
+}
+
+void Server::shutdown() {
+    for (int socket : sockets) {
+        close(socket);
+    }
 }
 
 Server::Worker::Worker(int socket, uint32_t clientId, Server &server) : socket(socket), clientId(clientId), server(server) {}

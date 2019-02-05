@@ -5,6 +5,8 @@
 #include <model/request.h>
 #include <model/response.h>
 #include <atomic>
+#include <thread>
+#include <set>
 #include "EmailWithInfo.h"
 
 class Server {
@@ -13,10 +15,13 @@ private:
     std::atomic_uint32_t clientIdCounter;
     std::atomic_uint32_t idCounter;
     tbb::concurrent_unordered_map<uint32_t, EmailWithInfo> emails;
+    std::set<int> sockets;
 public:
     explicit Server(uint16_t port);
 
     void runServer();
+
+    void shutdown();
 
 private:
     class Worker : request::RequestVisitor {

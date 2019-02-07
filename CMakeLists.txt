@@ -3,9 +3,17 @@ project(NetworksLab2019HSE)
 
 set(CMAKE_CXX_STANDARD 14)
 
-include_directories(.)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -Iinclude -pedantic -Wextra -pthread")
+
+include_directories(./include)
 
 add_executable(NetworksLab2019HSE
         src/Client.cpp
         src/CurrencyClientApplication.cpp
-        src/Currency.cpp include/Currency.h)
+        src/Currency.cpp
+        )
+
+add_executable(runTests test/ClientTest.cpp
+        src/Client.cpp
+        src/Currency.cpp
+        )

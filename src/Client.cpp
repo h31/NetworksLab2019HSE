@@ -7,7 +7,7 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <zconf.h>
-#include <include/Client.h>
+#include <Client.h>
 #include <cstring>
 
 
@@ -60,11 +60,6 @@ const std::vector<Currency> Client::list() const {
         }
         read_buffer.resize(static_cast<unsigned long>(bytes_number));
         message.insert(message.end(), read_buffer.begin(), read_buffer.end());
-        if (message.size() >= 29) {
-            message.resize(29);
-            message.push_back('\\');
-            message.push_back(0);
-        }
         message_received = is_message_received(message);
     }
     return translate_list_message(message);

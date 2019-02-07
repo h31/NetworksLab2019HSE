@@ -2,7 +2,7 @@
 // Created by mikhail on 03.02.19.
 //
 
-#include <include/CurrencyClientApplication.h>
+#include <CurrencyClientApplication.h>
 #include <iostream>
 
 int main(int argc, char *argv[]) {

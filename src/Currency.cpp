@@ -4,7 +4,7 @@
 // Created by mikhail on 03.02.19.
 //
 
-#include <include/Currency.h>
+#include <Currency.h>
 
 Currency::Currency(std::string name, std::vector<int32_t> rates) : name(std::move(name)), rates(std::move(rates)) {
     if (rates.size() >= 2) {
@@ -32,7 +32,7 @@ int32_t Currency::get_current_rate() const {
 }
 
 int32_t Currency::get_rate(size_t i) const {
-    return 0 <= i && i < rates.size() ? rates[i] : -1;
+    return i < rates.size() ? rates[i] : -1;
 }
 
 int32_t Currency::get_absolute_change() const {

@@ -61,7 +61,7 @@ void CurrencyClientApplication::run() {
             std::string currency_name;
             std::cin >> currency_name;
             Currency currency_with_history = client.getCurrencyWithHistory(Currency(currency_name));
-            std::cout << "rates: ";
+            std::cout << "RATES: ";
             for (auto rate : currency_with_history.get_rates()) {
                 std::cout << rate << " ";
             }

@@ -17,26 +17,14 @@ const std::vector<Currency> Client::list() const {
 
     write_command(write_buffer, command_no);
     write_end_of_message(write_buffer);
-    if (write(sockfd, write_buffer.data(), write_buffer.size()) < 0) {
+    auto written = write(sockfd, write_buffer.data(), write_buffer.size());
+    if (written < 0) {
         perror("ERROR writing to socket");
         exit(1);
     }
 
-    bool message_received = false;
-    auto message = std::vector<int8_t>();
-    while (!message_received) {
-        auto read_buffer = std::vector<int8_t>(BUFFER_INITIAL_LENGTH);
-        ssize_t bytes_number = read(sockfd, read_buffer.data(), read_buffer.size());
-
-        if (bytes_number < 0) {
-            perror("ERROR reading from socket");
-            exit(1);
-        }
-        read_buffer.resize(static_cast<unsigned long>(bytes_number));
-        message.insert(message.end(), read_buffer.begin(), read_buffer.end());
-        message_received = is_message_received(message);
-    }
-    return translate_list_message(message);
+    std::vector<int8_t> response = read_response();
+    return translate_list_message(response);
 }
 
 
@@ -229,7 +217,13 @@ void Client::write_int32(std::vector<int8_t> &buffer, int32_t rate) const {
 std::vector<int8_t> Client::read_response() const {
     bool message_received = false;
     auto message = std::vector<int8_t>();
+
+    const clock_t begin_time = clock();
     while (!message_received) {
+        if ((float(clock() - begin_time) / CLOCKS_PER_SEC) > SECONDS_TO_WAIT_FOR_RESPONSE) {
+            perror("Connection is to slow, please try later");
+            exit(1);
+        }
         auto read_buffer = std::vector<int8_t>(BUFFER_INITIAL_LENGTH);
         ssize_t bytes_number = read(sockfd, read_buffer.data(), read_buffer.size());
 

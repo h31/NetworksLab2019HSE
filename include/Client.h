@@ -28,7 +28,6 @@ private:
     const int sockfd;
     static const size_t BUFFER_INITIAL_LENGTH = 256;
     static const size_t CURRENCY_NAME_SIZE_IN_LIST = 16;
-    static const int SECONDS_TO_WAIT_FOR_RESPONSE = 30;
 
     void write_end_of_message(std::vector<int8_t> &buffer) const;
 
@@ -51,6 +50,8 @@ private:
     bool translate_remove_message(std::vector<int8_t> &message) const;
 
     std::vector<int32_t> translate_get_currency_history_message(std::vector<int8_t> &message) const;
+
+    void write_request(const std::vector<int8_t> &buffer) const;
 };
 
 

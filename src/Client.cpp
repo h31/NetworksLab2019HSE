@@ -17,11 +17,7 @@ const std::vector<Currency> Client::list() const {
 
     write_command(write_buffer, command_no);
     write_end_of_message(write_buffer);
-    auto written = write(sockfd, write_buffer.data(), write_buffer.size());
-    if (written < 0) {
-        perror("ERROR writing to socket");
-        exit(1);
-    }
+    write_request(write_buffer);
 
     std::vector<int8_t> response = read_response();
     return translate_list_message(response);
@@ -36,10 +32,8 @@ bool Client::addCurrency(const Currency &currency) const {
     write_string(write_buffer, currency.get_name());
     write_int32(write_buffer, currency.get_current_rate());
     write_end_of_message(write_buffer);
-    if (write(sockfd, write_buffer.data(), write_buffer.size()) < 0) {
-        perror("ERROR writing to socket");
-        exit(1);
-    }
+    write_request(write_buffer);
+
     std::vector<int8_t> response = read_response();
     return translate_add_message(response);
 }
@@ -51,10 +45,8 @@ bool Client::remove(const Currency &currency) const {
     write_command(write_buffer, command_no);
     write_string(write_buffer, currency.get_name());
     write_end_of_message(write_buffer);
-    if (write(sockfd, write_buffer.data(), write_buffer.size()) < 0) {
-        perror("ERROR writing to socket");
-        exit(1);
-    }
+    write_request(write_buffer);
+
     std::vector<int8_t> response = read_response();
     return translate_remove_message(response);
 }
@@ -67,10 +59,8 @@ bool Client::addRate(const Currency &currency, int32_t new_rate) const {
     write_string(write_buffer, currency.get_name());
     write_int32(write_buffer, new_rate);
     write_end_of_message(write_buffer);
-    if (write(sockfd, write_buffer.data(), write_buffer.size()) < 0) {
-        perror("ERROR writing to socket");
-        exit(1);
-    }
+    write_request(write_buffer);
+
     std::vector<int8_t> response = read_response();
     return translate_add_message(response);
 }
@@ -82,10 +72,8 @@ Currency Client::getCurrencyWithHistory(const Currency &currency) const {
     write_command(write_buffer, command_no);
     write_string(write_buffer, currency.get_name());
     write_end_of_message(write_buffer);
-    if (write(sockfd, write_buffer.data(), write_buffer.size()) < 0) {
-        perror("ERROR writing to socket");
-        exit(1);
-    }
+    write_request(write_buffer);
+
     std::vector<int8_t> response = read_response();
     return Currency(currency.get_name(), translate_get_currency_history_message(response));
 }
@@ -218,15 +206,14 @@ std::vector<int8_t> Client::read_response() const {
     bool message_received = false;
     auto message = std::vector<int8_t>();
 
-    const clock_t begin_time = clock();
     while (!message_received) {
-        if ((float(clock() - begin_time) / CLOCKS_PER_SEC) > SECONDS_TO_WAIT_FOR_RESPONSE) {
-            perror("Connection is to slow, please try later");
-            exit(1);
-        }
         auto read_buffer = std::vector<int8_t>(BUFFER_INITIAL_LENGTH);
         ssize_t bytes_number = read(sockfd, read_buffer.data(), read_buffer.size());
 
+        if (bytes_number == 0) {
+            perror("Connection was closed by server, please try later");
+            exit(1);
+        }
         if (bytes_number < 0) {
             perror("ERROR reading from socket");
             exit(1);
@@ -236,4 +223,18 @@ std::vector<int8_t> Client::read_response() const {
         message_received = is_message_received(message);
     }
     return message;
+}
+
+void Client::write_request(const std::vector<int8_t> &buffer) const {
+    ssize_t written = 0;
+    ssize_t must_be_written = buffer.size();
+    while (written < must_be_written) {
+        auto written_piece = write(sockfd, buffer.data() + written,
+                static_cast<size_t>(must_be_written - written));
+        if (written_piece < 0) {
+            perror("ERROR writing to socket");
+            exit(1);
+        }
+        written += written_piece;
+    }
 }

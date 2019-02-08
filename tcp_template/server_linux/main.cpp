@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
 
     /* Initialize socket structure */
     bzero((char *) &serv_addr, sizeof(serv_addr));
-    portno = 5001;
+    portno = 10239;
 
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;
@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
     }
 
 
-    Message m = Message::read(newsockfd);
+    Message m = Message::Read(newsockfd);
 
     if (m.type == Message::UNDEFINED) {
         perror("ERROR reading from socket");
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
            m.body.size(), m.body.c_str());
 
     /* Write a response to the client */
-    bool b = Message(Message::SUCCESS, "I got your message").write(newsockfd);
+    bool b = Message(Message::SUCCESS, "I got your message").Write(newsockfd);
 
     if (!b) {
         perror("ERROR writing to socket");

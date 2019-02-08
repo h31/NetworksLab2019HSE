@@ -11,6 +11,8 @@
 
 class Currency {
 public:
+    Currency(std::string name);
+
     Currency(std::string name, std::vector<int32_t> rates);
 
     Currency(std::string name, int32_t current_rate);
@@ -22,6 +24,8 @@ public:
     int32_t get_current_rate() const;
 
     int32_t get_rate(size_t i) const;
+
+    const std::vector<int32_t>& get_rates() const;
 
     int32_t get_absolute_change() const;
 

@@ -14,6 +14,14 @@ public:
 
     const std::vector<Currency> list() const;
 
+    bool addCurrency(const Currency &currency) const;
+
+    bool addRate(const Currency &currency, int32_t new_rate) const;
+
+    bool remove(const Currency &currency) const;
+
+    Currency getCurrencyWithHistory(const Currency &currency) const;
+
     virtual ~Client();
 
 private:
@@ -30,6 +38,18 @@ private:
     const std::vector<Currency> translate_list_message(std::vector<int8_t> &message) const;
 
     void remove_ending_symbols(std::vector<int8_t> &message) const;
+
+    void write_string(std::vector<int8_t> &buffer, const std::string &currency_name) const;
+
+    void write_int32(std::vector<int8_t> &buffer, int32_t rate) const;
+
+    std::vector<int8_t> read_response() const;
+
+    bool translate_add_message(std::vector<int8_t> &message) const;
+
+    bool translate_remove_message(std::vector<int8_t> &message) const;
+
+    std::vector<int32_t> translate_get_currency_history_message(std::vector<int8_t> &message) const;
 };
 
 

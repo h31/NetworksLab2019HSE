@@ -11,7 +11,16 @@ Currency::Currency(std::string name, std::vector<int32_t> rates) : name(std::mov
         int32_t current = get_current_rate(), previous = get_rate(rates.size() - 2);
         absolute_change = current - previous;
         relative_change = static_cast<int32_t>((current * 100.0) / previous );
+    } else {
+        absolute_change = -1;
+        relative_change = -1;
     }
+}
+
+Currency::Currency(std::string name) : name(std::move(name)) {
+    rates = {};
+    absolute_change = -1;
+    relative_change = -1;
 }
 
 Currency::Currency(std::string name, int32_t current_rate) : name(std::move(name)) {
@@ -35,6 +44,10 @@ int32_t Currency::get_current_rate() const {
 
 int32_t Currency::get_rate(size_t i) const {
     return i < rates.size() ? rates[i] : -1;
+}
+
+const std::vector<int32_t>& Currency::get_rates() const {
+    return rates;
 }
 
 int32_t Currency::get_absolute_change() const {

@@ -226,15 +226,9 @@ std::vector<int8_t> Client::read_response() const {
 }
 
 void Client::write_request(const std::vector<int8_t> &buffer) const {
-    ssize_t written = 0;
-    ssize_t must_be_written = buffer.size();
-    while (written < must_be_written) {
-        auto written_piece = write(sockfd, buffer.data() + written,
-                static_cast<size_t>(must_be_written - written));
-        if (written_piece < 0) {
-            perror("ERROR writing to socket");
-            exit(1);
-        }
-        written += written_piece;
+    auto written_piece = write(sockfd, buffer.data(), buffer.size());
+    if (written_piece < 0) {
+        perror("ERROR writing to socket");
+        exit(1);
     }
 }

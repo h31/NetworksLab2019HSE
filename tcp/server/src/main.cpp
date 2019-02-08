@@ -1,4 +1,5 @@
 #include <iostream>
+#include <thread>
 #include "server.h"
 
 int main(int argc, char* argv[]) {
@@ -10,7 +11,14 @@ int main(int argc, char* argv[]) {
     uint16_t port_number = static_cast<uint16_t>(std::stoi(argv[1]));
 
     RouletteServer server;
-    server.StartServer(port_number);
+    std::thread server_thread(&RouletteServer::StartServer, &server, port_number);
+    server_thread.detach();
+
+    std::string in;
+    while (in != "exit") {
+        std::cin >> in;
+    }
+    close(port_number);
 
     return 0;
 }

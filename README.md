@@ -26,6 +26,14 @@
 - Запрос на начало розыгрыша
   
       type: 400
+      
+- Запрос на конец розыгрыша
+  
+      type: 500
+      
+- Получить список всех ставок
+    
+      type 700
     
 ## Сервер
 
@@ -73,8 +81,18 @@
 
       type: 401
       body: "Optional message, ex: game in progress"
+      
+ - Отчёт об отклонении конца розыгрыша
+
+      type: 501
+      body: "Optional message, ex: game is already fineshed"
   
 - Оповещение о завершении розыгрыша
 
-      type: 500
+      type: 600
       body: "N GAIN"
+      
+- Список ставок всех игроков
+
+      type: 800
+      body: "NAME1 BET1 NAME2 BET2 ..."

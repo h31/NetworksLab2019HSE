@@ -60,6 +60,8 @@ void setup_server_returning(const std::vector<int8_t> &expected_to_receive,
         perror("ERROR writing to socket");
         exit(1);
     }
+    close(newsockfd);
+    close(sockfd);
 }
 
 uint16_t get_current_port(int sockfd) {

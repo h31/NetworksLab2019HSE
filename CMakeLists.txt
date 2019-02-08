@@ -13,7 +13,9 @@ add_executable(NetworksLab2019HSE
         src/Currency.cpp
         )
 
-add_executable(runTests test/ClientTest.cpp
+add_executable(runTests
+        include/catch.hpp
+        test/ClientTest.cpp
         src/Client.cpp
         src/Currency.cpp
         )

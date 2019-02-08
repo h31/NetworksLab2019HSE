@@ -9,6 +9,7 @@
 #include <zconf.h>
 #include <Client.h>
 #include <cstring>
+#include <algorithm>
 
 
 template<class T>
@@ -18,23 +19,22 @@ void insert_bytes(std::vector<int8_t> &container, const T &value) {
 }
 
 int32_t read_int32(std::vector<int8_t>::iterator &it) {
-    int32_t val;
-    std::memcpy(&val, &it, sizeof(int32_t));
+    int32_t val = it[0] | (it[1] << 8) | (it[2] << 16) | (it[3] << 24);
     it += sizeof(int32_t);
     return val;
 }
 
 bool read_bool(std::vector<int8_t>::iterator &it) {
-    bool val;
-    std::memcpy(&val, &it, sizeof(bool));
+    bool val = it[0];
     it += sizeof(bool);
     return val;
 }
 
 std::string read_string(std::vector<int8_t>::iterator &it, size_t len) {
-    std::string string(it, it + len);
+    std::string str(it, it + len);
+    str.erase(std::find(str.begin(), str.end(), '\0'), str.end());
     it += len;
-    return string;
+    return str;
 }
 
 const std::vector<Currency> Client::list() const {
@@ -120,10 +120,9 @@ const std::vector<Currency> Client::translate_list_message(std::vector<int8_t> &
         std::string currency_name = read_string(it, CURRENCY_NAME_SIZE_IN_LIST);
         int32_t current_rate = read_int32(it);
         bool has_change = read_bool(it);
-        int32_t absolute_change, relative_change;
+        int32_t absolute_change = read_int32(it);
+        int32_t relative_change = read_int32(it);
         if (has_change) {
-            absolute_change = read_int32(it);
-            relative_change = read_int32(it);
             currencies.emplace_back(currency_name, current_rate, absolute_change, relative_change);
         } else {
             currencies.emplace_back(currency_name, current_rate);

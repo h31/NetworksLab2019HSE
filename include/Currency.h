@@ -27,6 +27,10 @@ public:
 
     int32_t get_relative_change() const;
 
+    bool operator==(const Currency &rhs) const;
+
+    bool operator!=(const Currency &rhs) const;
+
 private:
     std::string name;
     std::vector<int32_t> rates;

@@ -16,6 +16,8 @@ Currency::Currency(std::string name, std::vector<int32_t> rates) : name(std::mov
 
 Currency::Currency(std::string name, int32_t current_rate) : name(std::move(name)) {
     rates = {current_rate};
+    absolute_change = -1;
+    relative_change = -1;
 }
 
 Currency::Currency(std::string name, int32_t current_rate, int32_t absolute_change, int32_t relative_change) :
@@ -41,5 +43,16 @@ int32_t Currency::get_absolute_change() const {
 
 int32_t Currency::get_relative_change() const {
     return relative_change;
+}
+
+bool Currency::operator==(const Currency &rhs) const {
+    return name == rhs.name &&
+           rates == rhs.rates &&
+           absolute_change == rhs.absolute_change &&
+           relative_change == rhs.relative_change;
+}
+
+bool Currency::operator!=(const Currency &rhs) const {
+    return !(rhs == *this);
 }
 

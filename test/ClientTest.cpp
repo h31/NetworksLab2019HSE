@@ -80,3 +80,54 @@ TEST_CASE("list empty currencies") {
     REQUIRE(result.empty());
     server_thread.join();
 }
+
+TEST_CASE("list one currency") {
+    ClientTest clientTest;
+    std::vector<int8_t> server_return = {'c', 'u', 'r', 'r', 'e', 'n', 'c', 'y','N', 'a', 'm', 'e', '1', 0, 0, 0,
+                                         1, 1, 1, 1,
+                                         1,
+                                         1, 0, 1, 0,
+                                         12, 0, 0, 0,
+                                         '\\', 0};
+    std::thread server_thread(setup_server_returning, server_return, std::ref(clientTest));
+    while (clientTest.PORTNO == 0) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+    Client client = Client(clientTest.HOST, clientTest.PORTNO);
+    std::vector<Currency> result = client.list();
+    std::vector<Currency> expected = {Currency("currencyName1",
+                                      (1 << 24) + (1 << 16) + (1 << 8) + (1 << 0),
+                                      (1 << 16) + (1 << 0),
+                                      12)};
+    REQUIRE(result == expected);
+    server_thread.join();
+}
+
+
+TEST_CASE("list two currencies") {
+    ClientTest clientTest;
+    std::vector<int8_t> server_return = {'c', 'u', 'r', 'r', 'e', 'n', 'c', 'y','N', 'a', 'm', 'e', '1', 0, 0, 0,
+                                         1, 1, 1, 1,
+                                         1,
+                                         1, 0, 1, 0,
+                                         12, 0, 0, 0,
+                                         'c', 'u', 'r', 'r', 'e', 'n', 'c', 'y','N', 'a', 'm', 'e', '2', 'e', 'n', 'd',
+                                         1, 0, 0, 0,
+                                         0,
+                                         0, 0, 0, 0,
+                                         0, 0, 0, 0,
+                                         '\\', 0};
+    std::thread server_thread(setup_server_returning, server_return, std::ref(clientTest));
+    while (clientTest.PORTNO == 0) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+    Client client = Client(clientTest.HOST, clientTest.PORTNO);
+    std::vector<Currency> result = client.list();
+    std::vector<Currency> expected = {Currency("currencyName1",
+                                               (1 << 24) + (1 << 16) + (1 << 8) + (1 << 0),
+                                               (1 << 16) + (1 << 0),
+                                               12),
+                                      Currency("currencyName2end", 1)};
+    REQUIRE(result == expected);
+    server_thread.join();
+}

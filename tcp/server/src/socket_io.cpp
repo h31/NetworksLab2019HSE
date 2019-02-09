@@ -37,7 +37,7 @@ size_t socket_io::read_size_t() {
 std::string socket_io::read_string(size_t size) {
     char buffer[size];
     read_bytes(buffer, size);
-    return std::string(buffer);
+    return std::string(buffer, buffer + size);
 }
 
 void socket_io::write_int(int n) {

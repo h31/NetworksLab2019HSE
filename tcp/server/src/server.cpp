@@ -4,23 +4,21 @@
 
 void server::client_accept_cycle(int server_socket_fd) {
     while (true) {
-        clients_vector_access.lock();
-        try {
-            boost::this_thread::interruption_point();
-        } catch (boost::thread_interrupted) {
-            clients_vector_access.unlock();
-            break;
-        }
-
+        std::vector<int> clients_sockets;
         struct sockaddr_in client_address{};
+
         unsigned int clilen = sizeof(client_address);
         int client_socket_fd = accept(server_socket_fd, (struct sockaddr *) &client_address, &clilen);
         if (client_socket_fd >= 0) {
+            clients_sockets.push_back(client_socket_fd);
             auto *client_thread = new boost::thread(&server::request_response_cycle, this, client_socket_fd);
             clients.push_back(client_thread);
+        } else {
+            for (int client_socket : clients_sockets) {
+                close(client_socket);
+            }
+            break;
         }
-
-        clients_vector_access.unlock();
     }
 }
 
@@ -29,8 +27,6 @@ void server::request_response_cycle(int client_socket_fd) {
 
     try {
         while (true) {
-            boost::this_thread::interruption_point();
-
             int command = io.read_int();
             switch (command) {
                 case 1: {
@@ -71,10 +67,7 @@ void server::request_response_cycle(int client_socket_fd) {
                 }
                     break;
 
-                case 4: {
-                    close(client_socket_fd);
-                    return;
-                }
+                default:break;
             }
         }
     } catch (...) {
@@ -85,7 +78,7 @@ void server::request_response_cycle(int client_socket_fd) {
 server::server(uint16_t port) : PORT(port) {}
 
 void server::start() {
-    int server_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+    server_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_socket_fd < 0) {
         throw socket_opening_exception();
     }
@@ -105,13 +98,7 @@ void server::start() {
 }
 
 void server::stop() {
-    clients_vector_access.lock();
-    main_thread->interrupt();
-    for (auto client : clients) {
-        client->interrupt();
-    }
-    clients_vector_access.unlock();
-
+    close(server_socket_fd);
     main_thread->join();
     for (auto client : clients) {
         client->join();

@@ -4,7 +4,7 @@
 #include "server.hpp"
 
 void server_main_loop() {
-    server payment_system_server = server(1337);
+    server payment_system_server = server(1338);
     payment_system_server.start();
 }
 

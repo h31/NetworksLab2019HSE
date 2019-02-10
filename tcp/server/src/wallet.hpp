@@ -1,14 +1,21 @@
-//
-// Created by karvozavr on 10/02/19.
-//
+#pragma once
 
-#ifndef SERVER_WALLET_HPP
-#define SERVER_WALLET_HPP
+#include <string>
+#include <vector>
+#include <set>
+
+using id_type = std::string;
+using money_type = uint64_t;
 
 
-class wallet {
+struct wallet {
+    wallet(std::string wallet_id, std::string password)
+            : wallet_id(std::move(wallet_id)),
+              password(std::move(password)) {}
 
+    std::string wallet_id;
+    std::string password;
+    money_type balance = 0;
+    std::set<std::pair<id_type, money_type>> payment_requests = {};
+    std::vector<std::pair<id_type, money_type>> v = {};
 };
-
-
-#endif //SERVER_WALLET_HPP

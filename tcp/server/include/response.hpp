@@ -126,7 +126,7 @@ struct pstp_get_request_for_payments_response {
     uint32_t content_size() {
         uint32_t size = sizeof(uint32_t);
         for (auto const &val : requests) {
-            size += (val.first.length() + 1 + std::to_string(val.second).length()) * sizeof(char);
+            size += (val.first.length() + 1 + std::to_string(val.second).length() + 1) * sizeof(char);
         }
         return size;
     }
@@ -171,7 +171,7 @@ struct pstp_get_payment_results_response {
     uint32_t content_size() {
         uint32_t size = sizeof(uint32_t);
         for (auto const &val : results) {
-            size += (val.first.length() + 1 + std::to_string(val.second).length()) * sizeof(char);
+            size += (val.first.length() + 1 + std::to_string(val.second).length() + 1) * sizeof(char);
         }
         return size;
     }

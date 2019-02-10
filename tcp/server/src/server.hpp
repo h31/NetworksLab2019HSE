@@ -9,7 +9,11 @@
 #include <thread>
 #include <unordered_set>
 #include <request.hpp>
+#include <response.hpp>
 #include <unistd.h>
+#include <unordered_map>
+#include <mutex>
+#include "wallet.hpp"
 
 static volatile sig_atomic_t done = 0;
 
@@ -17,90 +21,48 @@ void term_handler(int signum);
 
 class server {
 public:
-    explicit server(uint16_t port) : port(port) {
-        socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+    explicit server(uint16_t port);
 
-        if (socket_fd < 0) {
-            perror("Error opening socket");
-        }
+    ~server();
 
-        /* Initialize socket structure */
-        bzero((char *) &server_addr, sizeof(server_addr));
-
-
-        server_addr.sin_family = AF_INET;
-        server_addr.sin_addr.s_addr = INADDR_ANY;
-        server_addr.sin_port = htons(port);
-
-        if (bind(socket_fd, (sockaddr *) &server_addr, sizeof(server_addr))) {
-            perror("Error binding socket.");
-        }
-    }
-
-    ~server() {
-        shutdown(socket_fd, SHUT_RD);
-        close(socket_fd);
-    }
-
-    void start() {
-        listen(socket_fd, 5);
-
-        int client_socket_fd;
-        unsigned int client_size = sizeof(client_addr);
-
-        while (!done) {
-            client_socket_fd = accept(socket_fd, (struct sockaddr *) &client_addr, &client_size);
-
-            if (client_socket_fd < 0) {
-                perror("ERROR on accept");
-                continue;
-            }
-
-            new_client(client_socket_fd);
-        }
-    }
+    void start();
 
 private:
-    void handle_client(int client_socket_fd) {
-        pstp_request_header header;
+    void handle_client(int client_socket_fd);
 
-        while (true) {
-
-            ssize_t n = read(client_socket_fd, (char *) &header, sizeof(header));
-
-            if (n < 0) {
-                perror("ERROR reading from socket");
-            }
-
-            if (n == 0) {
-                break;
-            }
-
-            switch (header.type) {
-                case REGISTER:
-                    break;
-                case CHECK_LOGIN:
-                    break;
-            }
-        }
-
-        shutdown(client_socket_fd, SHUT_RD);
-        close(client_socket_fd);
+    template<typename T>
+    bool send_simple_response(int client_socket_fd, T &response) {
+        ssize_t written = write(client_socket_fd, (char *) &response, sizeof(response));
+        return written == sizeof(response);
     }
 
-    void handle_register(int client_socket_fd, pstp_request_header const &header) {
-        // register
-        std::cout << "Register";
+    template<typename T>
+    bool send_serializable_response(int client_socket_fd, T &response) {
+        size_t size = response.content_size() + sizeof(response.header);
+        auto *buffer = new uint8_t[size]();
+        response.serialize(buffer);
+        return size == write(client_socket_fd, (char *) buffer, size);
     }
 
-    void new_client(int client_socket_fd) {
-        std::thread *thread = new std::thread(&server::handle_client, this, client_socket_fd);
+    bool handle_register(int client_socket_fd, pstp_request_header const &header);
 
-    }
+    bool handle_check_login(int client_socket_fd, pstp_request_header const &header);
+
+    bool handle_get_all_wallets(int client_socket_fd, pstp_request_header const &header);
+
+    bool handle_account_info(int client_socket_fd, pstp_request_header const &header);
+
+    bool handle_payment(int client_socket_fd, pstp_request_header const &header);
+
+    bool handle_ask_for_payment(int client_socket_fd, pstp_request_header const &header);
+
+    void new_client(int client_socket_fd);
 
     uint16_t port = 1337;
     int socket_fd = 0;
     sockaddr_in server_addr = {};
     sockaddr_in client_addr = {};
-    std::unordered_map<std::string, std::string>
+    std::unordered_map<std::string, wallet> wallets;
+    std::mutex wallets_mutex;
+    // std::vector<std::thread *> threads;
 };

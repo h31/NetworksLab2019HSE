@@ -44,6 +44,8 @@ Identifier login(int socket_descriptor) {
     } else if (login_response_header.code != OK) {
         error("unknown error.");
     }
+
+    return ident;
 }
 
 std::string create_password() {

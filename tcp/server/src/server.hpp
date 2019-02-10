@@ -58,6 +58,10 @@ private:
 
     bool handle_confirm_payment(int client_socket_fd, pstp_request_header const &header);
 
+    bool handle_get_payment_requests(int client_socket_fd, pstp_request_header const &header);
+
+    bool handle_payment_results(int client_socket_fd, pstp_request_header const &header);
+
     void new_client(int client_socket_fd);
 
     uint16_t port = 1337;

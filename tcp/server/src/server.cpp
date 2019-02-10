@@ -53,7 +53,7 @@ void server::start() {
 
 void server::handle_client(int client_socket_fd) {
     pstp_request_header header;
-
+    std::cout << "Connected" << '\n';
     while (true) {
 
         ssize_t n = read(client_socket_fd, (char *) &header, sizeof(header));
@@ -67,7 +67,6 @@ void server::handle_client(int client_socket_fd) {
         }
 
         bool success;
-        std::cout << "Connected: " << header.wallet_id << '\n';
         switch (header.type) {
             case REGISTER:
                 success = handle_register(client_socket_fd, header);
@@ -88,6 +87,22 @@ void server::handle_client(int client_socket_fd) {
             case PAYMENT:
                 success = handle_payment(client_socket_fd, header);
                 std::cout << "Payment: " << header.wallet_id << '\n';
+                break;
+            case ASK_FOR_PAYMENT:
+                success = handle_ask_for_payment(client_socket_fd, header);
+                std::cout << "Ask for payment: " << header.wallet_id << '\n';
+                break;
+            case CONFIRM_PAYMENT:
+                success = handle_confirm_payment(client_socket_fd, header);
+                std::cout << "Confirm payment: " << header.wallet_id << '\n';
+                break;
+            case GET_REQUESTS_FOR_PAYMENTS:
+                success = handle_get_payment_requests(client_socket_fd, header);
+                std::cout << "Requests: " << header.wallet_id << '\n';
+                break;
+            case PAYMENT_RESULTS:
+                success = handle_payment_results(client_socket_fd, header);
+                std::cout << "Results: " << header.wallet_id << '\n';
                 break;
             default:
                 auto response = pstp_response_header{0, UNSUPPORTED_REQUEST_TYPE, 0};
@@ -156,8 +171,7 @@ void server::new_client(int client_socket_fd) {
     std::thread *thread = new std::thread(&server::handle_client, this, client_socket_fd);
 }
 
-bool server::
-handle_account_info(int client_socket_fd, pstp_request_header const &header) {
+bool server::handle_account_info(int client_socket_fd, pstp_request_header const &header) {
     wallets_mutex.lock();
     id_type id = header.wallet_id;
     auto wallet_ = wallets.find(id);
@@ -173,12 +187,12 @@ handle_account_info(int client_socket_fd, pstp_request_header const &header) {
 }
 
 bool server::handle_payment(int client_socket_fd, pstp_request_header const &header) {
-    char request_data[sizeof(pstp_payment_request)];
-    pstp_payment_request &request = reinterpret_cast<pstp_payment_request &>(request_data);
+    pstp_payment_request request;
+    request.header = header;
 
-    ssize_t red = read(client_socket_fd, (char *) &request, sizeof(pstp_payment_request));
+    ssize_t red = read(client_socket_fd, ((char *) &request) + sizeof(header), header.content_size);
 
-    if (red != sizeof(pstp_payment_request)) {
+    if (red != header.content_size) {
         return false;
     }
 
@@ -207,8 +221,14 @@ bool server::handle_payment(int client_socket_fd, pstp_request_header const &hea
 }
 
 bool server::handle_ask_for_payment(int client_socket_fd, pstp_request_header const &header) {
-    char request_data[sizeof(pstp_ask_for_payment_request)];
-    pstp_ask_for_payment_request &request = reinterpret_cast<pstp_ask_for_payment_request &>(request_data);
+    pstp_ask_for_payment_request request;
+    request.header = header;
+
+    ssize_t red = read(client_socket_fd, ((char *) &request) + sizeof(header), header.content_size);
+
+    if (red != header.content_size) {
+        return false;
+    }
 
     wallets_mutex.lock();
     id_type id = header.wallet_id;
@@ -216,31 +236,31 @@ bool server::handle_ask_for_payment(int client_socket_fd, pstp_request_header co
     wallet &w = wallet_->second;
 
     if (wallets.find(id) != wallets.end() && std::string(header.password) == w.password) {
-        if (wallets.find(request.recipient_id) == wallets.end()) {
+        if (wallets.find(request.recipient_id) == wallets.end() || request.amount == 0) {
             wallets_mutex.unlock();
-            auto response = pstp_payment_response(INVALID_CONTENT);
+            auto response = pstp_ask_for_payment_response(INVALID_CONTENT);
             return send_simple_response(client_socket_fd, response);
         } else {
             wallet &recipient = wallets.find(std::string(request.recipient_id))->second;
-            recipient.payment_requests.insert({request.recipient_id, request.amount});
+            recipient.payment_requests.insert({w.wallet_id, request.amount});
             wallets_mutex.unlock();
-            auto response = pstp_payment_response(OK);
+            auto response = pstp_ask_for_payment_response(OK);
             return send_simple_response(client_socket_fd, response);
         }
     } else {
         wallets_mutex.unlock();
-        auto response = pstp_account_info_response(INVALID_PASSWORD);
+        auto response = pstp_ask_for_payment_response(INVALID_PASSWORD);
         return send_simple_response(client_socket_fd, response);
     }
 }
 
 bool server::handle_confirm_payment(int client_socket_fd, pstp_request_header const &header) {
-    char request_data[sizeof(pstp_ask_for_payment_request)];
-    pstp_ask_for_payment_request &request = reinterpret_cast<pstp_ask_for_payment_request &>(request_data);
+    pstp_confirm_payment_request request;
+    request.header = header;
 
-    ssize_t red = read(client_socket_fd, &request, sizeof(pstp_ask_for_payment_request));
+    ssize_t red = read(client_socket_fd, ((char *) &request) + sizeof(header), header.content_size);
 
-    if (red != sizeof(pstp_ask_for_payment_request)) {
+    if (red != header.content_size) {
         return false;
     }
 
@@ -251,21 +271,66 @@ bool server::handle_confirm_payment(int client_socket_fd, pstp_request_header co
 
     if (wallets.find(id) != wallets.end() && std::string(header.password) == w.password) {
         if (wallets.find(request.recipient_id) == wallets.end() ||
-            (request.amount != 0 &&
-             w.payment_requests.find({request.recipient_id, request.amount}) == w.payment_requests.end())) {
+            w.payment_requests.find(request.recipient_id) == w.payment_requests.end() ||
+            (request.amount > w.balance) ||
+            w.payment_requests.find(request.recipient_id)->second != request.amount) {
             wallets_mutex.unlock();
-            auto response = pstp_payment_response(INVALID_CONTENT);
+            auto response = pstp_confirm_payment_response(INVALID_CONTENT);
             return send_simple_response(client_socket_fd, response);
         } else {
             wallet &recipient = wallets.find(std::string(request.recipient_id))->second;
-            recipient.payment_requests.insert({request.recipient_id, request.amount});
+            recipient.payment_results.emplace_back(w.wallet_id, request.amount);
+            w.payment_requests.erase(recipient.wallet_id);
+
+            recipient.balance += request.amount;
+            w.balance -= request.amount;
+
             wallets_mutex.unlock();
-            auto response = pstp_payment_response(OK);
+
+            auto response = pstp_confirm_payment_response(OK);
             return send_simple_response(client_socket_fd, response);
         }
     } else {
         wallets_mutex.unlock();
-        auto response = pstp_account_info_response(INVALID_PASSWORD);
+        auto response = pstp_confirm_payment_response(INVALID_PASSWORD);
         return send_simple_response(client_socket_fd, response);
+    }
+}
+
+bool server::handle_get_payment_requests(int client_socket_fd, pstp_request_header const &header) {
+    wallets_mutex.lock();
+    id_type id = header.wallet_id;
+    auto wallet_ = wallets.find(id);
+    wallet &w = wallet_->second;
+    if (wallets.find(id) != wallets.end() && std::string(header.password) == w.password) {
+        std::vector<std::pair<id_type, money_type>> requests;
+        for (auto const &entry : w.payment_requests) {
+            requests.emplace_back(entry);
+        }
+        wallets_mutex.unlock();
+
+        auto response = pstp_get_request_for_payments_response(OK, requests);
+        return send_serializable_response(client_socket_fd, response);
+    } else {
+        wallets_mutex.unlock();
+        auto response = pstp_get_request_for_payments_response(INVALID_PASSWORD);
+        return send_serializable_response(client_socket_fd, response);
+    }
+}
+
+bool server::handle_payment_results(int client_socket_fd, pstp_request_header const &header) {
+    wallets_mutex.lock();
+    id_type id = header.wallet_id;
+    auto wallet_ = wallets.find(id);
+    wallet &w = wallet_->second;
+    if (wallets.find(id) != wallets.end() && std::string(header.password) == w.password) {
+        auto response = pstp_get_payment_results_response(OK, w.payment_results);
+        w.payment_results = {};
+        wallets_mutex.unlock();
+        return send_serializable_response(client_socket_fd, response);
+    } else {
+        wallets_mutex.unlock();
+        auto response = pstp_get_payment_results_response(INVALID_PASSWORD);
+        return send_serializable_response(client_socket_fd, response);
     }
 }

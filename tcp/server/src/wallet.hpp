@@ -2,7 +2,7 @@
 
 #include <string>
 #include <vector>
-#include <set>
+#include <map>
 
 using id_type = std::string;
 using money_type = uint64_t;
@@ -16,6 +16,6 @@ struct wallet {
     std::string wallet_id;
     std::string password;
     money_type balance = 0;
-    std::set<std::pair<id_type, money_type>> payment_requests = {};
-    std::vector<std::pair<id_type, money_type>> v = {};
+    std::map<id_type, money_type> payment_requests = {};
+    std::vector<std::pair<id_type, money_type>> payment_results = {};
 };

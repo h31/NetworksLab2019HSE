@@ -73,6 +73,7 @@ void RouletteServer::WorkWithCroupier(int sock_fd) {
                 have_croupier_ = false;
                 croupier_mutex_.unlock();
                 close(sock_fd);
+                std::cout << "Croupier left\n";
                 return;
             }
 
@@ -108,6 +109,7 @@ void RouletteServer::WorkWithPlayer(Player* player) {
 
             case Message::UNDEFINED: {
                 DeletePlayer(player);
+                std::cout << "Player left\n";
                 return;
             }
 

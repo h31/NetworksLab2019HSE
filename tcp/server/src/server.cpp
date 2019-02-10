@@ -25,6 +25,9 @@ server::server(uint16_t port) : port(port) {
 }
 
 server::~server() {
+    for (std::thread *t : threads) {
+        t->join();
+    }
     close(socket_fd);
 }
 
@@ -165,6 +168,7 @@ bool server::handle_get_all_wallets(int client_socket_fd, pstp_request_header co
 
 void server::new_client(int client_socket_fd) {
     std::thread *thread = new std::thread(&server::handle_client, this, client_socket_fd);
+    threads.push_back(thread);
 }
 
 bool server::handle_account_info(int client_socket_fd, pstp_request_header const &header) {

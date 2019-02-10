@@ -208,7 +208,7 @@ RouletteServer::RouletteServer() {
 }
 
 int RouletteServer::Player::CalculateProfit(int winning_number) {
-    if ((winning_number % 2 == 0 && bet_type == EVEN) ||
+    if ((winning_number % 2 == 0 && bet_type == EVEN && winning_number != 0) ||
         (winning_number % 2 == 1 && bet_type == ODD))
         return 2 * bet;
     if (winning_number == number && bet_type == NUMBER)

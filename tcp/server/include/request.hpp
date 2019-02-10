@@ -80,6 +80,8 @@ struct pstp_account_info_request {
 #pragma pack(0)
 
 struct pstp_payment_request {
+    pstp_payment_request() = default;
+
     pstp_payment_request(const std::string &wallet_id,
                          const std::string &password,
                          const std::string &recipient_id,
@@ -97,6 +99,8 @@ struct pstp_payment_request {
 #pragma pack(0)
 
 struct pstp_ask_for_payment_request {
+    pstp_ask_for_payment_request() = default;
+
     pstp_ask_for_payment_request(const std::string &wallet_id,
                                  const std::string &password,
                                  const std::string &recipient_id,
@@ -114,6 +118,8 @@ struct pstp_ask_for_payment_request {
 #pragma pack(0)
 
 struct pstp_confirm_payment_request {
+    pstp_confirm_payment_request() = default;
+
     pstp_confirm_payment_request(const std::string &wallet_id,
                                  const std::string &password,
                                  const std::string &recipient_id,

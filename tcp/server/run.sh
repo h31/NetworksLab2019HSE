@@ -2,4 +2,8 @@ mkdir -p build
 cd build
 cmake --quiet ..
 make hw01-calc-server -s
-./hw01-calc-server
+if (( $# < 1 )); then
+    ./hw01-calc-server
+else
+    ./hw01-calc-server $1
+fi

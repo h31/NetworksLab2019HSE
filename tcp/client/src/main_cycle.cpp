@@ -5,7 +5,7 @@
 #include <response.hpp>
 
 #include "main_cycle.h"
-#include "util.h"
+#include "io_util.h"
 
 void print_help() {
     println("Functions list:");
@@ -32,6 +32,7 @@ void print_help() {
 
 void main_cycle(Identifier ident, int socket_descriptor) {
     while (true) {
+        println("Enter command (h for help): ");
         std::string code;
         std::cin >> code;
 
@@ -65,10 +66,12 @@ void main_cycle(Identifier ident, int socket_descriptor) {
 
             uint32_t content_size = account_info_response_header.content_size;
             if (content_size != sizeof(uint64_t)) {
-                error("contract violation!");
+                error("header contract violation!");
             }
 
             auto sum = read_thing<uint64_t>(socket_descriptor);
+
+            println("Your login: " + ident.login);
             println("You have " + std::to_string(sum) + " kukareks!");
         } else if (code == "PAY") {
             std::string user_id;
@@ -134,9 +137,7 @@ void main_cycle(Identifier ident, int socket_descriptor) {
                     std::string acc = read_until_zero(&ptr, buffer, res_size_byte);;
                     std::string payment = read_until_zero(&ptr, buffer, res_size_byte);
 
-                    std::cout << "Request from user " + acc;
-                    std::cout << " on sum " << payment << std::endl;
-
+                    println("Request from user " + acc + " on sum " + payment); // NOLINT(performance-inefficient-string-concatenation)
                 }
             }
         } else if (code == "ASK") {
@@ -151,7 +152,7 @@ void main_cycle(Identifier ident, int socket_descriptor) {
             if (payment_response_header.code == OK) {
                 println("Request was sent! When user answers, payment result will be available.");
             } else {
-                println("Request failed! Check if user-id was real.");
+                println("Request failed! Check if user-id was real or sum is correct.");
             }
         } else if (code == "ARQ") {
             std::string user_id;
@@ -175,6 +176,8 @@ void main_cycle(Identifier ident, int socket_descriptor) {
                     println("Payment confirmation failed!");
                 }
             }
+        } else {
+            println("No such command!");
         }
     }
 }

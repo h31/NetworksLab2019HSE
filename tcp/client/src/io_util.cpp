@@ -1,4 +1,4 @@
-#include "util.h"
+#include "io_util.h"
 
 void write_to_socket(int socket_descriptor, const void *buf, size_t size) {
     ssize_t n = write(socket_descriptor, buf, size);
@@ -7,7 +7,7 @@ void write_to_socket(int socket_descriptor, const void *buf, size_t size) {
     }
 
     if (n != size) {
-        error("write", "end of socket! (Maybe server disconnect?)");
+        error("write", "unexpected end of socket! (Maybe server disconnect?)");
         exit(0);
     }
 }
@@ -20,13 +20,13 @@ void read_from_socket(int socket_descriptor, void *buf, size_t size) {
     }
 
     if (n != size) {
-        error("read", "end of socket! (Maybe server disconnect?)");
+        error("read", "unexpected end of socket! (Maybe server disconnect?)");
         exit(0);
     }
 }
 
 void println(const std::string &s) {
-    std::cout << s << "\n";
+    std::cout << s << std::endl;
 }
 
 void error(const std::string &s) {
@@ -44,7 +44,7 @@ pstp_response_header read_header(int socket_descriptor) {
     read_from_socket(socket_descriptor, (char *) &response_header, sizeof(response_header));
 
     if (response_header.code == INVALID_PASSWORD) {
-        error("invalid combination of login-password!");
+        error("read header", "invalid combination of login-password!");
     }
 
     return response_header;

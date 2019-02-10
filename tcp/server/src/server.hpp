@@ -15,9 +15,6 @@
 #include <mutex>
 #include "wallet.hpp"
 
-static volatile sig_atomic_t done = 0;
-
-void term_handler(int signum);
 
 class server {
 public:
@@ -27,6 +24,9 @@ public:
 
     void start();
 
+    int get_socket_fd();
+
+    volatile sig_atomic_t done = 0;
 private:
     void handle_client(int client_socket_fd);
 

@@ -4,10 +4,6 @@
 
 #include "server.hpp"
 
-void term_handler(int signum) {
-    done = 1;
-}
-
 server::server(uint16_t port) : port(port) {
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -29,11 +25,11 @@ server::server(uint16_t port) : port(port) {
 }
 
 server::~server() {
-    shutdown(socket_fd, SHUT_RD);
     close(socket_fd);
 }
 
 void server::start() {
+    std::cout << "Server listening on port: " << port << '\n';
     listen(socket_fd, 5);
 
     int client_socket_fd;
@@ -333,4 +329,8 @@ bool server::handle_payment_results(int client_socket_fd, pstp_request_header co
         auto response = pstp_get_payment_results_response(INVALID_PASSWORD);
         return send_serializable_response(client_socket_fd, response);
     }
+}
+
+int server::get_socket_fd() {
+    return socket_fd;
 }

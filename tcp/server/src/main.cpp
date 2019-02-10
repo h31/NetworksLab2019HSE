@@ -3,16 +3,29 @@
 #include "response.hpp"
 #include "server.hpp"
 
-void server_main_loop() {
-    server payment_system_server = server(1337);
+static server *serv = nullptr;
+
+void term_handler(int signum) {
+    shutdown(serv->get_socket_fd(), SHUT_RD);
+    serv->done = 1;
+}
+
+void server_main_loop(uint16_t port) {
+    server payment_system_server = server(port);
+    serv = &payment_system_server;
     payment_system_server.start();
 }
 
-int main() {
+int main(int argc, char **argv) {
     signal(SIGINT, term_handler);
     signal(SIGTERM, term_handler);
 
-    server_main_loop();
+    if (argc != 2) {
+        std::cerr << "This command accepts only 1 argument: server port.\n";
+        return 1;
+    }
+
+    server_main_loop(static_cast<uint16_t>(atoi(argv[1])));
 
     return 0;
 }

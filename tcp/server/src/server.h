@@ -50,7 +50,7 @@ class RouletteServer {
 
     void WorkWithCroupier(int sock_fd);
 
-    void WorkWithPlayer(Player& player);
+    void WorkWithPlayer(Player* player);
 
     Message ProcessGetAllBets();
 

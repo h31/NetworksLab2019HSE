@@ -17,8 +17,8 @@ void RouletteServer::AuthoriseClient(int sock_fd) {
             if (players.count(message.body) == 0) {
                 auto* player = new Player(sock_fd);
                 players[message.body] = player;
-                workWithClient = std::bind(&RouletteServer::WorkWithPlayer, this, *player);
-                ans_type = Message::SUCCESS;
+                workWithClient = std::bind(&RouletteServer::WorkWithPlayer, this, player);
+                ans_type = Message::PLAYER_ADDED;
             } else {
                 ans_type = Message::CANT_ADD_PLAYER;
             }
@@ -30,7 +30,7 @@ void RouletteServer::AuthoriseClient(int sock_fd) {
             } else if (message.body == CROUPIER_PASSWORD) {
                 have_croupier_ = true;
                 workWithClient = std::bind(&RouletteServer::WorkWithCroupier, this, sock_fd);
-                ans_type = Message::SUCCESS;
+                ans_type = Message::CROUPIER_ADDED;
             } else {
                 ans_type = Message::CANT_ADD_CROUPIER;
             }
@@ -113,9 +113,9 @@ void RouletteServer::WorkWithCroupier(int sock_fd) {
     }
 }
 
-void RouletteServer::WorkWithPlayer(Player& player) {
+void RouletteServer::WorkWithPlayer(Player* player) {
     while (true) {
-        Message message = Message::Read(player.socket_fd);
+        Message message = Message::Read(player->socket_fd);
         Message ans_message;
         switch (message.type) {
             case Message::NEW_BET: {
@@ -125,7 +125,7 @@ void RouletteServer::WorkWithPlayer(Player& player) {
                 }
 
                 // Otherwise game wasn't started.
-                ans_message = ProcessBet(player, message.body);
+                ans_message = ProcessBet(*player, message.body);
                 rolling_mutex_.unlock_shared();
                 break;
             }
@@ -138,7 +138,7 @@ void RouletteServer::WorkWithPlayer(Player& player) {
                 ans_message = Message(Message::INCORRECT_MESSAGE);
             }
         }
-        ans_message.Write(player.socket_fd);
+        ans_message.Write(player->socket_fd);
     }
 }
 
@@ -146,7 +146,7 @@ Message RouletteServer::ProcessStartDraw() {
     if (!is_rolling_) {
         rolling_mutex_.lock();
         is_rolling_ = true;
-        return Message(Message::SUCCESS);
+        return Message(Message::DRAW_STARTED);
     }
     return Message(Message::CANT_START_DRAW, "Game is already in progress.");
 
@@ -167,9 +167,9 @@ Message RouletteServer::ProcessEndDraw() {
         players_mutex_.unlock();
         rolling_mutex_.unlock();
         is_rolling_ = false;
-        return Message(Message::SUCCESS);
+        return Message(Message::DRAW_ENDED);
     }
-    return Message(Message::CANT_END_DWAW, "Game wasnt in progress.");
+    return Message(Message::CANT_END_DRAW, "Game wasnt in progress.");
 }
 
 Message RouletteServer::ProcessGetAllBets() {
@@ -177,7 +177,9 @@ Message RouletteServer::ProcessGetAllBets() {
     std::string result;
     for (auto& p: players) {
         result += p.first;
+        result += " ";
         result += std::to_string(p.second->bet);
+        result += '\n';
     }
     players_mutex_.unlock();
     return Message(Message::LIST_OF_BETS, result);
@@ -223,7 +225,7 @@ Message RouletteServer::ProcessBet(RouletteServer::Player& player, std::string b
         player.bet = bet_sum;
         player.bet_type = bet_type;
         player.number = betting_number;
-        result = Message::SUCCESS;
+        result = Message::BET_ACCEPTED;
     }
     players_mutex_.unlock();
     return Message(result);

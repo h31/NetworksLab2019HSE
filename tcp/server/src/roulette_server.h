@@ -6,13 +6,12 @@
 #include <atomic>
 #include <map>
 #include <boost/thread/executors/basic_thread_pool.hpp>
-#include "../../message/src/message.h"
+#include "message.h"
+#include "tcp_server.h"
 
-class RouletteServer {
+class RouletteServer : public TcpServer {
  public:
     RouletteServer();
-
-    void StartServer(uint16_t port_number);
 
     ~RouletteServer();
  private:
@@ -56,7 +55,7 @@ class RouletteServer {
 
     Message ProcessEndDraw();
 
-    void AuthoriseClient(int sock_fd);
+    void StartWorkingWithClient(int sock_fd) override;
 
     void WorkWithCroupier(int sock_fd);
 

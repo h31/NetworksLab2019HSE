@@ -6,5 +6,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -lboost_system -lboost_date_tim
 
 find_package(Boost REQUIRED COMPONENTS thread)
 
-add_executable(server src/main.cpp src/server.cpp src/server.h)
+add_executable(server
+        src/main.cpp
+        src/roulette_server.cpp src/roulette_server.h
+        src/tcp_server.cpp src/tcp_server.h)
 target_link_libraries(server LINK_PUBLIC message ${Boost_LIBRARIES})

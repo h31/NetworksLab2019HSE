@@ -1,6 +1,6 @@
 #include <iostream>
 #include <thread>
-#include "server.h"
+#include "roulette_server.h"
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {

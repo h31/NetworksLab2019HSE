@@ -1,0 +1,17 @@
+#ifndef SERVER_TCP_SERVER_H
+#define SERVER_TCP_SERVER_H
+
+
+#include <cstdint>
+#include <netinet/in.h>
+
+class TcpServer {
+ public:
+    void StartServer(uint16_t port_number);
+
+ private:
+    virtual void StartWorkingWithClient(int sock_fd) = 0;
+};
+
+
+#endif //SERVER_TCP_SERVER_H

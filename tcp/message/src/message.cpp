@@ -47,24 +47,24 @@ Message Message::Read(int sockfd) {
     return Message();
 }
 
-void Message::PutInt32(uint32_t i, char* buf) {
+void Message::PutInt32(uint32_t i, char *buf) {
     i = htonl(i);
     memcpy(buf, &i, sizeof(uint32_t));
 }
 
-void Message::PutBody(char* buf) {
+void Message::PutBody(char *buf) {
     memcpy(buf, body.c_str(), body.size());
 }
 
-bool Message::GetInt32(uint32_t* i, int sockfd) {
-    if (Get(reinterpret_cast<char*>(i), sizeof(uint32_t), sockfd)) {
+bool Message::GetInt32(uint32_t *i, int sockfd) {
+    if (Get(reinterpret_cast<char *>(i), sizeof(uint32_t), sockfd)) {
         *i = ntohl(*i);
         return true;
     }
     return false;
 }
 
-bool Message::GetBody(std::string* body, size_t length, int sockfd) {
+bool Message::GetBody(std::string *body, size_t length, int sockfd) {
     auto buf = new char[length];
     if (Get(buf, length, sockfd)) {
         *body = std::string(buf);
@@ -73,7 +73,7 @@ bool Message::GetBody(std::string* body, size_t length, int sockfd) {
     return length != 0;
 }
 
-bool Message::Get(char* dst, size_t message_len, int sockfd) {
+bool Message::Get(char *dst, size_t message_len, int sockfd) {
     for (ssize_t read = 0; message_len; read = ::read(sockfd, dst, message_len)) {
         if (read < 0) {
             std::cerr << strerror(errno) << std::endl;

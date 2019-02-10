@@ -66,7 +66,7 @@
   - Успех
 
         type: 401
-        content: char[] current url
+        content: char[] current url (absolute)
 
   - Расположение не найдено
 

@@ -138,7 +138,7 @@ void RouletteServer::WorkWithPlayer(Player* player) {
                 ans_message = Message(Message::INCORRECT_MESSAGE);
             }
         }
-        ans_message.Write(player->socket_fd);
+        player->messages_.push(ans_message);
     }
 }
 
@@ -162,7 +162,7 @@ Message RouletteServer::ProcessEndDraw() {
                         std::to_string(winning_number) + " " + std::to_string(profit));
             player.second->bet = 0;
             player.second->bet_type = Player::NO_BET;
-            msg.Write(player.second->socket_fd);
+            player.second->messages_.push(msg);
         }
         players_mutex_.unlock();
         rolling_mutex_.unlock();
@@ -237,6 +237,10 @@ RouletteServer::~RouletteServer() {
     }
 }
 
+RouletteServer::RouletteServer() {
+    srand(time(NULL));
+}
+
 int RouletteServer::Player::CalculateProfit(int winning_number) {
     if ((winning_number % 2 == 0 && bet_type == EVEN) ||
         (winning_number % 2 == 1 && bet_type == ODD))
@@ -244,4 +248,22 @@ int RouletteServer::Player::CalculateProfit(int winning_number) {
     if (winning_number == number && bet_type == NUMBER)
         return 35 * bet;
     return 0;
+}
+
+RouletteServer::Player::Player(int socket_fd) : socket_fd(socket_fd) {
+    writer = std::thread([this]() {
+        while (!messages_.closed()) {
+            try {
+                Message m = messages_.pull();
+                m.Write(this->socket_fd);
+            } catch (boost::sync_queue_is_closed&) {
+                break;
+            }
+        }
+    });
+}
+
+RouletteServer::Player::~Player() {
+    messages_.close();
+    writer.join();
 }

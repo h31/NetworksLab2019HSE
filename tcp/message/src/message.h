@@ -10,7 +10,6 @@
 #include <iostream>
 
 
-
 class Message {
  public:
     enum Type {

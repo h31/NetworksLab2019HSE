@@ -5,16 +5,23 @@
 #include <shared_mutex>
 #include <atomic>
 #include <map>
+#include <boost/thread/executors/basic_thread_pool.hpp>
 #include "../../message/src/message.h"
 
 class RouletteServer {
  public:
+    RouletteServer();
+
     void StartServer(uint16_t port_number);
 
     ~RouletteServer();
  private:
-    struct Player {
-        explicit Player(int socket_fd) : socket_fd(socket_fd) {};
+    class Player {
+     public:
+        explicit Player(int socket_fd);
+
+        ~Player();
+
         const int socket_fd;
 
         int bet = 0;
@@ -26,6 +33,9 @@ class RouletteServer {
         };
         BetType bet_type = NO_BET;
         int number = -1;
+
+        std::thread writer;
+        boost::sync_queue<Message> messages_;
 
         int CalculateProfit(int winning_number);
     };

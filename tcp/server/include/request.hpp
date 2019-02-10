@@ -10,7 +10,10 @@
 struct pstp_request_header {
 #define TEXT_UNIT_SIZE (std::size_t)64
 
-    pstp_request_header(uint8_t type, const std::string &wallet_id, const std::string &password, uint32_t content_size)
+    explicit pstp_request_header(uint8_t type = 0,
+                                 const std::string &wallet_id = "",
+                                 const std::string &password = "",
+                                 uint32_t content_size = 0)
             : type(type), content_size(content_size) {
         strncpy(this->wallet_id, wallet_id.c_str(), std::min(wallet_id.length(), TEXT_UNIT_SIZE));
         strncpy(this->password, password.c_str(), std::min(password.length(), TEXT_UNIT_SIZE));

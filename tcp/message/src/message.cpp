@@ -1,14 +1,12 @@
 #include <iostream>
-#include "message.h"
-
 #include <cstdio>
 #include <cstdlib>
-
 #include <netdb.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <string>
 
-#include <cstring>
+#include "message.h"
 
 Message::Message() : type(UNDEFINED), body() {}
 

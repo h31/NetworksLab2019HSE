@@ -19,6 +19,7 @@ void RouletteServer::AuthoriseClient(int sock_fd) {
                 players[message.body] = player;
                 workWithClient = std::bind(&RouletteServer::WorkWithPlayer, this, player);
                 ans_type = Message::PLAYER_ADDED;
+                std::cout << "New player\n";
             } else {
                 ans_type = Message::CANT_ADD_PLAYER;
             }
@@ -31,6 +32,7 @@ void RouletteServer::AuthoriseClient(int sock_fd) {
                 have_croupier_ = true;
                 workWithClient = std::bind(&RouletteServer::WorkWithCroupier, this, sock_fd);
                 ans_type = Message::CROUPIER_ADDED;
+                std::cout << "New croupier\n";
             } else {
                 ans_type = Message::CANT_ADD_CROUPIER;
             }
@@ -146,6 +148,7 @@ Message RouletteServer::ProcessStartDraw() {
     if (!is_rolling_) {
         rolling_mutex_.lock();
         is_rolling_ = true;
+        std::cout << "New spin\n";
         return Message(Message::DRAW_STARTED);
     }
     return Message(Message::CANT_START_DRAW, "Game is already in progress.");

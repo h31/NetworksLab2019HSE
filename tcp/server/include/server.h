@@ -5,14 +5,14 @@
 
 class Server
 {
-  public:
-    Server(uint16_t port);
+public:
+  Server(uint16_t port);
 
-    ~Server();
+  ~Server();
 
-    void Run();
+  void Run();
 
-  private:
+private:
 };
 
 #endif // TCP_SERVER_H

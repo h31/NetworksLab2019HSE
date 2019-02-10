@@ -4,7 +4,5 @@ project(server)
 set(CMAKE_CXX_STANDARD 17)
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 
-add_executable(server
-        src/main.cpp
-        src/server.cpp src/server.h
-        ../message/src/message.cpp ../message/src/message.h)
+add_executable(server src/main.cpp src/server.cpp src/server.h)
+target_link_libraries (server LINK_PUBLIC message)

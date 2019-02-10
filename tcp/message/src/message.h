@@ -14,39 +14,43 @@
 class Message {
  public:
     enum Type {
-        UNDEFINED = -1,
-        SUCCESS = 0,
+        UNDEFINED = 0,
         UNAUTHORIZED = 1,
         INCORRECT_MESSAGE = 2,
         NEW_PLAYER = 100,
-        CANT_ADD_PLAYER = 101,
+        PLAYER_ADDED = 101,
+        CANT_ADD_PLAYER = 102,
         NEW_CROUPIER = 200,
-        CANT_ADD_CROUPIER = 201,
-        CROUPIER_ALREADY_EXISTS = 202,
+        CROUPIER_ADDED = 201,
+        CANT_ADD_CROUPIER = 202,
+        CROUPIER_ALREADY_EXISTS = 203,
         NEW_BET = 300,
-        REPEATED_BET = 301,
-        UNTIMELY_BET = 302,
+        BET_ACCEPTED = 301,
+        REPEATED_BET = 302,
+        UNTIMELY_BET = 303,
         START_DRAW = 400,
-        CANT_START_DRAW = 401,
+        DRAW_STARTED = 401,
+        CANT_START_DRAW = 402,
         END_DRAW = 500,
-        CANT_END_DWAW = 501,
+        DRAW_ENDED = 501,
+        CANT_END_DRAW = 502,
         DRAW_RESULTS = 600,
         GET_ALL_BETS = 700,
-        LIST_OF_BETS = 800
+        LIST_OF_BETS = 701
     };
 
-    Message() : type(UNDEFINED), body() {}  // I dont like -1 because we cast to uint then.
+    Type type;
+    std::string body;
 
-    explicit Message(Type type) : type(type), body() {}
+    Message();
 
-    Message(Type type, std::string message) : type(type), body(std::move(message)) {}
+    explicit Message(Type type);
+
+    Message(Type type, std::string message);
 
     bool Write(int sockfd);
 
     static Message Read(int sockfd);
-
-    Type type;
-    std::string body;
 
  private:
 

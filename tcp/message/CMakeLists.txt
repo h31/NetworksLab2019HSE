@@ -1,7 +1,2 @@
-cmake_minimum_required(VERSION 3.13)
-project(message)
-
-set(CMAKE_CXX_STANDARD 17)
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
-
-add_executable(message src/message.h src/message.cpp)
+add_library (message src/message.cpp src/message.h)
+target_include_directories (message PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)

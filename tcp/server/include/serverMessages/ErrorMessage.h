@@ -12,7 +12,7 @@ public:
     explicit ErrorMessage(const std::string &message);
 
 protected:
-    void WriteBody(int socket_fd) const override;
+    bool WriteBody(int socket_fd) const override;
 };
 
 #endif

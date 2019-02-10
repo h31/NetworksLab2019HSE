@@ -1,9 +1,11 @@
 #include "clientMessages/BroadcastMessageMessage.h"
+#include "Client.h"
 
-void BroadcastMessageMessage::ReadBody(int socket_fd) {
-    ReadString(socket_fd, message);
+bool BroadcastMessageMessage::ReadBody(int socket_fd) {
+    return ReadString(socket_fd, message);
 }
 
-void BroadcastMessageMessage::Process(Server *server, Client *client) {
+bool BroadcastMessageMessage::Process(Server *server, Client *client) {
     server->SendToAll(client->GetUserName(), GroupMessageMessage(client->GetUserName(), message));
+    return true;
 }

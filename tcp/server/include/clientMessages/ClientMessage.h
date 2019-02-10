@@ -2,7 +2,7 @@
 #define SERVER_CLIENT_MESSAGE_H
 
 #include <string>
-#include "serverMessages/ServerMessage.h"
+
 #include "Server.h"
 
 enum struct ClientMessageType : unsigned char {
@@ -14,11 +14,11 @@ enum struct ClientMessageType : unsigned char {
 class ClientMessage {
 
 protected:
-    static void ReadString(int socket_fd, std::string &dst);
+    static bool ReadString(int socket_fd, std::string &dst);
 
 public:
-    virtual void ReadBody(int socket_fd) { };
-    virtual void Process(Server *server, Client *client) = 0;
+    virtual bool ReadBody(int socket_fd) { return true; };
+    virtual bool Process(Server *server, Client *client) = 0;
 };
 
 #endif

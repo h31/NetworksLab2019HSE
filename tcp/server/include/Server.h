@@ -7,10 +7,12 @@
 #include <cstring>
 #include <unistd.h>
 #include <unordered_map>
+#include <mutex>
 
 #include "serverMessages/GroupMessageMessage.h"
 #include "serverMessages/MessageMessage.h"
-#include "Client.h"
+
+class Client;
 
 class Server {
 
@@ -19,8 +21,9 @@ private:
     static const int BACKLOG_SIZE = 5;
     int server_socket_fd;
     std::unordered_map<std::string, Client *> active_clients;
+    std::mutex active_clients_mtx;
+
     void ShutdownSocket();
-    void JoinAllClients();
 
 public:
     explicit Server(unsigned short port);
@@ -30,7 +33,8 @@ public:
     Server &operator=(const Server &) = delete;
     Server &operator=(Server &&) = delete;
 
-    int GetSocket();
+    int Accept();
+    void RemoveClient(const std::string &user_name);
     bool AddClient(const std::string &user_name, Client *client);
     void Run();
     void SendToAll(const std::string &from, const GroupMessageMessage &message);

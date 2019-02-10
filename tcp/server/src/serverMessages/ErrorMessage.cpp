@@ -4,6 +4,6 @@ ErrorMessage::ErrorMessage(const std::string &message) : ServerMessage(ServerMes
     this->message = message;
 }
 
-void ErrorMessage::WriteBody(int socket_fd) const {
-    WriteString(socket_fd, message);
+bool ErrorMessage::WriteBody(int socket_fd) const {
+    return WriteString(socket_fd, message);
 }

@@ -10,8 +10,8 @@ private:
     std::string message;
 
 public:
-    void ReadBody(int socket_fd) override;
-    void Process(Server *server, Client *client) override;
+    bool ReadBody(int socket_fd) override;
+    bool Process(Server *server, Client *client) override;
 };
 
 #endif

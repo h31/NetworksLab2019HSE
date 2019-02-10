@@ -16,12 +16,12 @@ class ServerMessage {
 
 protected:
     ServerMessageType type;
-    virtual void WriteBody(int socket_fd) const { };
-    static void WriteString(int socket_fd, const std::string &value);
+    virtual bool WriteBody(int socket_fd) const { };
+    static bool WriteString(int socket_fd, const std::string &value);
 
 public:
     explicit ServerMessage(ServerMessageType type);
-    void Write(int socket_fd) const;
+    bool Write(int socket_fd) const;
 };
 
 #endif

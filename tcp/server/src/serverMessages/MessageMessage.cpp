@@ -8,7 +8,6 @@ MessageMessage::MessageMessage(const std::string &user_name,
     this->message = message;
 }
 
-void MessageMessage::WriteBody(int socket_fd) const {
-    WriteString(socket_fd, user_name);
-    WriteString(socket_fd, message);
+bool MessageMessage::WriteBody(int socket_fd) const {
+    return WriteString(socket_fd, user_name) && WriteString(socket_fd, message);
 }

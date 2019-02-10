@@ -11,7 +11,7 @@ private:
 
 public:
     explicit GroupMessageMessage(const std::string &user_name, const std::string &message);
-    void WriteBody(int socket_fd) const override;
+    bool WriteBody(int socket_fd) const override;
 };
 
 #endif

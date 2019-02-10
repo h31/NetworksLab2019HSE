@@ -1,12 +1,11 @@
 #include <thread>
 
 #include "Acceptor.h"
-#include "Server.h"
 #include "serverMessages/GroupMessageMessage.h"
 #include "serverMessages/DisconnectMessage.h"
 #include "Server.h"
 
-Server::Server() {
+Server::Server(unsigned short port) {
     server_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_socket_fd < 0) {
         perror("Error opening socket");
@@ -15,7 +14,7 @@ Server::Server() {
     struct sockaddr_in address{};
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(PORT);
+    address.sin_port = htons(port);
     if (bind(server_socket_fd, (struct sockaddr *) &address, sizeof(address)) < 0) {
         perror("Error binding socket");
         ShutdownSocket();

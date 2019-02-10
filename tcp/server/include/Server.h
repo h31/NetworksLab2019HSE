@@ -23,9 +23,7 @@ private:
     void JoinAllClients();
 
 public:
-    const unsigned short PORT = 5001;
-
-    Server();
+    explicit Server(unsigned short port);
     ~Server();
     Server(const Server &) = delete;
     Server(Server &&) = delete;

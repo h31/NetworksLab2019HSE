@@ -226,19 +226,19 @@ void RouletteClient::Quit() {
 void RouletteClient::PrintHeader(const std::string &header) {
     io_mutex_.lock();
     system("clear");
-    std::cout << header << '\n' << "> ";
+    std::cout << header + "\n> " << std::flush;
     io_mutex_.unlock();
 }
 
 void RouletteClient::PrintPrompt() {
     io_mutex_.lock();
-    std::cout << "> ";
+    std::cout << "> " << std::flush;
     io_mutex_.unlock();
 }
 
 void RouletteClient::Cout(const std::string &message) {
     io_mutex_.lock();
-    std::cout << message << '\n';
+    std::cout << message << std::endl;
     io_mutex_.unlock();
 }
 

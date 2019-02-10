@@ -2,7 +2,7 @@
 #include <iostream>
 #include <limits>
 #include <response.hpp>
-#include <util.h>
+#include <io_util.h>
 #include "login.h"
 
 std::string has_account() {
@@ -44,6 +44,8 @@ Identifier login(int socket_descriptor) {
     } else if (login_response_header.code != OK) {
         error("unknown error.");
     }
+
+    return ident;
 }
 
 std::string create_password() {

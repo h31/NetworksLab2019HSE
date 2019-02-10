@@ -10,7 +10,8 @@
 #include <request.hpp>
 #include <response.hpp>
 #include "login.h"
-#include "util.h"
+#include "io_util.h"
+#include "main_cycle.h"
 
 
 int main(int argc, char *argv[]) {
@@ -60,6 +61,10 @@ int main(int argc, char *argv[]) {
 
     println("Welcome, user " + ident.login + "!");
 
+    println("");
+
+    print_help();
+    main_cycle(ident, socket_descriptor);
 
 
     return 0;

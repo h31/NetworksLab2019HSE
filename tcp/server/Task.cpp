@@ -39,8 +39,9 @@ void Task::get_file_list() {
     }
     int file_number = file_list.size();
     int answer = GET_FILE_LIST_SUCC;
-    send_num(file_number);
     send_num(answer);
+    send_num(message_length);
+    send_num(file_number);
     for (auto &i : file_list) {
         send_string(i);
     }

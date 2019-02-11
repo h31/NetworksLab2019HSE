@@ -16,23 +16,24 @@ Task::Task(int socket, std::string root_directory) {
 }
 
 void Task::cd_in_dir() {
-    std::regex short_path(".*\\/..");
+    std::regex short_path(".*\\/\\.\\.");
     std::string path = get_string();
     std::string new_path = std::regex_replace(this->directory + path, short_path, "");
-    if (!(new_path.length() < root_directory.length() || !strncmp(new_path.c_str(), root_directory.c_str(), root_directory.length()))) {
+    if (new_path[new_path.size() - 1] != '/') {
+        new_path.push_back('/');
+    }
+    if (new_path.length() >= root_directory.length() && strncmp(new_path.c_str(), root_directory.c_str(), root_directory.length()) == 0) {
         directory = new_path;
-        int answer = CD_IN_DIR_SUCC;
-        write(socket, &answer, sizeof(int));
-        send_string(new_path);
+        send_num(CD_IN_DIR_SUCC);
+        send_string(directory.substr(root_directory.size(), directory.size() - root_directory.size()));
     } else {
-        int answer = CD_IN_DIR_FAIL;
-        send_num(answer);
-        send_string(directory);
+        send_num(CD_IN_DIR_FAIL);
+        send_string(directory.substr(root_directory.size(), directory.size() - root_directory.size()));
     }
 }
 
 void Task::get_file_list() {
-    int zero = get_num();
+    get_num();
     std::vector<std::string> file_list = get_file_list_in_dir();
     int message_length = sizeof(int);
     for (auto &i : file_list) {
@@ -49,7 +50,7 @@ void Task::get_file_list() {
 }
 
 void Task::get_file() {
-    int message_size = get_num();
+    get_num();
     std::string file_name = get_string();
     FILE *fp;
     if((fp = fopen(file_name.c_str(), "w+b")) == NULL) {
@@ -58,8 +59,7 @@ void Task::get_file() {
         send_string(file_name);
         return;
     }
-    int size;
-    read(socket, &size, sizeof(int));
+    int size = get_num();
     char* buf = new char[size];
     read(socket, buf, size);
     fwrite (buf , sizeof(char), size, fp);

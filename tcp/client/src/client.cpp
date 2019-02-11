@@ -66,132 +66,110 @@ bool RouletteClient::StartClient(const char *host, uint16_t port_number) {
 void RouletteClient::AuthorisePlayer(const std::string &name) {
     Message request{Message::NEW_PLAYER, name};
     requests_.push(request);
-    for (Message response = responses_.pull();; response = responses_.pull()) {
-        switch (response.type) {
-            case Message::PLAYER_ADDED:
-                Cout("enjoy the game, " + name);
-                return;
-            case Message::CANT_ADD_PLAYER:
-                Cout(response.body.empty() ? "sorry, this name is taken" : response.body);
-                return;
-            case Message::DRAW_RESULTS:
-                continue;
-            default:
-                HandleResponse(response);
-                return;
-        }
+    Message response = responses_.pull();
+    switch (response.type) {
+        case Message::PLAYER_ADDED:
+            Cout("enjoy the game, " + name);
+            return;
+        case Message::CANT_ADD_PLAYER:
+            Cout(response.body.empty() ? "sorry, this name is taken" : response.body);
+            return;
+        default:
+            HandleResponse(response);
+            return;
     }
+
 }
 
 void RouletteClient::AuthoriseCroupier(const std::string &key) {
     Message request{Message::NEW_CROUPIER, key};
     requests_.push(request);
-    for (Message response = responses_.pull();; response = responses_.pull()) {
-        switch (response.type) {
-            case Message::CROUPIER_ADDED:
-                Cout("welcome ruler");
-                return;
-            case Message::CANT_ADD_CROUPIER:
-                Cout(response.body.empty() ? "wrong password" : response.body);
-                return;
-            case Message::CROUPIER_ALREADY_EXISTS:
-                Cout(response.body.empty() ? "there can't be two masters" : response.body);
-                return;
-            case Message::DRAW_RESULTS:
-                continue;
-            default:
-                HandleResponse(response);
-                return;
-        }
+    Message response = responses_.pull();
+    switch (response.type) {
+        case Message::CROUPIER_ADDED:
+            Cout("welcome ruler");
+            return;
+        case Message::CANT_ADD_CROUPIER:
+            Cout(response.body.empty() ? "wrong password" : response.body);
+            return;
+        case Message::CROUPIER_ALREADY_EXISTS:
+            Cout(response.body.empty() ? "there can't be two masters" : response.body);
+            return;
+        default:
+            HandleResponse(response);
+            return;
     }
 }
 
 void RouletteClient::StartDraw() {
     Message request{Message::START_DRAW};
     requests_.push(request);
-    for (Message response = responses_.pull();; response = responses_.pull()) {
-        switch (response.type) {
-            case Message::DRAW_STARTED:
-                Cout("whirrr!");
-                return;
-            case Message::CANT_START_DRAW:
-                Cout(response.body.empty() ? "draw declined" : response.body);
-                return;
-            case Message::DRAW_RESULTS:
-                PrintResults(response);
-                continue;
-            default:
-                HandleResponse(response);
-                return;
-        }
+    Message response = responses_.pull();
+    switch (response.type) {
+        case Message::DRAW_STARTED:
+            Cout("whirrr!");
+            return;
+        case Message::CANT_START_DRAW:
+            Cout(response.body.empty() ? "draw declined" : response.body);
+            return;
+        default:
+            HandleResponse(response);
+            return;
     }
 }
 
 void RouletteClient::FinishDraw() {
     Message request{Message::END_DRAW};
     requests_.push(request);
-    for (Message response = responses_.pull();; response = responses_.pull()) {
-        switch (response.type) {
-            case Message::DRAW_ENDED:
-                Cout("draw ended");
-                return;
-            case Message::CANT_END_DRAW:
-                Cout(response.body.empty() ? "can't finish" : response.body);
-                return;
-            case Message::DRAW_RESULTS:
-                PrintResults(response);
-                continue;
-            default:
-                HandleResponse(response);
-                return;
-        }
+    Message response = responses_.pull();
+    switch (response.type) {
+        case Message::DRAW_ENDED:
+            Cout("draw ended");
+            return;
+        case Message::CANT_END_DRAW:
+            Cout(response.body.empty() ? "can't finish" : response.body);
+            return;
+        default:
+            HandleResponse(response);
+            return;
     }
 }
 
 void RouletteClient::NewBet(const std::string &type, int sum) {
     Message request{Message::NEW_BET, type + " " + std::to_string(sum)};
     requests_.push(request);
-    for (Message response = responses_.pull();; response = responses_.pull()) {
-        switch (response.type) {
-            case Message::BET_ACCEPTED:
-                Cout("good luck!");
-                return;
-            case Message::REPEATED_BET:
-                Cout(response.body.empty() ? "you already made a bet" : response.body);
-                return;
-            case Message::DRAW_RESULTS:
-                PrintResults(response);
-                continue;
-            default:
-                HandleResponse(response);
-                return;
-        }
+    Message response = responses_.pull();
+    switch (response.type) {
+        case Message::BET_ACCEPTED:
+            Cout("good luck!");
+            return;
+        case Message::REPEATED_BET:
+            Cout(response.body.empty() ? "you already made a bet" : response.body);
+            return;
+        default:
+            HandleResponse(response);
+            return;
     }
 }
 
 void RouletteClient::ListBets() {
     Message request{Message::GET_ALL_BETS};
     requests_.push(request);
-    for (Message response = responses_.pull();; response = responses_.pull()) {
-        switch (response.type) {
-            case Message::LIST_OF_BETS:
-                Cout(response.body);
-                return;
-            case Message::DRAW_RESULTS:
-                PrintResults(response);
-                continue;
-            default:
-                HandleResponse(response);
-                return;
-        }
+    Message response = responses_.pull();
+    switch (response.type) {
+        case Message::LIST_OF_BETS:
+            Cout(response.body);
+            return;
+        default:
+            HandleResponse(response);
+            return;
+
     }
 }
 
 void RouletteClient::HandleUnexpectedServerResponse(const Message &response) {
     Cout("server responded with {type: " + std::to_string(response.type) + ", message: " + response.body + "}");
 }
-
-void RouletteClient::PrintResults(const Message &response) { Cout(response.body); }
 
 void RouletteClient::HandleUnauthorised() { Cout("introduce yourself"); }
 
@@ -207,6 +185,9 @@ void RouletteClient::HandleResponse(const Message &response) {
         case Message::UNAUTHORIZED:
             HandleUnauthorised();
             return;
+        case Message::UNDEFINED:
+            Quit();
+            exit(0);
         default:
             HandleUnexpectedServerResponse(response);
             return;
@@ -215,11 +196,11 @@ void RouletteClient::HandleResponse(const Message &response) {
 
 void RouletteClient::Quit() {
     Cout("closing connection...");
+    shutdown(sockfd_, SHUT_RDWR);
     requests_.close();
     responses_.close();
     request_sender_.join();
     response_receiver_.join();
-    close(sockfd_);
     Cout("bye!");
 }
 

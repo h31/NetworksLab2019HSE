@@ -44,6 +44,7 @@ int main(int argc, char *argv[]) {
             client.ListBets();
         } else if (line == "bye") {
             client.Quit();
+            return 0;
         } else if (sscanf(line.c_str(), "bet %d odd", &sum) and sum > 0) {
             client.NewBet("odd", sum);
         } else if (sscanf(line.c_str(), "bet %d even", &sum) and sum > 0) {

@@ -21,14 +21,10 @@ bool Message::Write(int sockfd) {
     PutInt32(static_cast<uint32_t>(body.size()), data + sizeof(uint32_t));
     PutBody(data + 2 * sizeof(uint32_t));
 
-    for (ssize_t written = 0; message_len; written = ::write(sockfd, data, message_len)) {
-        if (written < 0) {
-            std::cerr << strerror(errno) << std::endl;
-            return false;
-        } else {
-            data += written;
-            message_len -= written;
-        }
+    ssize_t written = ::write(sockfd, data, message_len);
+    if (written < 0) {
+        std::cerr << strerror(errno) << std::endl;
+        return false;
     }
 
     return true;
@@ -72,8 +68,8 @@ bool Message::GetBody(std::string *body, size_t length, int sockfd) {
 }
 
 bool Message::Get(char *dst, size_t message_len, int sockfd) {
-    for (ssize_t read = 0; message_len; read = ::read(sockfd, dst, message_len)) {
-        if (read < 0) {
+    for (ssize_t read = ::read(sockfd, dst, message_len); message_len; read = ::read(sockfd, dst, message_len)) {
+        if (read <= 0) {
             std::cerr << strerror(errno) << std::endl;
             return false;
         } else {

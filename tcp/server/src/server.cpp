@@ -1,4 +1,5 @@
 #include "../include/server.h"
+#include "../../message/include/message.h";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,7 +33,7 @@ Server::Server(uint16_t port)
 void Server::Run()
 {
 
-    listen(sockfd_, 5);
+    listen(sockfd_, 10); // could be changed
     socklen_t clilen = sizeof(cli_addr_);
     while (!exit_)
     {
@@ -41,21 +42,39 @@ void Server::Run()
         if (newsockfd < 0)
         {
             perror("ERROR on accept");
+            continue;
         }
 
-        std::thread* new_client_thread = new std::thread(&Server::ClientLifeCycle, this, newsockfd);
-        client_threads_.push_back(new_client_thread);
+        std::thread new_client_thread(&Server::ClientLifeCycle, this, newsockfd);
+        client_threads_.emplace_back(&Server::ClientLifeCycle, this, newsockfd);
     }
+}
+
+void Server::Stop()
+{
+    exit_ = 1;
 }
 
 void Server::ClientLifeCycle(int newsockfd)
 {
+    char* buf = new char[sizeof(Calculation)];
+    while (true) {
+        int n = read(newsockfd, buf, sizeof(Calculation));
+
+        if (n < 0) {
+            continue;
+        }
+
+        Calculation calculation = Calculation::Deserialize(buf);
+    }
+    delete buf;
 }
 
 Server::~Server()
 {
-    for (auto thread: client_threads_) {
-        thread -> join();
+    for (auto &thread : client_threads_)
+    {
+        thread.join();
     }
     close(sockfd_);
 }

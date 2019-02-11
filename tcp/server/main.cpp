@@ -12,7 +12,7 @@ int main(int argc, char **argv)
 
     std::cout << "Server started, port " << port << std::endl;
 
-    Server server = Server(port);
+    Server server(port);
 
     std::cout << "Server stoped" << std::endl;
     server.Run();

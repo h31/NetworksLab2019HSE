@@ -1,8 +1,8 @@
 #ifndef TCP_SERVER_H
 #define TCP_SERVER_H
 
-#include <vector>
 #include <thread>
+#include <vector>
 
 #include <csignal>
 #include <cstdint>
@@ -21,6 +21,7 @@ public:
 
   void Run();
 
+  void Stop();
 private:
   uint16_t port_;
 
@@ -30,7 +31,7 @@ private:
 
   sockaddr_in cli_addr_;
 
-  std::vector<std::thread*> client_threads_;
+  std::vector<std::thread> client_threads_;
 
   volatile std::sig_atomic_t exit_ = 0;
 

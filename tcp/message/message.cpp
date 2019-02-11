@@ -14,10 +14,11 @@ char* Calculation::Serialize() const {
 Calculation Calculation::Deserialize(char* bytes) {
     char operation;
     int arg_left, arg_right;
+    double result;
     memcpy(&operation, bytes, sizeof(char));
     memcpy(&arg_left, bytes + sizeof(char), sizeof(int));
     memcpy(&arg_right, bytes + sizeof(char) + sizeof(int), sizeof(int));
-    memcpy(&arg_right, bytes + sizeof(char) + 2 * sizeof(int), sizeof(double));
+    memcpy(&result, bytes + sizeof(char) + 2 * sizeof(int), sizeof(double));
     return Calculation(operation, arg_left, arg_right, result);
 }
 

@@ -15,7 +15,7 @@ void RouletteServer::StartWorkingWithClient(int sock_fd) {
         if (Message::NEW_PLAYER == message.type) {
             players_mutex_.lock();
             if (players.count(message.body) == 0) {
-                auto* player = new Player(sock_fd);
+                auto* player = new Player(message.body, sock_fd);
                 players[message.body] = player;
                 workWithClient = std::bind(&RouletteServer::WorkWithPlayer, this, player);
                 ans_type = Message::PLAYER_ADDED;
@@ -68,6 +68,14 @@ void RouletteServer::WorkWithCroupier(int sock_fd) {
                 ans_message = ProcessGetAllBets();
                 break;
             }
+            case Message::UNDEFINED: {
+                croupier_mutex_.lock();
+                have_croupier_ = false;
+                croupier_mutex_.unlock();
+                close(sock_fd);
+                std::cout << "Croupier left\n";
+                return;
+            }
 
             default: {
                 ans_message = Message(Message::INCORRECT_MESSAGE);
@@ -97,6 +105,12 @@ void RouletteServer::WorkWithPlayer(Player* player) {
             case Message::GET_ALL_BETS: {
                 ans_message = ProcessGetAllBets();
                 break;
+            }
+
+            case Message::UNDEFINED: {
+                DeletePlayer(player);
+                std::cout << "Player left\n";
+                return;
             }
 
             default: {
@@ -198,8 +212,8 @@ Message RouletteServer::ProcessBet(RouletteServer::Player& player, std::string b
 }
 
 RouletteServer::~RouletteServer() {
-    for (auto& p: players) {
-        delete p.second;
+    for (const auto& p: players) {
+        close(p.second->socket_fd);
     }
 }
 
@@ -207,8 +221,16 @@ RouletteServer::RouletteServer() {
     srand(time(NULL));
 }
 
+void RouletteServer::DeletePlayer(RouletteServer::Player* player) {
+    players_mutex_.lock();
+    players.erase(player->name);
+    players_mutex_.unlock();
+
+    delete player;
+}
+
 int RouletteServer::Player::CalculateProfit(int winning_number) {
-    if ((winning_number % 2 == 0 && bet_type == EVEN) ||
+    if ((winning_number % 2 == 0 && bet_type == EVEN && winning_number != 0) ||
         (winning_number % 2 == 1 && bet_type == ODD))
         return 2 * bet;
     if (winning_number == number && bet_type == NUMBER)
@@ -216,7 +238,8 @@ int RouletteServer::Player::CalculateProfit(int winning_number) {
     return 0;
 }
 
-RouletteServer::Player::Player(int socket_fd) : socket_fd(socket_fd) {
+RouletteServer::Player::Player(const std::string& name, int socket_fd) : name(name),
+                                                                         socket_fd(socket_fd) {
     writer = std::thread([this]() {
         while (!messages_.closed()) {
             try {
@@ -231,5 +254,6 @@ RouletteServer::Player::Player(int socket_fd) : socket_fd(socket_fd) {
 
 RouletteServer::Player::~Player() {
     messages_.close();
+    close(socket_fd);
     writer.join();
 }

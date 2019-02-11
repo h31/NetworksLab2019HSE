@@ -17,11 +17,13 @@ class RouletteServer : public TcpServer {
  private:
     class Player {
      public:
-        explicit Player(int socket_fd);
+        explicit Player(const std::string& name, int socket_fd);
 
         ~Player();
 
         const int socket_fd;
+
+        const std::string name;
 
         int bet = 0;
         enum BetType {
@@ -65,6 +67,7 @@ class RouletteServer : public TcpServer {
 
     Message ProcessBet(Player& player, std::string bet);
 
+    void DeletePlayer(Player* player);
 };
 
 #endif //SERVER_SERVER_H

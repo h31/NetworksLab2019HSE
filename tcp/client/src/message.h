@@ -1,22 +1,18 @@
 #ifndef FILE_SYSTEM_MESSAGE_H
 #define FILE_SYSTEM_MESSAGE_H
 
-
-#include <cstdint>
+#include <string>
 
 class Message {
 public:
     uint32_t type;
-    char* content;
+    std::string content;
 
     Message();
 
     explicit Message(uint32_t type);
 
     Message(uint32_t type, const char *content);
-
-    ~Message();
-
 };
 
 

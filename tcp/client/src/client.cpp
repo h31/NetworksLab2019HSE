@@ -82,7 +82,7 @@ void FileSystemClient::downloadFile(const char *sourceUrl) {
         std::cout << "Enter file location:\n";
         std::string filename;
         getline(std::cin, filename);
-        if (_saveFile(response.content, strlen(response.content), filename.data())) {
+        if (_saveFile(response.content.c_str(), response.content.size(), filename.data())) {
             std::cout << "File " << filename << " was successfully saved" << '\n';
         } else {
             std::cout << "Error while saving file: " << filename << '\n';
@@ -109,6 +109,9 @@ void FileSystemClient::getFilesList() {
             _read(data, nameSize);
             data[nameSize] = '\0';
             std::cout << data << '\n';
+        }
+        if (filesNumber == 0) {
+            std::cout << "There are no files\n";
         }
     } else if (type == 1) {
         uint32_t code;
@@ -139,13 +142,13 @@ void FileSystemClient::quit() {
 }
 
 bool FileSystemClient::_sendMessage(Message message) {
-    size_t size = message.content == nullptr ? 0 : strlen(message.content);
+    size_t size = message.content.size();
     size_t buf_size = size + sizeof(uint32_t) * 2;
     char data[buf_size];
     size_t shift = 0;
     _writeInt32ToBuffer(data, message.type, shift);
     _writeInt32ToBuffer(data, static_cast<uint32_t>(size), shift);
-    _writeToBuffer(data, message.content, size, shift);
+    _writeToBuffer(data, message.content.c_str(), size, shift);
     _write(data, buf_size);
     return true;
 }

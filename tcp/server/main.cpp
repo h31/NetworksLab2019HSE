@@ -1,5 +1,4 @@
 #include <iostream>
-#include <cstdint>
 
 #include "./include/server.h"
 
@@ -14,6 +13,17 @@ int main(int argc, char **argv)
 
     Server server(port);
 
+    std::thread server_thread(&Server::Run, &server);
+    server_thread.detach();
+
+    std::cout << "Enter \'stop\' to stop." << std::endl << "$ ";
+    std::string cmd;
+    while (std::cin >> cmd) {
+        if (cmd == "stop")
+            break;
+        std::cout << cmd << std::endl << "$ ";
+    }
+
     std::cout << "Server stoped" << std::endl;
-    server.Run();
+    return 0;
 }

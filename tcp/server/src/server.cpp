@@ -50,33 +50,47 @@ void Server::Run()
     }
 }
 
+void Server::SignalStop(int signum)
+{
+    Stop();
+}
+
 void Server::Stop()
 {
+    shutdown(sockfd_, SHUT_RD);
     exit_ = 1;
 }
 
 void Server::ClientLifeCycle(int newsockfd)
 {
-    char* buf = new char[sizeof(Calculation)];
-    while (true) {
+    char *buf = new char[sizeof(Calculation)];
+    while (true)
+    {
         int n = read(newsockfd, buf, sizeof(Calculation));
 
-        if (n < 0) {
+        if (n < 0)
+        {
             continue;
         }
 
         Calculation calculation = Calculation::Deserialize(buf);
 
         char operation = calculation.GetOperation();
-        if (operation == 's') {
-
-        } else if (operation == '!') {
-
-        } else if (operation == '+' || operation == '-' || operation == '*' || operation == '/') {
+        if (operation == 's' || operation == '!')
+        {
+            operations_threads_.emplace_back(&Server::ProcessLongOperation, this, operation, calculation.GetArgLeft(), newsockfd);
+        }
+        else if (operation == '+' || operation == '-' || operation == '*' || operation == '/')
+        {
             double result = Server::ProcessOperation(operation, calculation.GetArgLeft(), calculation.GetArgRight());
             calculation.SetResult(result);
+            SendCalculationResult(newsockfd, calculation);
         }
     }
+
+    shutdown(newsockfd, SHUT_RD);
+    close(newsockfd);
+
     delete buf;
 }
 
@@ -86,48 +100,85 @@ Server::~Server()
     {
         thread.join();
     }
+    for (auto &thread : operations_threads_)
+    {
+        thread.join();
+    }
     close(sockfd_);
 }
 
-double Server::ProcessOperation(char operation, int left_arg, int right_arg) {
-    if (operation == '+') {
+double Server::ProcessOperation(char operation, int left_arg, int right_arg)
+{
+    if (operation == '+')
+    {
         return left_arg + right_arg;
-    } else if (operation == '-') {
+    }
+    else if (operation == '-')
+    {
         return left_arg - right_arg;
-    } else if (operation == '*') {
+    }
+    else if (operation == '*')
+    {
         return left_arg * right_arg;
-    } else if (operation == '/') {
+    }
+    else if (operation == '/')
+    {
         return left_arg / right_arg;
     }
 
     return 0;
 }
 
-void Server::ProcessLongOperation(char operation, int arg, int newsockfd) {
+void Server::ProcessLongOperation(char operation, int arg, int newsockfd)
+{
     double result = 0;
 
     std::thread new_thread;
-    if (operation == '!') {
+    if (operation == '!')
+    {
         result = Server::GetFactorial(arg);
-    } else if (operation == 's') {
+    }
+    else if (operation == 's')
+    {
         result = Server::GetSqrt(arg);
     }
+
+    Calculation calculation(operation, arg, 0, result);
+    SendCalculationResult(newsockfd, calculation);
 }
 
-double Server::GetSqrt(int n) {
+double Server::GetSqrt(int n)
+{
     return std::sqrt(n);
 }
 
-double Server::GetFactorial(int n) {
-    if (n < 0) {
+double Server::GetFactorial(int n)
+{
+    if (n < 0)
+    {
         return 0;
-    } else if (n <= 1) {
+    }
+    else if (n <= 1)
+    {
         return 1;
-    } else {
+    }
+    else
+    {
         return n * GetFactorial(n - 1);
     }
 }
 
-bool Server::SendCalculationResult(int newsockfd, const Calculation& calculation) const {
+bool Server::SendCalculationResult(int newsockfd, const Calculation &calculation) const
+{
+    char *serialized = calculation.Serialize();
+    int n = write(newsockfd, serialized, sizeof(Calculation));
 
+    if (n < 0)
+    {
+        return false;
+    }
+
+    delete serialized;
+
+    return true;
 }

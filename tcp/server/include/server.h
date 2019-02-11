@@ -24,6 +24,9 @@ public:
   void Run();
 
   void Stop();
+
+  void SignalStop(int signum);
+  
 private:
   uint16_t port_;
 

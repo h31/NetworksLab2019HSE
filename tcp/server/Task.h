@@ -25,6 +25,8 @@ class Task {
         void get_file_list();
         void get_file();
         void send_file();
+        int get_num();
+        void send_num(int);
 
         Task(int socket, std::string);
 

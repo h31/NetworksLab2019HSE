@@ -81,7 +81,7 @@ void FileSystemClient::downloadFile(const char *sourceUrl) {
 }
 
 void FileSystemClient::getFilesList() {
-    Message message = Message(300);
+    Message message = Message(300, "");
     _sendMessage(message);
     uint32_t type;
     _readInt32(&type);

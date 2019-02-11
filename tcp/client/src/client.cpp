@@ -93,7 +93,7 @@ void FileSystemClient::downloadFile(const char *sourceUrl) {
 }
 
 void FileSystemClient::getFilesList() {
-    Message message = Message(300, "");
+    Message message = Message(300);
     _sendMessage(message);
     uint32_t type;
     _readInt32(&type);
@@ -137,7 +137,7 @@ void FileSystemClient::quit() {
 }
 
 bool FileSystemClient::_sendMessage(Message message) {
-    size_t size = strlen(message.content);
+    size_t size = message.content == nullptr ? 0 : strlen(message.content);
     size_t buf_size = size + sizeof(uint32_t) * 2;
     char data[buf_size];
     size_t shift = 0;

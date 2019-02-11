@@ -12,5 +12,5 @@ Message::Message() : Message(0) {}
 Message::Message(uint32_t type) : type(type), content(nullptr) {}
 
 Message::~Message() {
-    delete content;
+    delete [] this->content;
 }

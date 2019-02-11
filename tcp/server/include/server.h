@@ -1,6 +1,9 @@
 #ifndef TCP_SERVER_H
 #define TCP_SERVER_H
 
+#include <vector>
+#include <thread>
+
 #include <csignal>
 #include <cstdint>
 
@@ -12,7 +15,7 @@
 class Server
 {
 public:
-  Server(uint16_t port);
+  explicit Server(uint16_t port);
 
   ~Server();
 
@@ -27,9 +30,11 @@ private:
 
   sockaddr_in cli_addr_;
 
+  std::vector<std::thread*> client_threads_;
+
   volatile std::sig_atomic_t exit_ = 0;
 
-  void ClientLifeCycle();
+  void ClientLifeCycle(int newsockfd);
 };
 
 #endif // TCP_SERVER_H

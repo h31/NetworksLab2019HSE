@@ -42,14 +42,20 @@ void Server::Run()
         {
             perror("ERROR on accept");
         }
+
+        std::thread* new_client_thread = new std::thread(&Server::ClientLifeCycle, this, newsockfd);
+        client_threads_.push_back(new_client_thread);
     }
 }
 
-void Server::ClientLifeCycle() {
-
+void Server::ClientLifeCycle(int newsockfd)
+{
 }
 
 Server::~Server()
 {
+    for (auto thread: client_threads_) {
+        thread -> join();
+    }
     close(sockfd_);
 }

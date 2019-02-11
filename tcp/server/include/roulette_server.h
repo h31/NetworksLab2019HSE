@@ -6,7 +6,7 @@
 #include <atomic>
 #include <map>
 #include <boost/thread/executors/basic_thread_pool.hpp>
-#include "message.h"
+#include "../include/message.h"
 #include "tcp_server.h"
 
 class RouletteServer : public TcpServer {

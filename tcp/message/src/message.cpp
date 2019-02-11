@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <string>
 
-#include "message.h"
+#include "../include/message.h"
 
 Message::Message() : type(UNDEFINED), body() {}
 

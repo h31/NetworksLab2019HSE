@@ -4,7 +4,7 @@
 #include <netinet/in.h>
 #include <thread>
 
-#include "roulette_server.h"
+#include "../include/roulette_server.h"
 
 
 void RouletteServer::StartWorkingWithClient(int sock_fd) {

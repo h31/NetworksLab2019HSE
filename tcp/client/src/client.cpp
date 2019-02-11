@@ -103,8 +103,9 @@ void FileSystemClient::getFilesList() {
         _readInt32(&filesNumber);
         for (uint32_t i = 0; i < filesNumber; i++) {
             _readInt32(&nameSize);
-            char data[nameSize];
+            char data[nameSize + 1];
             _read(data, nameSize);
+            data[nameSize] = '\0';
             std::cout << data << '\n';
         }
     } else if (type == 1) {
@@ -150,7 +151,8 @@ bool FileSystemClient::_sendMessage(Message message) {
 Message FileSystemClient::_getResponse() {
     uint32_t type, size;
     if (FileSystemClient::_readInt32(&type) && FileSystemClient::_readInt32(&size)) {
-        char buf[size];
+        char buf[size + 1];
+        buf[size] = '\0';
         if (size == 0 || !FileSystemClient::_read(buf, size)) {
             return Message();
         } else {

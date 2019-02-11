@@ -58,6 +58,7 @@ class UserTests {
 public:
     struct TestResult {
         std::vector<int> marks = std::vector<int>();
+
         int countFullMark() {
             int res = 0;
             for (int mark: marks) {
@@ -65,16 +66,24 @@ public:
             }
             return res;
         }
+
+        std::string toString() {
+            std::string res = "";
+            for (int i = 0; i < marks.size(); i++) {
+                res += std::to_string(i) + '&' + possibleAnswers[i] + '|';
+            }
+        }
     };
 
-    UserTests(std::string login, TestContainer* container) : login(std::move(login)), container(container) {}
+    UserTests(std::string login, TestContainer *container) : login(std::move(login)), container(container) {}
+
     UserTests() = default;
 
     TestResult getLastResult();
 
-    TestContainer::Question* startTest(std::string testId);
+    TestContainer::Question *startTest(std::string testId);
 
-    TestContainer::Question* answer(int answer);
+    TestContainer::Question *answer(int answer);
 
     bool isCurrentTestFinished();
 
@@ -84,7 +93,7 @@ public:
 
 private:
     std::string currentTestId = "";
-    TestContainer* container;
+    TestContainer *container;
     TestResult curResult = TestResult();
     int curQuestion = -1;
 };

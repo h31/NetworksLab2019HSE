@@ -191,16 +191,14 @@ void Server::ClientWorker::answerRequest(std::string commandCode, std::string bo
             } else {
                 if (tests->isCurrentTestFinished()) {
                     responseStatus = "TN";
-                    responseBody = std::to_string(tests->getLastResult().countFullMark()) + "/" +
-                                   std::to_string(tests->getLastResult().marks.size());
+                    responseBody = tests->getLastResult().toString()
                 } else {
                     responseStatus = "BR";
                 }
             }
         } else if (commandCode == "LAST") {
             responseStatus = "OK";
-            responseBody = std::to_string(tests->getLastResult().countFullMark()) + "/" +
-                           std::to_string(tests->getLastResult().marks.size());
+            responseBody = tests->getLastResult().toString()
 
         } else {
             // unknown commandCode

@@ -62,7 +62,7 @@ void FileSystemClient::uploadFile(const char *destUrl, const char *sourceUrl) {
     _writeInt32ToBuffer(data, static_cast<uint32_t>(destSize), shift);
     _writeToBuffer(data, destUrl, destSize, shift);
     _writeInt32ToBuffer(data, static_cast<uint32_t>(fileSize), shift);
-    _writeToBuffer(data, sourceUrl, fileSize, shift);
+    _writeToBuffer(data, buf, fileSize, shift);
     _write(data, shift);
     Message response = _getResponse();
     if (response.type == 101) {

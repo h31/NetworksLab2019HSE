@@ -18,7 +18,7 @@
 class Server {
     public:
         void start(int);
-        int listenSoket();
+        void listenSoket();
         std::string getRootDirectory();
         Server(std::string);
 

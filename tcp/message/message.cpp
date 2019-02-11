@@ -49,17 +49,24 @@ int Response::GetId() {
 
 
 char* Result::Serialize() const {
-    char* result = new char[sizeof(double)];
-    memcpy(result, &(this->value), sizeof(double));
+    char* result = new char[sizeof(double) + sizeof(int)];
+    memcpy(result, &(this->id), sizeof(int));
+    memcpy(result + sizeof(int), &(this->value), sizeof(double));
     return result;
 }
 
 Result Result::Deserialize(char* bytes) {
     double value;
-    memcpy(&value, bytes, sizeof(double));
+    int id;
+    memcpy(&value, bytes, sizeof(int));
+    memcpy(&value, bytes + sizeof(int), sizeof(double));
     return Result(value);
 }
 
 double Result::GetValue() {
     return this->value;
+}
+
+int Result::GetId() {
+    return this->id;
 }

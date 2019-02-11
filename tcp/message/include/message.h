@@ -66,12 +66,14 @@ class Response
 class Result
 {
   public:
-    Result(double value): value(value){};
+    Result(int id, double value): id(id), value(value){};
     char* Serialize() const;
     static Result Deserialize(char* bytes);
     double GetValue();
+    int GetId();
 
   private:
+    int id;
     double value;
 };
 #endif // TCP_MESSAGE_H

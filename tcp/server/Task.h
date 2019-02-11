@@ -3,6 +3,7 @@
 #include <string>
 #include <dirent.h>
 #include <sys/types.h>
+#include <vector>
 
 enum Tasks_types {
     CD_IN_DIR = 400,

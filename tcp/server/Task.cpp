@@ -26,7 +26,7 @@ void Task::cd_in_dir() {
         send_string(new_path);
     } else {
         int answer = CD_IN_DIR_FAIL;
-        write(socket, &answer, sizeof(int));
+        send_num(answer);
         send_string(directory);
     }
 }
@@ -39,21 +39,21 @@ void Task::get_file_list() {
     }
     int file_number = file_list.size();
     int answer = GET_FILE_LIST_SUCC;
-    write(socket, &file_number, sizeof(int));
-    write(socket, &answer, sizeof(int));
+    send_num(answer);
+    send_num(message_length);
+    send_num(file_number);
     for (auto &i : file_list) {
         send_string(i);
     }
 }
 
 void Task::get_file() {
-    int message_size;
-    read(socket, &message_size, sizeof(int));
+    int message_size = get_num();
     std::string file_name = get_string();
     FILE *fp;
     if((fp = fopen(file_name.c_str(), "w+b")) == NULL) {
         int answer = GET_FILE_FAIL;
-        write(socket, &answer, sizeof(int));
+        send_num(answer);
         send_string(file_name);
         return;
     }
@@ -65,7 +65,7 @@ void Task::get_file() {
     delete[] buf;
     fclose(fp);
     int answer = GET_FILE_SUCC;
-    write(socket, &answer, sizeof(int));
+    send_num(answer);
     send_string(file_name.c_str());
 }
 
@@ -84,24 +84,24 @@ void Task::send_file() {
     char* buf = new char[file_size];
     fread (buf, sizeof(char), file_size, fp);
     int answer = SEND_FILE_SUCC;
-    write(socket, &answer, sizeof(int));
-    write(socket, &file_size, sizeof(int));
+    send_num(answer);
+    send_num(file_size);
     write(socket, buf, file_size);
     delete[] buf;
 }
 
 void Task::send_string(std::string string_to_send) {
     int length = string_to_send.length();
-    write(socket, &length, sizeof(int));
+    send_num(length);
     write(socket, string_to_send.c_str(), length);
 }
 
 std::string Task::get_string() {
-    int length;
-    ssize_t n = read(socket, &length, sizeof(int));
+    int length = get_num();
     std::string buf;
-    while (length > 0) {
-        ssize_t n = read(socket, buffer, sizeof(int));
+    ssize_t n = 1;
+    while (length > 0 && n > 0) {
+        n = get_num();
         length -= n;
         buf += std::string(buffer);
     }
@@ -124,15 +124,23 @@ std::vector<std::string> Task::get_file_list_in_dir() {
     return result;
 }
 
+int Task::get_num() {
+    int num;
+    read(socket, &num, sizeof(int));
+    num = ntohl(num);
+    return num;
+}
+
+void Task::send_num(int num) {
+    num = htonl(num);
+    write(socket, &num, sizeof(int));
+}
+
 void clientWork(int socket, std::string root_dir) {
     std::cout << "hey";
     Task task = Task(socket, std::move(root_dir));
     while (true) {
-        int command;
-        ssize_t n = read(socket, &command, sizeof(int));
-        if (n < -1) {
-            return;
-        }
+        int command = task.get_num();
         switch (command) {
             case CD_IN_DIR:
                 task.cd_in_dir();

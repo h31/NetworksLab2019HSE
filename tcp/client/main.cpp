@@ -108,6 +108,7 @@ int main(int argc, char* argv[]) {
             calculation = new Calculation(operation, arg_left, arg_right);
         }
 
+        cout << "> ";
         send_calculation(calculation, sockfd);
     }
     return 0;

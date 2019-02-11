@@ -66,6 +66,16 @@ void Server::ClientLifeCycle(int newsockfd)
         }
 
         Calculation calculation = Calculation::Deserialize(buf);
+
+        char operation = calculation.GetOperation;
+        if (operation == 's') {
+
+        } else if (operation == '!') {
+
+        } else if (operation == '+' || operation == '-' || operation == '*' || operation == '/'){
+            double result = Server::ProcessOperation(operation, calculation.GetArgLeft, calculation.GetArgRight);
+            
+        }
     }
     delete buf;
 }
@@ -77,4 +87,18 @@ Server::~Server()
         thread.join();
     }
     close(sockfd_);
+}
+
+double Server::ProcessOperation(char operation, int left_arg, int right_arg) {
+    if (operation == '+') {
+        return left_arg + right_arg;
+    } else if (operation == '-') {
+        return left_arg - right_arg;
+    } else if (operation == '*') {
+        return left_arg * right_arg;
+    } else if (operation == '/') {
+        return left_arg / right_arg;
+    }
+
+    return 0;
 }

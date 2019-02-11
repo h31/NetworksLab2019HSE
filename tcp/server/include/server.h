@@ -36,6 +36,10 @@ private:
   volatile std::sig_atomic_t exit_ = 0;
 
   void ClientLifeCycle(int newsockfd);
+
+  static double ProcessOperation(char operation, int left_arg, int right_arg);
+
+  double ProcessLongOperation(char operation, int arg);
 };
 
 #endif // TCP_SERVER_H

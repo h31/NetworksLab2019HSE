@@ -25,7 +25,7 @@ void send_calculation(Calculation* calculation, int sockfd) {
     }
 }
 
-void receive_responses(int sockfd, map<int, Calculation*> &requests) {
+void receive_responses(int sockfd) {
     char buffer[256];
 
     while (true) {
@@ -38,13 +38,12 @@ void receive_responses(int sockfd, map<int, Calculation*> &requests) {
         char operation = result.GetOperation();
         double value = result.GetResult();
 
-        cout << "< ";
         if (operation == 's') {
-            cout << "sqrt " << arg_left << " = " << value << endl;
+            cout << "sqrt " << arg_left << " = " << value << "\n";
         } else if (operation == '!') {
-            cout << arg_left << "! = " << value << endl;
+            cout << arg_left << "! = " << value << "\n";
         } else {
-            cout << arg_left << " " << operation << " "  << arg_right << " = " << value << endl;
+            cout << arg_left << " " << operation << " "  << arg_right << " = " << value << "\n";
         }
     }
 
@@ -88,10 +87,10 @@ int main(int argc, char* argv[]) {
         exit(1);
     }
 
+    cout << "Connection established!" << endl;
     thread t = thread(receive_responses, sockfd);
 
     string s;
-    cout << "> ";
     while (getline(cin, s)) {
         int arg_left, arg_right;
         char operation;
@@ -102,7 +101,7 @@ int main(int argc, char* argv[]) {
             } else if (sscanf(s.c_str(), "sqrt %d", &arg_left) == 1) {
                 calculation = new Calculation('s', arg_left, 0);
             } else {
-                cout << "Invalid input!\n> ";
+                cout << "Invalid input!";
                 continue;
             }
         } else {

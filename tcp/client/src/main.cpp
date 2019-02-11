@@ -4,7 +4,7 @@
 #include <netdb.h>
 #include <memory.h>
 #include <unistd.h>
-#include "client.h"
+#include "../include/client.h"
 
 void usage(char *const *argv) { std::cerr << "Usage: " << argv[0] << " <hostname> <port>\n"; }
 

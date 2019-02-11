@@ -70,7 +70,6 @@ bool Message::GetBody(std::string *body, size_t length, int sockfd) {
 bool Message::Get(char *dst, size_t message_len, int sockfd) {
     for (ssize_t read = ::read(sockfd, dst, message_len); message_len; read = ::read(sockfd, dst, message_len)) {
         if (read <= 0) {
-            std::cerr << strerror(errno) << std::endl;
             return false;
         } else {
             dst += read;

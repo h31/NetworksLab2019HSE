@@ -1,7 +1,7 @@
 #include <netdb.h>
 #include <boost/lockfree/queue.hpp>
 #include <thread>
-#include "client.h"
+#include "../include/client.h"
 
 bool RouletteClient::StartClient(const char *host, uint16_t port_number) {
 

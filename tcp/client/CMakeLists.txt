@@ -6,5 +6,5 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -lboost_system -lboost_date_tim
 
 find_package(Boost REQUIRED COMPONENTS thread)
 
-add_executable(client src/main.cpp src/client.cpp src/client.h)
+add_executable(client src/main.cpp src/client.cpp include/client.h)
 target_link_libraries (client LINK_PUBLIC message ${Boost_LIBRARIES})

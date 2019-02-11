@@ -1,2 +1,2 @@
-add_library (message src/message.cpp src/message.h)
+add_library(message src/message.cpp include/message.h)
 target_include_directories (message PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)

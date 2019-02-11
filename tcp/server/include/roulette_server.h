@@ -14,6 +14,9 @@ class RouletteServer : public TcpServer {
     RouletteServer();
 
     ~RouletteServer();
+
+    bool BanPlayer(const std::string& name);
+
  private:
     class Player {
      public:

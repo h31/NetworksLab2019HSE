@@ -229,6 +229,17 @@ void RouletteServer::DeletePlayer(RouletteServer::Player* player) {
     delete player;
 }
 
+bool RouletteServer::BanPlayer(const std::string& name) {
+    bool result = false;
+    players_mutex_.lock();
+    if (players.count(name)) {
+        close(players[name]->socket_fd);
+        result = true;
+    }
+    players_mutex_.unlock();
+    return result;
+}
+
 int RouletteServer::Player::CalculateProfit(int winning_number) {
     if ((winning_number % 2 == 0 && bet_type == EVEN && winning_number != 0) ||
         (winning_number % 2 == 1 && bet_type == ODD))

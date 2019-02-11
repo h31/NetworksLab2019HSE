@@ -3,12 +3,6 @@
 
 #include <string>
 
-enum MessageType
-{
-    CALCULATION,
-    RESULT
-};
-
 class Calculation
 {
   public:

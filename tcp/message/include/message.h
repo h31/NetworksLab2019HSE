@@ -6,29 +6,7 @@
 enum MessageType
 {
     CALCULATION,
-    RESULT,
-    RESPONSE
-};
-
-class Message
-{
-  public:
-    Message();
-
-    Message(char* data, MessageType& type);
-
-    bool Serialize(int sockfd) const;
-
-    static Message Deserialize(int sockfd);
-
-    MessageType GetMessageType() const;
-
-    char* GetBodyData() const;
-
-  private:
-    MessageType type_;
-    
-    char* body_;
+    RESULT
 };
 
 class Calculation

@@ -6,53 +6,55 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <thread>
-#include <mutex>
 #include <string.h>
 #include <iostream>
 #include <map>
 
 using namespace std;
 
-mutex m;
+
+void send_calculation(Calculation* calculation, int sockfd) {
+    int n;
+    char* serialized = calculation->Serialize();
+    n = write(sockfd, serialized, sizeof(Calculation));
+    delete serialized;
+
+    if (n < 0) {
+        cerr << "ERROR writing to socket\n";
+        exit(1);
+    }
+}
 
 void receive_responses(int sockfd, map<int, Calculation*> &requests) {
     char buffer[256];
 
     while (true) {
         bzero(buffer, 256);
-        read(sockfd, buffer, sizeof(Response));
-        Result result = Result::Deserialize(buffer);
+        read(sockfd, buffer, sizeof(Calculation));
+        Calculation result = Calculation::Deserialize(buffer);
 
-        m.lock();
-        auto it = requests.find(result.GetId());
-        if (it != requests.end()) {
-            int arg_left = it->second->GetArgLeft();
-            int arg_right = it->second->GetArgRight();
-            char operation = it->second->GetOperation();
+        int arg_left = result.GetArgLeft();
+        int arg_right = result.GetArgRight();
+        char operation = result.GetOperation();
+        double value = result.GetResult();
 
-            cout << "< ";
-            if (operation == 's') {
-                cout << "sqrt " << arg_left << " = " << result.GetValue() << endl;
-            } else if (operation == '!') {
-                cout << arg_left << "! = " << result.GetValue() << endl;
-            } else {
-                cout << arg_left << " " << operation << " "  << arg_right << " = " << result.GetValue() << endl;
-            }
+        cout << "< ";
+        if (operation == 's') {
+            cout << "sqrt " << arg_left << " = " << value << endl;
+        } else if (operation == '!') {
+            cout << arg_left << "! = " << value << endl;
+        } else {
+            cout << arg_left << " " << operation << " "  << arg_right << " = " << value << endl;
         }
-        m.unlock();
     }
+
 }
 
 int main(int argc, char* argv[]) {
     int sockfd;
-    int n;
     uint16_t portno;
     struct sockaddr_in serv_addr{};
     struct hostent *server;
-
-    map<int, Calculation*> requests;
-
-    char buffer[256];
 
     if (argc < 3) {
         fprintf(stderr, "usage %s hostname port\n", argv[0]);
@@ -86,7 +88,7 @@ int main(int argc, char* argv[]) {
         exit(1);
     }
 
-    thread t = thread(receive_responses, sockfd, requests);
+    thread t = thread(receive_responses, sockfd);
 
     string s;
     cout << "> ";
@@ -107,32 +109,7 @@ int main(int argc, char* argv[]) {
             calculation = new Calculation(operation, arg_left, arg_right);
         }
 
-        char* serialized = calculation->Serialize();
-        n = write(sockfd, serialized, sizeof(Calculation));
-        delete serialized;
-
-        if (n < 0) {
-            cerr << "ERROR writing to socket\n";
-            exit(1);
-        }
-
-        bzero(buffer, 256);
-        n = read(sockfd, buffer, sizeof(Response));
-
-        if (n < 0) {
-            perror("ERROR reading from socket");
-            exit(1);
-        }
-
-        Response response = Response::Deserialize(buffer);
-
-        m.lock();
-        requests.insert(pair<int, Calculation*>(response.GetId(), calculation));
-        m.unlock();
-
-        cout << calculation->GetArgLeft() << calculation->GetOperation() << calculation->GetArgRight() << endl;
-        delete calculation;
-        cout << "> ";
+        send_calculation(calculation, sockfd);
     }
     return 0;
 }

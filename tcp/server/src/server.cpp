@@ -41,7 +41,6 @@ void Server::listenClient() {
         printLog("Got a client!!!");
         workers.emplace_back(this, clientSockfd);
         auto worker = &workers[workers.size() - 1];
-        worker->vectorPos = workers.size() - 1;
         worker->startThread();
     }
 }
@@ -95,6 +94,16 @@ void Server::ClientWorker::startThread() {
     }
 }
 
+
+void Server::ClientWorker::removeFromVector() {
+    for (auto ptr = server->workers.begin(); ptr < server->workers.end(); ptr++) {
+        if (ptr.base()->tid == tid) {
+            server->workers.erase(ptr);
+            return;
+        }
+    }
+}
+
 void Server::ClientWorker::work() {
     printLog("Client worker started with tid " + std::to_string(tid));
     char buffer[256];
@@ -107,14 +116,14 @@ void Server::ClientWorker::work() {
             exit(1);
         }
         if (n == 0) {
-            server->workers.erase(server->workers.begin() + vectorPos);
+            removeFromVector();
             return;
         }
         for (size_t i = 0; i < n; i++) {
             if (buffer[i] == SPLIT) {
                 bool stopWorking = handleRequest(command);
                 if (stopWorking) {
-                    server->workers.erase(server->workers.begin() + vectorPos);
+                    removeFromVector();
                     return;
                 }
                 command = "";
@@ -124,6 +133,7 @@ void Server::ClientWorker::work() {
         }
     }
 }
+
 
 bool Server::ClientWorker::handleRequest(std::string request) {
     if (request.length() < 5 || request[4] != ' ') {
@@ -214,9 +224,12 @@ void Server::ClientWorker::answerRequest(std::string commandCode, std::string bo
 }
 
 void Server::ClientWorker::stop() {
-    tests->isAuthorized = false;
+    if (tests) {
+        tests->isAuthorized = false;
+    }
     close(clientSockfd);
 }
+
 
 UserTests::TestResult UserTests::getLastResult() {
     return curResult;

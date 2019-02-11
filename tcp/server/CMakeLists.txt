@@ -3,7 +3,7 @@ project(server)
 
 set(CMAKE_CXX_STANDARD 17)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -pthread")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -pthread -std=c++17")
 
 add_executable(server src/main.cpp src/server.cpp include/server.h)
 

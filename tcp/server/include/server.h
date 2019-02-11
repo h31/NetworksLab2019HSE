@@ -126,8 +126,6 @@ private:
 
         std::string login;
 
-        int vectorPos;
-
         void work();
 
         void startThread();
@@ -151,6 +149,8 @@ private:
         bool handleRequest(std::string request);
 
         void answerRequest(std::string commandCode, std::string body);
+
+        void removeFromVector();
     };
 
     static void *listenClientStatic(void *server) {

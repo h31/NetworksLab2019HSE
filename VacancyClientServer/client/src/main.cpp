@@ -1,5 +1,6 @@
 #include <Client.h>
 #include <iostream>
+#include <sstream>
 
 using namespace std;
 
@@ -12,7 +13,17 @@ int main() {
     if (serverAddress.empty()) {
         serverAddress = "127.0.0.1";
     }
-    vacancy::Client client(serverAddress, PORT);
+
+    uint16_t port = PORT;
+    std::cout << "Enter port (or leave empty for " << PORT << ") :> ";
+    std::string input;
+    getline(std::cin, input);
+    if (!input.empty()) {
+        std::istringstream stream( input );
+        stream >> port;
+    }
+
+    vacancy::Client client(serverAddress, port);
     client.run();
     return 0;
 }

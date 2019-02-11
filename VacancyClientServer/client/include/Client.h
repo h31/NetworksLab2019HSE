@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <model.h>
 #include "../../common/include/json.hpp"
 
 namespace vacancy {
@@ -31,30 +32,45 @@ namespace vacancy {
         class AddSpecialityCommand : public Command {
         public:
             void execute(int socket) override;
+
+        private:
+            nlohmann::json sendRequest(int socket, const std::string &speciality) const;
         };
 
 
         class AddVacancyCommand : public Command {
         public:
             void execute(int socket) override;
+
+        private:
+            nlohmann::json sendRequest(int socket, const model::VacancyInfo &vacancyInfo) const;
         };
 
 
         class RemoveVacancyCommand : public Command {
         public:
             void execute(int socket) override;
+
+        private:
+            nlohmann::json sendRequest(int socket, int32_t id) const;
         };
 
 
         class GetSpecialitiesCommand : public Command {
         public:
             void execute(int socket) override;
+
+        private:
+            nlohmann::json sendRequest(int socket) const;
         };
 
 
         class GetVacanciesCommand : public Command {
         public:
             void execute(int socket) override;
+
+        private:
+            nlohmann::json sendRequest(int socket, int32_t specialityId, int32_t age, int32_t salary) const;
         };
 
 

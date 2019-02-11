@@ -2,7 +2,6 @@
 #include <iostream>
 #include <util.h>
 #include <names.h>
-#include <model.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -94,12 +93,17 @@ void vacancy::Client::AddSpecialityCommand::execute(int socket) {
     string speciality;
     cout << "Enter speciality name :> ";
     getline(cin, speciality);
+    json response = sendRequest(socket, speciality);
+    processBadResponse(response);
+    cout << "Speciality successfully added" << endl;
+}
+
+json Client::AddSpecialityCommand::sendRequest(int socket, const string &speciality) const {
     json request;
     request[REQUEST_TYPE] = 1;
     request[SPECIALITY] = speciality;
     auto response = communicate(socket, request);
-    processBadResponse(response);
-    cout << "Speciality successfully added" << endl;
+    return response;
 }
 
 void Client::AddVacancyCommand::execute(int socket) {
@@ -118,30 +122,38 @@ void Client::AddVacancyCommand::execute(int socket) {
     int32_t salary = readInt(false);
     VacancyInfo vacancyInfo(specialityId, company, position, minAge, maxAge, salary);
 
-    json request;
-    request[REQUEST_TYPE] = 2;
-    request[VACANCY] = vacancyInfo;
-    auto response = communicate(socket, request);
+    json response = sendRequest(socket, vacancyInfo);
     processBadResponse(response);
     auto id = response.at(ID).get<int32_t>();
     cout << "Vacancy successfully added. Id: " << id << endl;
 }
 
+json Client::AddVacancyCommand::sendRequest(int socket, const VacancyInfo &vacancyInfo) const {
+    json request;
+    request[REQUEST_TYPE] = 2;
+    request[VACANCY] = vacancyInfo;
+    auto response = communicate(socket, request);
+    return response;
+}
+
 void Client::RemoveVacancyCommand::execute(int socket) {
     cout << "Enter vacancy id :> ";
     int32_t id = readInt(false);
-    json request;
-    request[REQUEST_TYPE] = 3;
-    request[ID] = id;
-    auto response = communicate(socket, request);
+    json response = sendRequest(socket, id);
     processBadResponse(response);
     cout << "Vacancy successfully removed" << endl;
 }
 
-void Client::GetSpecialitiesCommand::execute(int socket) {
+json Client::RemoveVacancyCommand::sendRequest(int socket, int32_t id) const {
     json request;
-    request[REQUEST_TYPE] = 4;
+    request[REQUEST_TYPE] = 3;
+    request[ID] = id;
     auto response = communicate(socket, request);
+    return response;
+}
+
+void Client::GetSpecialitiesCommand::execute(int socket) {
+    json response = sendRequest(socket);
     processBadResponse(response);
     json jsonInfos = response.at(SPECIALITIES);
     if (jsonInfos.empty()) {
@@ -154,6 +166,13 @@ void Client::GetSpecialitiesCommand::execute(int socket) {
     }
 }
 
+json Client::GetSpecialitiesCommand::sendRequest(int socket) const {
+    json request;
+    request[REQUEST_TYPE] = 4;
+    auto response = communicate(socket, request);
+    return response;
+}
+
 void Client::GetVacanciesCommand::execute(int socket) {
     cout << "Enter speciality id (or leave empty) :> ";
     int32_t specialityId = readInt(true);
@@ -161,12 +180,7 @@ void Client::GetVacanciesCommand::execute(int socket) {
     int32_t age = readInt(true);
     cout << "Enter salary (or leave empty) :> ";
     int32_t salary = readInt(true);
-    json request;
-    request[SPECIALITY_ID] = specialityId;
-    request[REQUEST_TYPE] = 5;
-    request[AGE] = age;
-    request[SALARY] = salary;
-    auto response = communicate(socket, request);
+    json response = sendRequest(socket, specialityId, age, salary);
     processBadResponse(response);
     json jsonInfos = response.at(VACANCIES);
     if (jsonInfos.empty()) {
@@ -181,6 +195,16 @@ void Client::GetVacanciesCommand::execute(int socket) {
             cout << "Salary: " << info.salary << endl << endl;
         }
     }
+}
+
+json Client::GetVacanciesCommand::sendRequest(int socket, int32_t specialityId, int32_t age, int32_t salary) const {
+    json request;
+    request[SPECIALITY_ID] = specialityId;
+    request[REQUEST_TYPE] = 5;
+    request[AGE] = age;
+    request[SALARY] = salary;
+    auto response = communicate(socket, request);
+    return response;
 }
 
 int32_t vacancy::readInt(bool withDefault) {

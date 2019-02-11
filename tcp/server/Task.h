@@ -16,7 +16,8 @@ enum Tasks_types {
     GET_FILE_FAIL = 102,
     SEND_FILE = 200,
     SEND_FILE_SUCC = 201,
-    SEND_FILE_FAIL = 202
+    SEND_FILE_FAIL = 202,
+    UNKNOWN_REQUEST = 1,
 };
 
 class Task {
@@ -30,14 +31,16 @@ class Task {
 
         Task(int socket, std::string);
 
+        class TaskException{};
+
     private:
         std::string directory;
         std::string root_directory;
-        char buffer[256];
         int socket;
         std::string get_string();
         void send_string(std::string);
         std::vector<std::string> get_file_list_in_dir();
+        void terminate();
 };
 
 void clientWork(int, std::string);

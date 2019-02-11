@@ -16,19 +16,24 @@ Task::Task(int socket, std::string root_directory) {
 }
 
 void Task::cd_in_dir() {
-    std::regex short_path(".*\\/\\.\\.");
+    std::regex short_path("/[^/]*\\/\\.\\.");
     std::string path = get_string();
     std::string new_path = std::regex_replace(this->directory + path, short_path, "");
     if (new_path[new_path.size() - 1] != '/') {
         new_path.push_back('/');
     }
-    if (new_path.length() >= root_directory.length() && strncmp(new_path.c_str(), root_directory.c_str(), root_directory.length()) == 0) {
+    if (new_path.length() >= root_directory.length() &&
+        strncmp(new_path.c_str(), root_directory.c_str(), root_directory.length()) == 0
+            && opendir(new_path.c_str())) {
         directory = new_path;
         send_num(CD_IN_DIR_SUCC);
+        if (new_path == root_directory) {
+            send_string("/");
+        }
         send_string(directory.substr(root_directory.size(), directory.size() - root_directory.size()));
     } else {
         send_num(CD_IN_DIR_FAIL);
-        send_string(directory.substr(root_directory.size(), directory.size() - root_directory.size()));
+        send_string(directory.substr(root_directory.size(), directory.size() - root_directory.size()) + path);
     }
 }
 
@@ -98,10 +103,13 @@ void Task::send_string(std::string string_to_send) {
 std::string Task::get_string() {
     int length = get_num();
     char* buf = new char[length + 1];
-    read(socket, buf, length);
+    int n = read(socket, buf, length);
     buf[length] = '\0';
     std::string ans(buf);
     delete[] buf;
+    if (n < 0) {
+        terminate();
+    }
     return ans;
 }
 
@@ -123,7 +131,10 @@ std::vector<std::string> Task::get_file_list_in_dir() {
 
 int Task::get_num() {
     int num;
-    read(socket, &num, sizeof(int));
+    int n = read(socket, &num, sizeof(int));
+    if (n < 0) {
+        terminate();
+    }
     return ntohl(num);
 }
 
@@ -132,26 +143,39 @@ void Task::send_num(int num) {
     write(socket, &num, sizeof(int));
 }
 
+void Task::terminate() {
+    close(socket);
+    socket = NULL;
+    throw TaskException();
+}
+
 void clientWork(int socket, std::string root_dir) {
     std::cout << "hey";
     Task task = Task(socket, std::move(root_dir));
-    while (true) {
-        int command = task.get_num();
-        switch (command) {
-            case CD_IN_DIR:
-                task.cd_in_dir();
-                break;
-            case GET_FILE_LIST:
-                task.get_file_list();
-                break;
-            case GET_FILE:
-                task.get_file();
-                break;
-            case SEND_FILE:
-                task.send_file();
-                break;
-            default:
-                return;
+    try {
+        while (true) {
+            int command = task.get_num();
+            switch (command) {
+                case CD_IN_DIR:
+                    task.cd_in_dir();
+                    break;
+                case GET_FILE_LIST:
+                    task.get_file_list();
+                    break;
+                case GET_FILE:
+                    task.get_file();
+                    break;
+                case SEND_FILE:
+                    task.send_file();
+                    break;
+                default:
+                    task.send_num(UNKNOWN_REQUEST);
+                    task.send_num(sizeof(int));
+                    task.send_num(command);
+                    break;
+            }
         }
+    } catch (Task::TaskException e) {
+        return;
     }
 }

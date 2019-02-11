@@ -2,11 +2,11 @@
 #include "Server.h"
 
 int main(int argc, char* argv[]) {
-    if (argc < 2) {
+    if (argc < 3) {
         return 1;
     }
     std::string root_dir = std::string(argv[1]);
     Server server(root_dir);
-    server.start(5058);
+    server.start(std::stoi(argv[2]));
     server.listenSoket();
 }

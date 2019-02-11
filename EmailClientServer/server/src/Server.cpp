@@ -88,7 +88,7 @@ void Server::Worker::operator()() {
 void Server::Worker::visitSendEmailRequest(const SendEmailRequest *request) {
     const Email &email = request->getEmail();
     uint32_t id = server.idCounter++;
-    EmailWithInfo emailWithInfo(id, email);
+    EmailWithId emailWithInfo(id, email);
     server.emails[id] = emailWithInfo;
     auto responseBody = make_shared<EmptyResponseBody>();
     sendResponse(socket, make_unique<Response>(responseBody));
@@ -118,7 +118,7 @@ void Server::Worker::visitGetEmailRequest(const GetEmailRequest *request) {
         if (id >= allEmails) {
             throw ERROR_MESSAGE;
         }
-        EmailWithInfo &info = server.emails[id];
+        EmailWithId &info = server.emails[id];
         auto &email = info.getEmail();
         if (email.getAuthor() != request->getAuthor()) {
             throw ERROR_MESSAGE;

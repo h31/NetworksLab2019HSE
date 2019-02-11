@@ -3,16 +3,16 @@
 
 #include <model/model.h>
 
-class EmailWithInfo {
+class EmailWithId {
 private:
     uint32_t id;
     model::Email email;
     bool checked;
 
 public:
-    EmailWithInfo() = default;
+    EmailWithId() = default;
 
-    EmailWithInfo(uint32_t id, const model::Email &email);
+    EmailWithId(uint32_t id, const model::Email &email);
 
     const uint32_t getId() const;
 
@@ -20,8 +20,8 @@ public:
 
     model::EmailInfo getInfo() const;
 
-    bool operator == (const EmailWithInfo &other) const;
-    bool operator < (const EmailWithInfo &other) const;
+    bool operator == (const EmailWithId &other) const;
+    bool operator < (const EmailWithId &other) const;
 
     void checkEmail();
 

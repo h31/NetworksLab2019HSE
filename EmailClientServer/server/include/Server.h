@@ -7,14 +7,14 @@
 #include <atomic>
 #include <thread>
 #include <set>
-#include "EmailWithInfo.h"
+#include "EmailWithId.h"
 
 class Server {
 private:
     uint16_t port;
     std::atomic_uint32_t clientIdCounter;
     std::atomic_uint32_t idCounter;
-    tbb::concurrent_unordered_map<uint32_t, EmailWithInfo> emails;
+    tbb::concurrent_unordered_map<uint32_t, EmailWithId> emails;
     std::set<int> sockets;
 public:
     explicit Server(uint16_t port);

@@ -7,8 +7,6 @@
 
 #include <string.h>
 
-#include "../../tcp/message/src/message.h"
-
 int main(int argc, char *argv[]) {
     int sockfd, newsockfd;
     uint16_t portno;
@@ -27,7 +25,7 @@ int main(int argc, char *argv[]) {
 
     /* Initialize socket structure */
     bzero((char *) &serv_addr, sizeof(serv_addr));
-    portno = 10239;
+    portno = 5001;
 
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;
@@ -54,26 +52,24 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
+    /* If connection is established then start communicating */
+    bzero(buffer, 256);
+    n = read(newsockfd, buffer, 255); // recv on Windows
 
-    Message m = Message::Read(newsockfd);
-
-    if (m.type == Message::UNDEFINED) {
+    if (n < 0) {
         perror("ERROR reading from socket");
         exit(1);
     }
 
-    printf("Message: {type = %zu, length = %zu, message = %s}\n", static_cast<size_t>(m.type),
-           m.body.size(), m.body.c_str());
+    printf("Here is the message: %s\n", buffer);
 
     /* Write a response to the client */
-    bool b = Message(Message::SUCCESS, "I got your message").Write(newsockfd);
+    n = write(newsockfd, "I got your message", 18); // send on Windows
 
-    if (!b) {
+    if (n < 0) {
         perror("ERROR writing to socket");
         exit(1);
     }
 
-    close(sockfd);
-    close(newsockfd);
     return 0;
 }

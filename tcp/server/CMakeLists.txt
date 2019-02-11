@@ -1,7 +1,6 @@
-cmake_minimum_required(VERSION 2.8)
-project(server_linux)
+cmake_minimum_required(VERSION 3.13)
+project(Networks)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
+set(CMAKE_CXX_STANDARD 14)
 
-set(SOURCE_FILES main.c)
-add_executable(server_linux ${SOURCE_FILES})
+add_executable(Networks main.cpp Task.cpp Task.h Server.cpp Server.h)

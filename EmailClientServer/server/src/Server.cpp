@@ -124,7 +124,7 @@ void Server::Worker::visitGetEmailRequest(const GetEmailRequest *request) {
         }
         EmailWithId &info = server.emails[id];
         auto &email = info.getEmail();
-        if (email.getAuthor() != request->getAuthor()) {
+        if (email.getRecipient() != request->getAuthor()) {
             throw ERROR_MESSAGE;
         }
         info.checkEmail();

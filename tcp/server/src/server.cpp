@@ -83,8 +83,12 @@ void Server::ClientLifeCycle(int newsockfd)
         }
     }
 
-    shutdown(newsockfd, SHUT_RD);
-    close(newsockfd);
+    try {
+        shutdown(newsockfd, SHUT_RD);
+        close(newsockfd);
+    } catch (...) {
+        // Nothing to do here
+    }
 
     delete buf;
 }
@@ -118,7 +122,7 @@ double Server::ProcessOperation(char operation, int left_arg, int right_arg)
     }
     else if (operation == '/')
     {
-        return left_arg / right_arg;
+        return (1.0 * left_arg) / right_arg;
     }
 
     return 0;

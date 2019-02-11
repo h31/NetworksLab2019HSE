@@ -104,13 +104,13 @@
 
 ### Список тестов
 
-test_id1&test_name1|test_id1&test_name1|...
+test_id1&test_name1|test_id1&test_name1|
 
 ### Задание
 
-number&text
+text&number1 answer1|number2 answer2|
 
 ### Результат теста
 
-number1&mark1|number2&mark2|...
+number1&mark1|number2&mark2|
 

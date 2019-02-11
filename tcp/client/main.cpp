@@ -25,7 +25,7 @@ void send_calculation(Calculation* calculation, int sockfd) {
     }
 }
 
-void receive_responses(int sockfd, map<int, Calculation*> &requests) {
+void receive_responses(int sockfd) {
     char buffer[256];
 
     while (true) {
@@ -38,7 +38,7 @@ void receive_responses(int sockfd, map<int, Calculation*> &requests) {
         char operation = result.GetOperation();
         double value = result.GetResult();
 
-        cout << "< ";
+        cout << "\b\b< ";
         if (operation == 's') {
             cout << "sqrt " << arg_left << " = " << value << endl;
         } else if (operation == '!') {
@@ -46,6 +46,7 @@ void receive_responses(int sockfd, map<int, Calculation*> &requests) {
         } else {
             cout << arg_left << " " << operation << " "  << arg_right << " = " << value << endl;
         }
+        cout << "> ";
     }
 
 }
@@ -109,6 +110,7 @@ int main(int argc, char* argv[]) {
             calculation = new Calculation(operation, arg_left, arg_right);
         }
 
+        cout << "> ";
         send_calculation(calculation, sockfd);
     }
     return 0;

@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
     }
 
     uint16_t port_number = static_cast<uint16_t>(std::stoi(argv[2]));
-    FileSystemClient fileSystemClient = FileSystemClient(argv[1], 5053);
+    FileSystemClient fileSystemClient = FileSystemClient(argv[1], port_number);
     std::string line;
     char dest[256], src[256];
     while (true) {

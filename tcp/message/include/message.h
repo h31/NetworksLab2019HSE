@@ -20,6 +20,7 @@ class Calculation
     char GetOperation();
     double GetResult();
 
+    void SetResult(double result);
   private:
     char operation;
     int arg_left, arg_right;

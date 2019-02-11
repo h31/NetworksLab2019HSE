@@ -37,3 +37,7 @@ int Calculation::GetArgRight() {
 double Calculation::GetResult() {
     return this->result;
 }
+
+void Calculation::SetResult(double result) {
+    this->result = result;
+}

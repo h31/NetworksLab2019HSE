@@ -35,8 +35,6 @@ int Client::openSocket() {
     ssize_t valread;
     struct sockaddr_in serv_addr;
 
-    std::string hello = "Hello from client ";
-
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         printf("\n Socket creation error \n");
         return -1;

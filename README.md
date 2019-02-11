@@ -72,3 +72,8 @@
 
         type: 402
         content: char[] destination url
+
+- Сообщение о неизвестном типе запроса
+
+      type: 1
+      content: int type

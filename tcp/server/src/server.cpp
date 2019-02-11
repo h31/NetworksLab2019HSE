@@ -1,5 +1,5 @@
 #include "../include/server.h"
-#include "../../message/include/message.h";
+#include "../../message/include/message.h"
 
 #include <cmath>
 #include <stdio.h>
@@ -48,11 +48,6 @@ void Server::Run()
 
         client_threads_.emplace_back(&Server::ClientLifeCycle, this, newsockfd);
     }
-}
-
-void Server::SignalStop(int signum)
-{
-    Stop();
 }
 
 void Server::Stop()

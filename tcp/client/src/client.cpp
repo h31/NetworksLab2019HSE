@@ -34,9 +34,10 @@ FileSystemClient::FileSystemClient(const char *host, uint16_t port_number) {
 
     /* Now connect to the server */
     if (connect(_sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-        std::cerr << "ERROR connecting";
+        std::cerr << "ERROR connecting\n";
         exit(1);
     }
+    std::cout << "Connection established\n";
 }
 
 void FileSystemClient::uploadFile(const char *destUrl, const char *sourceUrl) {

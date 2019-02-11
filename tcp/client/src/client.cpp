@@ -34,20 +34,32 @@ FileSystemClient::FileSystemClient(const char *host, uint16_t port_number) {
 
     /* Now connect to the server */
     if (connect(_sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-        std::cerr << "ERROR connecting";
+        std::cerr << "ERROR connecting\n";
         exit(1);
     }
+    std::cout << "Connection established\n";
 }
 
 void FileSystemClient::uploadFile(const char *destUrl, const char *sourceUrl) {
+    // Reading file
+    FILE *fp = fopen(sourceUrl, "rb");
+    if (fp == nullptr) {
+        std::cout << "File not found: " << sourceUrl << '\n';
+        return;
+    }
+    fseek(fp, 0, SEEK_END);
+    auto fileSize = static_cast<size_t>(ftell(fp));
+    rewind(fp);
+    char buf[fileSize];
+    fread(buf, 1, fileSize, fp);
+    // filling content
     size_t destSize = strlen(destUrl);
-    size_t sourceSize = strlen(sourceUrl);
-    char data[destSize + sourceSize + 2 * sizeof(uint32_t)];
+    char data[destSize + fileSize + 2 * sizeof(uint32_t)];
     size_t shift = 0;
     _writeInt32ToBuffer(data, static_cast<uint32_t>(destSize), shift);
     _writeToBuffer(data, destUrl, destSize, shift);
-    _writeInt32ToBuffer(data, static_cast<uint32_t>(sourceSize), shift);
-    _writeToBuffer(data, sourceUrl, sourceSize, shift);
+    _writeInt32ToBuffer(data, static_cast<uint32_t>(fileSize), shift);
+    _writeToBuffer(data, sourceUrl, fileSize, shift);
     Message message = Message(100, data);
     _sendMessage(message);
     Message response = _getResponse();
@@ -145,7 +157,12 @@ Message FileSystemClient::_getResponse() {
 }
 
 bool FileSystemClient::_saveFile(const char *content, size_t size, const char *dest) {
-    return false;
+    FILE *fp = fopen(dest, "w+b");
+    if (fp == nullptr) {
+        return false;
+    }
+    fwrite(content, sizeof(char), size, fp);
+    return true;
 }
 
 void FileSystemClient::processUnknownResponse(Message message) {

@@ -5,18 +5,16 @@
 class Client {
 
   public:
-    Client(std::string host_name, int port_number);
+    Client(char* host_name, int port_number);
 
     bool connect();
     bool sendRequest();
     void getResponse();
 
   private:
-    std::string host_name;
+    const char* host_name;
     int port_number;
     int sockfd;
-    struct sockaddr_in serv_addr;
-    struct hostent *server;
     char buffer[256];
     void addUser();
     void sendMoney();

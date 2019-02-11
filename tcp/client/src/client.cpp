@@ -1,3 +1,5 @@
+#include <utility>
+
 #include "client.h"
 
 #include <iostream>
@@ -10,7 +12,7 @@
 #include <string.h>
 
 
-Client::Client(std::string host_name, int port_number){
+Client::Client(char* host_name, int port_number){
 	this->host_name = host_name;
 	this->port_number = port_number;
 }
@@ -22,22 +24,27 @@ bool Client::connect(){
         return false;
     }
 
-    server = gethostbyname(host_name.c_str());
+    struct hostent *server = gethostbyname(host_name);
 
-    if (server == NULL) {
+    if (server == nullptr) {
         return false;
     }
 
+    struct sockaddr_in serv_addr{};
     bzero((char *) &serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     bcopy(server->h_addr, (char *) &serv_addr.sin_addr.s_addr, (size_t) server->h_length);
     serv_addr.sin_port = htons(port_number);
+    if (::connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+        perror("ERROR connecting");
+        exit(1);
+    }
     return true;
 }
 
 
 bool Client::sendRequest(){
-    std::cout << "0 -- add user\n 1 -- get all wallets\n2 -- sent to user\n3 -- ask from user\n"
+    std::cout << "0 -- add user\n1 -- get all wallets\n2 -- sent to user\n3 -- ask from user\n"
          << "4 -- confirm sent request\n5 -- check money\n6 -- check sent requests\n7 -- disconnect\n\n Enter message type: ";
 
     int32_t message_type;
@@ -74,7 +81,7 @@ bool Client::sendRequest(){
             return false;
     } 
 
-    size_t n = write(sockfd, buffer, strlen(buffer));
+    ssize_t n = write(sockfd, buffer, strlen(buffer));
 
     if (n < 0) {
         perror("ERROR writing to socket");
@@ -85,7 +92,7 @@ bool Client::sendRequest(){
 
 void Client::getResponse() {
     bzero(buffer, 256);
-    int n = read(sockfd, buffer, 255);
+    ssize_t n = read(sockfd, buffer, 255);
 
     if (n < 0) {
         perror("ERROR reading from socket");

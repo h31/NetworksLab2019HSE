@@ -9,3 +9,5 @@ target_link_libraries(${PROJECT_NAME} EmailCommon ${TBB_IMPORTED_TARGETS})
 target_include_directories(${PROJECT_NAME}
     PUBLIC ${PROJECT_SOURCE_DIR}/include
 )
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE DEBUG_MODE)

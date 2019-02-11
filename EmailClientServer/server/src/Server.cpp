@@ -56,7 +56,9 @@ void Server::runServer() {
             continue;
         }
         uint32_t clientId = clientIdCounter++;
+#ifdef DEBUG_MODE
         cout << "Client " << clientId << " connected" << endl;
+#endif
         sockets.insert(clientSocket);
         Worker worker(clientSocket, clientId, *this);
         thread thr(worker);
@@ -103,7 +105,9 @@ void Server::Worker::visitCheckEmailRequest(const CheckEmailRequest *request) {
             uncheckedEmails.push_back(info.getInfo());
         }
     }
+#ifdef DEBUG_MODE
     cout << uncheckedEmails.size() << endl;
+#endif
     auto responseBody = make_shared<EmailInfosResponseBody>(uncheckedEmails);
     sendResponse(socket, make_unique<Response>(responseBody));
 }

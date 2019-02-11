@@ -4,7 +4,6 @@
 
 void server::client_accept_cycle(int server_socket_fd) {
     while (true) {
-        std::vector<int> clients_sockets;
         struct sockaddr_in client_address{};
 
         unsigned int clilen = sizeof(client_address);
@@ -15,7 +14,7 @@ void server::client_accept_cycle(int server_socket_fd) {
             clients.push_back(client_thread);
         } else {
             for (int client_socket : clients_sockets) {
-                close(client_socket);
+                shutdown(client_socket, SHUT_RDWR);
             }
             break;
         }
@@ -71,11 +70,15 @@ void server::request_response_cycle(int client_socket_fd) {
             }
         }
     } catch (...) {
-        close(client_socket_fd);
+        shutdown(client_socket_fd, SHUT_RDWR);
     }
 }
 
 server::server(uint16_t port) : PORT(port) {}
+
+server::~server() {
+    stop();
+}
 
 void server::start() {
     server_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -98,7 +101,12 @@ void server::start() {
 }
 
 void server::stop() {
-    close(server_socket_fd);
+    if (server_socket_fd < 0) {
+        return;
+    }
+
+    shutdown(server_socket_fd, SHUT_RDWR);
+    server_socket_fd = -1;
     main_thread->join();
     for (auto client : clients) {
         client->join();

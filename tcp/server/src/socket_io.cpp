@@ -4,14 +4,14 @@
 void socket_io::read_bytes(char *bytes, size_t amount) {
     bzero(bytes, amount);
     ssize_t result = read(socket_fd, bytes, amount);
-    if (result < 0) {
+    if (result <= 0) {
         throw socket_reading_exception();
     }
 }
 
 void socket_io::write_bytes(const char *bytes, size_t amount) {
     ssize_t result = write(socket_fd, bytes, amount);
-    if (result < 0) {
+    if (result <= 0) {
         throw socket_writing_exception();
     }
 }

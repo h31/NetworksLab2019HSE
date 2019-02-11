@@ -23,6 +23,7 @@ class server {
         int server_socket_fd;
         boost::thread *main_thread = nullptr;
         std::vector<boost::thread *> clients;
+        std::vector<int> clients_sockets;
         std::vector<product> products;
         boost::shared_mutex products_access;
 
@@ -32,6 +33,8 @@ class server {
 
     public:
         explicit server(uint16_t port);
+
+        ~server();
 
         void start();
 

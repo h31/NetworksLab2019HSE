@@ -113,7 +113,7 @@ void Server::Worker::visitCheckEmailRequest(const CheckEmailRequest *request) {
 }
 
 void Server::Worker::visitGetEmailRequest(const GetEmailRequest *request) {
-#define ERROR_MESSAGE "Email was not founded"
+#define ERROR_MESSAGE "Email was not found"
 
     shared_ptr<ResponseBody> responseBody;
     try {

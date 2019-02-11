@@ -77,16 +77,16 @@ void FileSystemClient::downloadFile(const char *sourceUrl) {
     _sendMessage(message);
     Message response = _getResponse();
     if (response.type == 201) {
-        std::cout << "Enter file location:";
+        std::cout << "Enter file location:\n";
         std::string filename;
         getline(std::cin, filename);
         if (_saveFile(response.content, strlen(response.content), filename.data())) {
-            std::cout << "File " << filename << " was successfully saved";
+            std::cout << "File " << filename << " was successfully saved" << '\n';
         } else {
-            std::cout << "Error while saving file: " << filename;
+            std::cout << "Error while saving file: " << filename << '\n';
         };
     } else if (response.type == 202) {
-
+        std::cout << "Could not download file: " << response.content << '\n';
     } else {
         processUnknownResponse(response);
     }
@@ -107,6 +107,10 @@ void FileSystemClient::getFilesList() {
             _read(data, nameSize);
             std::cout << data << '\n';
         }
+    } else if (type == 1) {
+        uint32_t code;
+        _readInt32(&code);
+        std::cerr << "Illegal server request type " << code << "\n";
     } else {
         std::cout << "Unknown response code " <<  type << '\n';
     }
@@ -166,7 +170,11 @@ bool FileSystemClient::_saveFile(const char *content, size_t size, const char *d
 }
 
 void FileSystemClient::processUnknownResponse(Message message) {
-    std::cout << "Unknown response code " <<  message.type << '\n';
+    if (message.type == 1) {
+        std::cerr << "Illegal server request type " << message.content << "\n";
+    } else {
+        std::cout << "Unknown response code " <<  message.type << '\n';
+    }
 }
 
 /* WRITING */

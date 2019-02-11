@@ -139,7 +139,6 @@ private:
         }
 
         ~ClientWorker() {
-            std::cout << "Closing socket from client worker with tid " << tid << std::endl;
             stop();
         }
 
@@ -164,7 +163,7 @@ private:
     int sockfd;
     struct sockaddr_in serv_addr;
     pthread_t serverThreadId;
-    std::vector<ClientWorker> workers;
+    std::vector<ClientWorker*> workers;
     std::map<std::string, UserTests> users;
     TestContainer testContainer = TestContainer();
 };

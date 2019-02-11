@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
     if (argc == 2) {
         port = static_cast<uint16_t>(std::stoi(std::string(argv[1])));
     } else {
-        port = 8882;
+        port = 8881;
     }
     server = new Server(port);
 

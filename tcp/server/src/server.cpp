@@ -10,7 +10,7 @@ void printLog(const std::string &s) {
 
 Server::Server(uint16_t port) {
     printLog("Starting server on port " + std::to_string(port));
-    workers = std::vector<ClientWorker>();
+    workers = std::vector<ClientWorker *>();
     users = std::map<std::string, UserTests>();
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     bzero((char *) &serv_addr, sizeof(serv_addr));
@@ -39,8 +39,8 @@ void Server::listenClient() {
             exit(1);
         }
         printLog("Got a client!!!");
-        workers.emplace_back(this, clientSockfd);
-        auto worker = &workers[workers.size() - 1];
+        ClientWorker *worker = new ClientWorker(this, clientSockfd);
+        workers.push_back(worker);
         worker->startThread();
     }
 }
@@ -60,7 +60,7 @@ void Server::start() {
 
 void Server::stop() {
     for (auto worker: workers) {
-        worker.stop();
+        worker->stop();
     }
     close(sockfd);
 }
@@ -73,8 +73,8 @@ bool Server::kickClient(std::string login) {
 std::vector<std::string> Server::getUsers() {
     std::vector<std::string> res = std::vector<std::string>();
     for (auto worker: workers) {
-        if (worker.login != "") {
-            res.push_back(worker.login);
+        if (worker->login != "") {
+            res.push_back(worker->login);
         }
     }
     return res;
@@ -97,8 +97,9 @@ void Server::ClientWorker::startThread() {
 
 void Server::ClientWorker::removeFromVector() {
     for (auto ptr = server->workers.begin(); ptr < server->workers.end(); ptr++) {
-        if (ptr.base()->tid == tid) {
+        if ((*ptr.base())->tid == tid) {
             server->workers.erase(ptr);
+            delete(this);
             return;
         }
     }
@@ -110,7 +111,7 @@ void Server::ClientWorker::work() {
     while (true) {
         std::string command = "";
         bzero(buffer, 256);
-        size_t n = static_cast<size_t>(read(clientSockfd, buffer, 255));
+        ssize_t n = read(clientSockfd, buffer, 255);
         if (n < 0) {
             perror("ERROR reading from socket");
             exit(1);
@@ -119,7 +120,7 @@ void Server::ClientWorker::work() {
             removeFromVector();
             return;
         }
-        for (size_t i = 0; i < n; i++) {
+        for (ssize_t i = 0; i < n; i++) {
             if (buffer[i] == SPLIT) {
                 bool stopWorking = handleRequest(command);
                 if (stopWorking) {
@@ -224,6 +225,7 @@ void Server::ClientWorker::answerRequest(std::string commandCode, std::string bo
 }
 
 void Server::ClientWorker::stop() {
+    std::cout << "Closing socket from client worker with tid " << tid << std::endl;
     if (tests) {
         tests->isAuthorized = false;
     }
@@ -256,7 +258,7 @@ TestContainer::Question *UserTests::answer(int answer) {
         curQuestion = -1;
         return NULL;
     } else {
-       return &container->tests[currentTestId].questions[curQuestion];
+        return &container->tests[currentTestId].questions[curQuestion];
     }
 }
 

@@ -1,7 +1,6 @@
-cmake_minimum_required(VERSION 2.8)
-project(client_linux)
+cmake_minimum_required(VERSION 3.13)
+project(client)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
+set(CMAKE_CXX_STANDARD 17)
 
-set(SOURCE_FILES main.c)
-add_executable(client_linux ${SOURCE_FILES})
+add_executable(client src/main.cpp src/client.cpp src/client.h src/message.cpp src/message.h)

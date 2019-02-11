@@ -54,14 +54,16 @@ void FileSystemClient::uploadFile(const char *destUrl, const char *sourceUrl) {
     fread(buf, 1, fileSize, fp);
     // filling content
     size_t destSize = strlen(destUrl);
-    char data[destSize + fileSize + 2 * sizeof(uint32_t)];
+    size_t size = destSize + fileSize + 2 * sizeof(uint32_t);
+    char data[size + 2 * sizeof(uint32_t)];
     size_t shift = 0;
+    _writeInt32ToBuffer(data, static_cast<uint32_t>(100), shift);
+    _writeInt32ToBuffer(data, static_cast<uint32_t>(size), shift);
     _writeInt32ToBuffer(data, static_cast<uint32_t>(destSize), shift);
     _writeToBuffer(data, destUrl, destSize, shift);
     _writeInt32ToBuffer(data, static_cast<uint32_t>(fileSize), shift);
     _writeToBuffer(data, sourceUrl, fileSize, shift);
-    Message message = Message(100, data);
-    _sendMessage(message);
+    _write(data, shift);
     Message response = _getResponse();
     if (response.type == 101) {
         std::cout << "File was uploaded: " << response.content << '\n';

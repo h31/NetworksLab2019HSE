@@ -5,23 +5,52 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <unistd.h>
-
+#include <thread>
+#include <mutex>
 #include <string.h>
 #include <iostream>
+#include <map>
 
 using namespace std;
 
-int sockfd;
+mutex m;
 
-void close_connection (int s) {
+void receive_responses(int sockfd, map<int, Calculation*> &requests) {
+    char buffer[256];
 
+    while (true) {
+        bzero(buffer, 256);
+        read(sockfd, buffer, sizeof(Response));
+        Result result = Result::Deserialize(buffer);
+
+        m.lock();
+        auto it = requests.find(result.GetId());
+        if (it != requests.end()) {
+            int arg_left = it->second->GetArgLeft();
+            int arg_right = it->second->GetArgRight();
+            char operation = it->second->GetOperation();
+
+            cout << "< ";
+            if (operation == 's') {
+                cout << "sqrt " << arg_left << " = " << result.GetValue() << endl;
+            } else if (operation == '!') {
+                cout << arg_left << "! = " << result.GetValue() << endl;
+            } else {
+                cout << arg_left << " " << operation << " "  << arg_right << " = " << result.GetValue() << endl;
+            }
+        }
+        m.unlock();
+    }
 }
 
 int main(int argc, char* argv[]) {
+    int sockfd;
     int n;
     uint16_t portno;
     struct sockaddr_in serv_addr{};
     struct hostent *server;
+
+    map<int, Calculation*> requests;
 
     char buffer[256];
 
@@ -32,7 +61,7 @@ int main(int argc, char* argv[]) {
 
     portno = (uint16_t) atoi(argv[2]);
 
-    /* Create a socket point */
+
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
     if (sockfd < 0) {
@@ -52,19 +81,16 @@ int main(int argc, char* argv[]) {
     bcopy(server->h_addr, (char *) &serv_addr.sin_addr.s_addr, (size_t) server->h_length);
     serv_addr.sin_port = htons(portno);
 
-    /* Now connect to the server */
     if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
         perror("ERROR connecting");
         exit(1);
     }
 
-    /* Now ask for a message from the user, this message
-       * will be read by server
-    */
+    thread t = thread(receive_responses, sockfd, requests);
 
     string s;
-    printf("> ");
-    while (cin >> s) {
+    cout << "> ";
+    while (getline(cin, s)) {
         int arg_left, arg_right;
         char operation;
         Calculation* calculation;
@@ -74,32 +100,39 @@ int main(int argc, char* argv[]) {
             } else if (sscanf(s.c_str(), "sqrt %d", &arg_left) == 1) {
                 calculation = new Calculation('s', arg_left, 0);
             } else {
-                printf("Invalid input!\n");
+                cout << "Invalid input!\n> ";
                 continue;
             }
         } else {
             calculation = new Calculation(operation, arg_left, arg_right);
         }
 
-        /*
-        n = write(sockfd, buffer, strlen(buffer));
+        char* serialized = calculation->Serialize();
+        n = write(sockfd, serialized, sizeof(Calculation));
+        delete serialized;
 
         if (n < 0) {
-            perror("ERROR writing to socket");
+            cerr << "ERROR writing to socket\n";
             exit(1);
         }
 
         bzero(buffer, 256);
-        n = read(sockfd, buffer, 255);
+        n = read(sockfd, buffer, sizeof(Response));
 
         if (n < 0) {
             perror("ERROR reading from socket");
             exit(1);
         }
-        */
-        printf("(%d %c %d\n", calculation->GetArgLeft(), calculation->GetOperation(), calculation->GetArgRight());
+
+        Response response = Response::Deserialize(buffer);
+
+        m.lock();
+        requests.insert(pair<int, Calculation*>(response.GetId(), calculation));
+        m.unlock();
+
+        cout << calculation->GetArgLeft() << calculation->GetOperation() << calculation->GetArgRight() << endl;
         delete calculation;
-        printf("> ");
+        cout << "> ";
     }
     return 0;
 }

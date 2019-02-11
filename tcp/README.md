@@ -114,3 +114,4 @@ text&number1 answer1|number2 answer2|
 
 number1 mark1|number2 mark2|
 
+Нумерация везде с 0

@@ -70,8 +70,9 @@ public:
         std::string toString() {
             std::string res = "";
             for (int i = 0; i < marks.size(); i++) {
-                res += std::to_string(i) + '&' + possibleAnswers[i] + '|';
+                res += std::to_string(i) + ' ' + std::to_string(marks[i]) + '|';
             }
+            return res;
         }
     };
 

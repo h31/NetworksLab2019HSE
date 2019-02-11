@@ -35,7 +35,10 @@ class Calculation
 {
   public:
     Calculation(char operation, int arg_left, int arg_right):
-        operation(operation), arg_left(arg_left), arg_right(arg_right){};
+        operation(operation), arg_left(arg_left), arg_right(arg_right), result(0){};
+
+    Calculation(char operation, int arg_left, int arg_right, double result):
+            operation(operation), arg_left(arg_left), arg_right(arg_right), result(result){};
 
     char* Serialize() const;
 
@@ -43,37 +46,11 @@ class Calculation
     int GetArgLeft();
     int GetArgRight();
     char GetOperation();
-    
+    double GetResult();
+
   private:
     char operation;
-
     int arg_left, arg_right;
-
-};
-
-class Response
-{
-  public:
-    Response(int id): id(id){};
-    char* Serialize() const;
-    static Response Deserialize(char* bytes);
-    int GetId();
-
-  private:
-    int id;
-};
-
-class Result
-{
-  public:
-    Result(int id, double value): id(id), value(value){};
-    char* Serialize() const;
-    static Result Deserialize(char* bytes);
-    double GetValue();
-    int GetId();
-
-  private:
-    int id;
-    double value;
+    double result;
 };
 #endif // TCP_MESSAGE_H

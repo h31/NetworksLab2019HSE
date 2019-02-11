@@ -7,6 +7,7 @@ char* Calculation::Serialize() const {
     memcpy(result, &(this->operation), sizeof(char));
     memcpy(result + sizeof(char), &(this->arg_left), sizeof(int));
     memcpy(result + sizeof(char) + sizeof(int), &(this->arg_right), sizeof(int));
+    memcpy(result + sizeof(char) + 2 * sizeof(int), &(this->result), sizeof(double));
     return result;
 }
 
@@ -16,7 +17,8 @@ Calculation Calculation::Deserialize(char* bytes) {
     memcpy(&operation, bytes, sizeof(char));
     memcpy(&arg_left, bytes + sizeof(char), sizeof(int));
     memcpy(&arg_right, bytes + sizeof(char) + sizeof(int), sizeof(int));
-    return Calculation(operation, arg_left, arg_right);
+    memcpy(&arg_right, bytes + sizeof(char) + 2 * sizeof(int), sizeof(double));
+    return Calculation(operation, arg_left, arg_right, result);
 }
 
 char Calculation::GetOperation() {
@@ -31,42 +33,6 @@ int Calculation::GetArgRight() {
     return this->arg_right;
 }
 
-char* Response::Serialize() const {
-    char* result = new char[sizeof(int)];
-    memcpy(result, &(this->id), sizeof(int));
-    return result;
-}
-
-Response Response::Deserialize(char* bytes) {
-    int id;
-    memcpy(&id, bytes, sizeof(int));
-    return Response(id);
-}
-
-int Response::GetId() {
-    return this->id;
-}
-
-
-char* Result::Serialize() const {
-    char* result = new char[sizeof(double) + sizeof(int)];
-    memcpy(result, &(this->id), sizeof(int));
-    memcpy(result + sizeof(int), &(this->value), sizeof(double));
-    return result;
-}
-
-Result Result::Deserialize(char* bytes) {
-    double value;
-    int id;
-    memcpy(&value, bytes, sizeof(int));
-    memcpy(&value, bytes + sizeof(int), sizeof(double));
-    return Result(value);
-}
-
-double Result::GetValue() {
-    return this->value;
-}
-
-int Result::GetId() {
-    return this->id;
+double Calculation::GetResult() {
+    return this->result;
 }

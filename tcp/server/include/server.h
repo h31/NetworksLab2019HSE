@@ -1,6 +1,8 @@
 #ifndef TCP_SERVER_H
 #define TCP_SERVER_H
 
+#include "../../message/include/message.h"
+
 #include <thread>
 #include <vector>
 
@@ -33,13 +35,22 @@ private:
 
   std::vector<std::thread> client_threads_;
 
+  std::vector<std::thread> operations_threads_;
+
   volatile std::sig_atomic_t exit_ = 0;
 
   void ClientLifeCycle(int newsockfd);
 
   static double ProcessOperation(char operation, int left_arg, int right_arg);
 
-  double ProcessLongOperation(char operation, int arg);
+  void ProcessLongOperation(char operation, int arg, int newsockfd);
+
+  static double GetFactorial(int n);
+
+  static double GetSqrt(int n);
+
+  bool SendCalculationResult(int newsockfd, const Calculation& calculation) const;
+
 };
 
 #endif // TCP_SERVER_H

@@ -1,6 +1,7 @@
 #include "../include/server.h"
 #include "../../message/include/message.h";
 
+#include <cmath>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -45,7 +46,6 @@ void Server::Run()
             continue;
         }
 
-        std::thread new_client_thread(&Server::ClientLifeCycle, this, newsockfd);
         client_threads_.emplace_back(&Server::ClientLifeCycle, this, newsockfd);
     }
 }
@@ -67,14 +67,14 @@ void Server::ClientLifeCycle(int newsockfd)
 
         Calculation calculation = Calculation::Deserialize(buf);
 
-        char operation = calculation.GetOperation;
+        char operation = calculation.GetOperation();
         if (operation == 's') {
 
         } else if (operation == '!') {
 
-        } else if (operation == '+' || operation == '-' || operation == '*' || operation == '/'){
-            double result = Server::ProcessOperation(operation, calculation.GetArgLeft, calculation.GetArgRight);
-            
+        } else if (operation == '+' || operation == '-' || operation == '*' || operation == '/') {
+            double result = Server::ProcessOperation(operation, calculation.GetArgLeft(), calculation.GetArgRight());
+            calculation.SetResult(result);
         }
     }
     delete buf;
@@ -101,4 +101,33 @@ double Server::ProcessOperation(char operation, int left_arg, int right_arg) {
     }
 
     return 0;
+}
+
+void Server::ProcessLongOperation(char operation, int arg, int newsockfd) {
+    double result = 0;
+
+    std::thread new_thread;
+    if (operation == '!') {
+        result = Server::GetFactorial(arg);
+    } else if (operation == 's') {
+        result = Server::GetSqrt(arg);
+    }
+}
+
+double Server::GetSqrt(int n) {
+    return std::sqrt(n);
+}
+
+double Server::GetFactorial(int n) {
+    if (n < 0) {
+        return 0;
+    } else if (n <= 1) {
+        return 1;
+    } else {
+        return n * GetFactorial(n - 1);
+    }
+}
+
+bool Server::SendCalculationResult(int newsockfd, const Calculation& calculation) const {
+
 }

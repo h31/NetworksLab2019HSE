@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <regex>
 #include <fstream>
+#include <iostream>
 
 Task::Task(int socket, std::string root_directory) {
     this->socket = socket;
@@ -124,6 +125,7 @@ std::vector<std::string> Task::get_file_list_in_dir() {
 }
 
 void clientWork(int socket, std::string root_dir) {
+    std::cout << "hey";
     Task task = Task(socket, std::move(root_dir));
     while (true) {
         int command;

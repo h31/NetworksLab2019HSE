@@ -1,3 +1,4 @@
+#include <vector>
 #include "Server.h"
 
 void Server::start(int port) {
@@ -6,11 +7,10 @@ void Server::start(int port) {
         exit(1);
     }
     bzero((char *) &serv_addr, sizeof(serv_addr));
-    portno = 5001;
 
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;
-    serv_addr.sin_port = htons(portno);
+    serv_addr.sin_port = htons(port);
 
     if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
         perror("ERROR on binding");
@@ -18,18 +18,20 @@ void Server::start(int port) {
     }
 }
 
-int Server::listenSoket() {
+void Server::listenSoket() {
     listen(sockfd, 5);
-    sockaddr_in cli_addr;
-    int clilen = sizeof(cli_addr);
-    int newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, (socklen_t *)&clilen);
+    std::vector<std::thread> clients;
+    while (true) {
+        sockaddr_in cli_addr;
+        int clilen = sizeof(cli_addr);
+        int newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, (socklen_t *) &clilen);
 
-    if (newsockfd < 0) {
-        perror("ERROR on accept");
-        exit(1);
+        if (newsockfd < 0) {
+            perror("ERROR on accept");
+            exit(1);
+        }
+        clients.emplace_back(clientWork, newsockfd, getRootDirectory());
     }
-    std::thread t(clientWork, newsockfd, getRootDirectory());
-    return newsockfd;
 }
 
 std::string Server::getRootDirectory() {

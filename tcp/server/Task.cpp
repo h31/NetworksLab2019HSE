@@ -74,8 +74,7 @@ void Task::send_file() {
     std::string file_name = get_string();
     FILE *fp;
     if((fp = fopen(file_name.c_str(), "rb")) == NULL) {
-        int answer = SEND_FILE_FAIL;
-        write(socket, &answer, sizeof(int));
+        send_num(SEND_FILE_FAIL);
         send_string(file_name);
         return;
     }
@@ -84,8 +83,7 @@ void Task::send_file() {
     rewind(fp);
     char* buf = new char[file_size];
     fread (buf, sizeof(char), file_size, fp);
-    int answer = SEND_FILE_SUCC;
-    send_num(answer);
+    send_num(SEND_FILE_SUCC);
     send_num(file_size);
     write(socket, buf, file_size);
     delete[] buf;
@@ -99,8 +97,9 @@ void Task::send_string(std::string string_to_send) {
 
 std::string Task::get_string() {
     int length = get_num();
-    char* buf = new char[length];
+    char* buf = new char[length + 1];
     read(socket, buf, length);
+    buf[length] = '\0';
     std::string ans(buf);
     delete[] buf;
     return ans;
@@ -125,8 +124,7 @@ std::vector<std::string> Task::get_file_list_in_dir() {
 int Task::get_num() {
     int num;
     read(socket, &num, sizeof(int));
-    num = ntohl(num);
-    return num;
+    return ntohl(num);
 }
 
 void Task::send_num(int num) {

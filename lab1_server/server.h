@@ -17,19 +17,21 @@ using std::vector;
 using std::max;
 using std::min;
 
-typedef long long calc_t;
+typedef unsigned long long calc_t;
+const calc_t MAX_CALC = 1e18;
 
 struct segment {
     segment(calc_t left, calc_t right);
     calc_t left;
     calc_t right;
-    bool operator < (struct segment other);
 };
+
+bool operator < (segment one, segment other);
 
 class Server {
 private:
     int server_sockfd;
-    calc_t max_val;
+    calc_t max_val = 0;
     vector<calc_t> calculated;
     set<segment> unprocessed;
     pthread_mutex_t mutex;
@@ -39,7 +41,8 @@ public:
     calc_t get_max();
     vector<calc_t> get_last_n(size_t n);
     segment ask_to_calculate(size_t n);
-    void add_calculated(vector<calc_t> &calculated);
+    void failed_to_calculate(segment seg);
+    void add_calculated(vector<calc_t> calculated);
     void run();
 };
 

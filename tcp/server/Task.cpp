@@ -32,6 +32,7 @@ void Task::cd_in_dir() {
 }
 
 void Task::get_file_list() {
+    int zero = get_num();
     std::vector<std::string> file_list = get_file_list_in_dir();
     int message_length = sizeof(int);
     for (auto &i : file_list) {
@@ -98,14 +99,11 @@ void Task::send_string(std::string string_to_send) {
 
 std::string Task::get_string() {
     int length = get_num();
-    std::string buf;
-    ssize_t n = 1;
-    while (length > 0 && n > 0) {
-        n = get_num();
-        length -= n;
-        buf += std::string(buffer);
-    }
-    return buf;
+    char* buf = new char[length];
+    read(socket, buf, length);
+    std::string ans(buf);
+    delete[] buf;
+    return ans;
 }
 
 std::vector<std::string> Task::get_file_list_in_dir() {

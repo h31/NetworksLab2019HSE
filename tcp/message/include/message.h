@@ -5,7 +5,9 @@
 
 enum MessageType
 {
-    // TODO:
+    CALCULATION,
+    RESULT,
+    RESPONSE
 };
 
 class Message
@@ -29,4 +31,47 @@ class Message
     char* body_;
 };
 
+class Calculation
+{
+  public:
+    Calculation(char operation, int arg_left, int arg_right):
+        operation(operation), arg_left(arg_left), arg_right(arg_right){};
+
+    char* Serialize() const;
+
+    static Calculation Deserialize(char* bytes);
+    int GetArgLeft();
+    int GetArgRight();
+    char GetOperation();
+    
+  private:
+    char operation;
+
+    int arg_left, arg_right;
+
+};
+
+class Response
+{
+  public:
+    Response(int id): id(id){};
+    char* Serialize() const;
+    static Response Deserialize(char* bytes);
+    int GetId();
+
+  private:
+    int id;
+};
+
+class Result
+{
+  public:
+    Result(double value): value(value){};
+    char* Serialize() const;
+    static Result Deserialize(char* bytes);
+    double GetValue();
+
+  private:
+    double value;
+};
 #endif // TCP_MESSAGE_H

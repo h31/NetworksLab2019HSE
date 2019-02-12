@@ -57,7 +57,13 @@ int main(int argc, char *argv[]) {
     fgets(buffer, 255, stdin);
 
     /* Send message to the server */
-    n = write(sockfd, buffer, strlen(buffer));
+    //n = write(sockfd, buffer, strlen(buffer));
+    unsigned long long nums[16];
+    nums[0] = 15;
+    for (int i = 1; i <= 15; i++) {
+        nums[i] = i;
+    }
+    n = write(sockfd, nums, sizeof(unsigned long long) * 16);
 
     if (n < 0) {
         perror("ERROR writing to socket");

@@ -14,5 +14,4 @@ std::string getWorkingPath() {
     return std::string(getcwd(cwd, sizeof(cwd)));
 }
 
-
 #endif //NETWORKS_UTILS_H

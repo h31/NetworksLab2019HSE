@@ -44,6 +44,9 @@ ServerMessage::ServerMessageType Communicator::get_type_from_server() {
   ServerMessage::ServerMessageType type;
   int n = socket->receive(&type, sizeof(ServerMessage::type));
   if (n != sizeof(ServerMessage::type)) {
+    if (n == 0) {
+      exit(0);
+    }
     perror("Error in message type");
     exit(1);
   }
@@ -56,6 +59,9 @@ std::string *Communicator::get_string_from_server() {
   do {
     int n = socket->receive(&c, 1);
     if (n != 1) {
+      if (n == 0) {
+        exit(0);
+      }
       perror("Error in message string");
       exit(1);
     }

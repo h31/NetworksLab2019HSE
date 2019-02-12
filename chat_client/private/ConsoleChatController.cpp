@@ -9,7 +9,7 @@ void ConsoleChatController::login() {
   std::string username;
 
   while (true) {
-    std::cout << "Enter your username: ";
+    std::cout << ">>enter your username: ";
     std::cin >> username;
 
     communicator.send_message(Message(Message::LOG_IN, &username));
@@ -20,19 +20,19 @@ void ConsoleChatController::login() {
     if (message.type == ServerMessage::SUCCESSFUL_CONNECT) {
       break;
     } else {
-      std::cout << "Please, try again:" << std::endl;
+      std::cout << ">>please, try again:" << std::endl;
     }
   }
 }
 
 void ConsoleChatController::send_message() {
   output_mutex.lock();
-  std::cout << "type name of recipient: ";
+  std::cout << ">>type name of recipient: ";
   std::string user_to;
   get_user_input(user_to);
 
   std::string message_text;
-  std::cout << "type your message: ";
+  std::cout << ">>type your message: ";
   get_user_input(message_text);
 
   communicator.send_message(Message(Message::SINGLE_MESSAGE, &user_to, &message_text));
@@ -42,7 +42,7 @@ void ConsoleChatController::send_message() {
 void ConsoleChatController::send_broadcast() {
   output_mutex.lock();
   std::string message_text;
-  std::cout << "type your message: ";
+  std::cout << ">>type your message: ";
   get_user_input(message_text);
 
   communicator.send_message(Message(Message::BROADCAST_MESSAGE, &message_text));
@@ -59,13 +59,13 @@ void ConsoleChatController::print_message(ServerMessage &message) {
       std::cout << '@' << *message.user << "@: " << *message.message_text << std::endl;
       break;
     case ServerMessage::ERROR_MESSAGE:
-      std::cout << "ERROR: " << *message.message_text << std::endl;
+      std::cout << ">>ERROR: " << *message.message_text << std::endl;
       break;
     case ServerMessage::DISCONNECT:
-      std::cout << "You has been disconnected from server" << std::endl;
+      std::cout << ">>you has been disconnected from server" << std::endl;
       break;
     case ServerMessage::SUCCESSFUL_CONNECT:
-      std::cout << "Connected successful" << std::endl;
+      std::cout << ">>connected successful" << std::endl;
   }
   output_mutex.unlock();
 }
@@ -90,7 +90,7 @@ void ConsoleChatController::startWork() {
 
 void ConsoleChatController::work_cycle() {
   while (true) {
-    std::cout << "type your command" << std::endl;
+    std::cout << ">>type your command" << std::endl;
     char command;
     std::cin >> command;
     switch (command) {
@@ -103,7 +103,7 @@ void ConsoleChatController::work_cycle() {
       case 'q':
         return;
       default:
-        std::cout << "Type p (private), b (broadcast) or q (quit)" << std::endl;
+        std::cout << ">>type p (private), b (broadcast) or q (quit)" << std::endl;
     }
   }
 }

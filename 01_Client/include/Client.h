@@ -24,7 +24,7 @@ private:
 public:
     Client(std::string host_name, uint16_t port);
 
-    calc_t get_max_simple() const;
+    calc_t get_max_prime() const;
     std::vector<calc_t> get_last_n(count_t n) const;
     void calculate(count_t n) const;
 };

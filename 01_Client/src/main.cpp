@@ -21,7 +21,7 @@ void print_commands()
 {
     cout << endl;
     cout << "List of commands:" << endl;
-    cout << "1. get_max_simple" << endl;
+    cout << "1. get_max_prime" << endl;
     cout << "2. get_last_n <n>" << endl;
     cout << "3. calculate <n>" << endl;
     cout << "4. exit" << endl;
@@ -50,8 +50,8 @@ int main()
         while (true) 
         {
             string command = read_command();
-            if (command == "get_max_simple") {
-                calc_t x = client.get_max_simple();
+            if (command == "get_max_prime") {
+                calc_t x = client.get_max_prime();
                 cout << x << endl;
             } else if (command == "get_last_n") {
                 count_t n;

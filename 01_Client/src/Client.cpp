@@ -8,7 +8,7 @@ Client::Client(string host_name, uint16_t port)
 {
 }
 
-calc_t Client::get_max_simple() const
+calc_t Client::get_max_prime() const
 {
     _network.send_int(CODE_GET_MAX_SIMPLE, sizeof(CODE_GET_MAX_SIMPLE));
     return (calc_t)_network.read_int(sizeof(calc_t));
@@ -32,7 +32,7 @@ void Client::calculate(count_t n) const
     _network.send_int(n, sizeof(n));
 
     calc_t start_num = (calc_t)_network.read_int(sizeof(calc_t));
-    vector<uint64_t> simple_nums = SimpleChecker::check_interval(start_num, n);
+    vector<uint64_t> prime_nums = SimpleChecker::check_interval(start_num, n);
 
-    _network.send_vector(simple_nums, sizeof(count_t), sizeof(calc_t));
+    _network.send_vector(prime_nums, sizeof(count_t), sizeof(calc_t));
 }

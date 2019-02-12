@@ -10,9 +10,12 @@ void Worker::operator()(Server *server, Client *client) {
         if (!message) {
             continue;
         }
-        if (!message->Process(server, client)) {
+        bool result = message->Process(server, client);
+        delete message;
+        if (!result) {
             break;
         }
     }
     server->RemoveClient(client->GetUserName());
+    delete client;
 }

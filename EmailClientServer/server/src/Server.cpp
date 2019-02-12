@@ -31,7 +31,7 @@ void Server::runServer() {
     sockets.insert(serverSocket);
 
     // Forcefully attaching socket to the port 8080
-    if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+    if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
         perror("setsockopt");
         exit(EXIT_FAILURE);
     }

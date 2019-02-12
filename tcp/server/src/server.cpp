@@ -233,7 +233,7 @@ bool Server::ClientWorker::answerRequest(std::string commandCode, std::string bo
                 responseBody = nextQuestion->toString();
             } else {
                 if (tests->isCurrentTestFinished()) {
-                    responseStatus = "TN";
+                    responseStatus = "TE";
                     responseBody = tests->getLastResult().toString();
                 } else {
                     responseStatus = "BR";

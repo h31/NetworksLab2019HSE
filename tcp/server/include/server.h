@@ -21,12 +21,7 @@
 #include <string>
 #include <signal.h>
 
-const char SPLIT = '\n';
-
-
 void printLog(const std::string &s);
-
-class ClientWorker;
 
 class TestContainer {
 public:
@@ -102,7 +97,7 @@ private:
 
 class Server {
 public:
-    explicit Server(uint16_t port);
+    Server(uint16_t port, char split);
 
     ~Server();
 
@@ -168,6 +163,7 @@ private:
     std::map<std::string, UserTests> users;
     TestContainer testContainer = TestContainer();
     int workerCounter = 0;
+    char SPLIT;
 };
 
 

@@ -8,7 +8,8 @@ void printLog(const std::string &s) {
     std::cout << s << std::endl;
 }
 
-Server::Server(uint16_t port) {
+Server::Server(uint16_t port, char split) {
+    SPLIT = split;
     printLog("Starting server on port " + std::to_string(port));
     workers = std::vector<ClientWorker *>();
     users = std::map<std::string, UserTests>();
@@ -128,7 +129,7 @@ void Server::ClientWorker::work() {
             return;
         }
         for (ssize_t i = 0; i < n; i++) {
-            if (buffer[i] == SPLIT) {
+            if (buffer[i] == server->SPLIT) {
                 bool stopWorking = handleRequest(command);
                 if (stopWorking) {
                     removeFromVector();
@@ -223,7 +224,7 @@ void Server::ClientWorker::answerRequest(std::string commandCode, std::string bo
             responseStatus = "BR";
         }
     }
-    std::string result = commandCode + ' ' + responseStatus + ' ' + responseBody + SPLIT;
+    std::string result = commandCode + ' ' + responseStatus + ' ' + responseBody + server->SPLIT;
     int n = write(clientSockfd, result.c_str(), result.size());
     if (n < 0) {
         perror("ERROR writing to socket");

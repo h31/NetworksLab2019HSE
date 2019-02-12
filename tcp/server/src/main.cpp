@@ -9,12 +9,12 @@ void handleCtrlC(int s) {
 
 int main(int argc, char *argv[]) {
     uint16_t port;
-    if (argc == 2) {
+    if (argc >= 2) {
         port = static_cast<uint16_t>(std::stoi(std::string(argv[1])));
     } else {
         port = 8881;
     }
-    server = new Server(port);
+    server = new Server(port, '\n');
 
     struct sigaction sigIntHandler;
     sigIntHandler.sa_handler = &handleCtrlC;

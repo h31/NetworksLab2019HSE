@@ -165,6 +165,9 @@ bool Server::ClientWorker::answerRequest(std::string commandCode, std::string bo
             responseStatus = "UE";
         } else {
             responseStatus = "OK";
+            if (tests) {
+                tests->isAuthorized = false;
+            }
             server->users.insert(std::make_pair(body, UserTests(body, &server->testContainer)));
             tests = &server->users[body];
             tests->isAuthorized = true; // usefull for testing
@@ -190,7 +193,7 @@ bool Server::ClientWorker::answerRequest(std::string commandCode, std::string bo
         } else if (commandCode == "LIST") {
             responseStatus = "OK";
             for (auto &test: server->testContainer.tests) {
-                responseBody += test.first + '&' + test.second.descriprion + '|';
+                responseBody += test.first + ' ' + test.second.descriprion + '|';
             }
         } else if (commandCode == "TEST") {
             TestContainer::Question *firstQuestion = tests->startTest(body);

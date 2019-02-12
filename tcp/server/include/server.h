@@ -148,7 +148,7 @@ private:
         void removeFromVector();
 
         void log(const std::string& s) {
-            std::cout << "Worker # " << number << " : " << s << std::endl;
+            std::cout << "Worker # " << number << ": " << s << std::endl;
         }
     };
 

@@ -95,7 +95,7 @@ void Server::ClientLifeCycle(int newsockfd)
 
     try
     {
-        shutdown(newsockfd, SHUT_RDWR);
+        shutdown(newsockfd, SHUT_RD);
         close(newsockfd);
     }
     catch (...)

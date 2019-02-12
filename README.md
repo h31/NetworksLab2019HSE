@@ -40,11 +40,6 @@
     
 ## Сервер
 
-- Отчёт об успешной операции
-
-      type: 0
-      body: "Optional message"
-
 - Отчёт о получении сообщения от неавторизованного игрока или крупье
 
       type: 1
@@ -55,42 +50,67 @@
       type: 2
       body: "Optional message"
 
-- Отчёт об отказе в добавлении игрока
+- Отчёт о добавлении игрока
 
       type: 101
+      body: "Optional message"
+
+- Отчёт об отказе в добавлении игрока
+
+      type: 102
       body: "Optional message, ex: name is taken"
+
+- Отчёт об авторизации крупье
+
+      type: 201
+      body: "Optional message"
 
 - Отчёт об ошибке ввода пароля крупье
 
-      type: 201
+      type: 202
       body: "Optional message, ex: wrong passord"
 
 - Отчёт об отказе входа крупье
 
-      type: 202
+      type: 203
       body: "Optional message, ex: croupier already authorised"
+
+- Отчёт о принятии ставки
+
+      type: 301
+      body: "Optional message"
 
 - Отчёт о повторной ставке
 
-      type: 301
+      type: 302
       body: "Optional message, ex: you already made your bet"
   
 - Отчёт о несвоевременной ставке
 
-      type: 302
+      type: 303
       body: "Optional message, ex: game in progress"
+
+- Отчёт о начале розыгрыша
+
+      type: 401
+      body: "Optional message"
 
 - Отчёт об отклонении начала розыгрыша
 
-      type: 401
+      type: 402
       body: "Optional message, ex: game in progress"
-      
- - Отчёт об отклонении конца розыгрыша
 
-      type: 501
-      body: "Optional message, ex: game is already fineshed"
+ - Отчёт о завершении розыгрыша
+
+        type: 501
+        body: "Optional message"
   
-- Оповещение о завершении розыгрыша
+- Отчёт об отклонении конца розыгрыша
+
+        type: 502
+        body: "Optional message, ex: game is already fineshed"
+  
+- Оповещение с результатами розыгрыша
 
       type: 600
       body: "N GAIN"

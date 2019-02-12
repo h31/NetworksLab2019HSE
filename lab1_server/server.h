@@ -11,11 +11,14 @@
 
 #include <set>
 #include <vector>
+#include <iostream>
 
 using std::set;
 using std::vector;
 using std::max;
 using std::min;
+using std::cerr;
+using std::endl;
 
 typedef unsigned long long calc_t;
 const calc_t MAX_CALC = 1e18;

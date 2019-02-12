@@ -93,9 +93,11 @@ void Server::failed_to_calculate(segment seg) {
 void Server::add_calculated(vector<calc_t> _calculated) {
     pthread_mutex_lock(&mutex);
     for (calc_t d: _calculated) {
+        cerr << d << " ";
         calculated.push_back(d);
         max_val = max(max_val, d);
     }
+    cerr << "\n";
     pthread_mutex_unlock(&mutex);
 }
 
@@ -117,15 +119,18 @@ vector<calc_t> read_nums(int sockfd, calc_t num) {
     ssize_t n;
     vector<calc_t> ans;
     while (num > 0) {
-        n = read(sockfd, buffer, sizeof(calc_t) * min((calc_t) 255, num));
+        calc_t m = min((calc_t) 255, num);
+        n = read(sockfd, buffer, sizeof(calc_t) * m);
+        cerr << "bytes read: " << n << endl;
         if (n < 0) {
             perror("ERROR reading from socket");
             exit(1);
         }
-        for (int i = 0; i < min((calc_t) 255, num); i++) {
+        n /= 8;
+        for (int i = 0; i < n; i++) {
             ans.push_back(buffer[i]);
         }
-        num = num - min(num, (calc_t) 255);
+        num -= n;
     }
     return ans;
 }
@@ -138,6 +143,7 @@ void write_nums(int sockfd, vector<calc_t> nums) {
             buffer[j] = nums[i + j];
         }
         write(sockfd, buffer, sizeof(calc_t) * j);
+        i += j;
     }
 }
 
@@ -145,21 +151,36 @@ void *doit(void *args) {
     int sockfd = ((task_args*) args)->sockfd;
     Server* server = ((task_args*) args)->server;
 
-    printf("wait, it's read\n");
-    fflush(stdout);
+    while(true) {
+ 
+        printf("wait, it's read\n");
+        fflush(stdout);
 
-    calc_t type = read_num(sockfd);
-    if (type == 1) {
-        write_nums(sockfd, {server->get_max()});
-    } else if (type == 2) {
-        calc_t n = read_num(sockfd);
-        write_nums(sockfd, server->get_last_n(n));
-    } else if (type == 3) {
-        calc_t len = read_num(sockfd);
-        segment seg = server->ask_to_calculate(len);
-        write_nums(sockfd, {seg.left});
-        calc_t n = read_num(sockfd);
-        server->add_calculated(read_nums(sockfd, n));
+        calc_t type = read_num(sockfd);
+        cerr << type << endl;
+        if (type == 1) {
+          write_nums(sockfd, {server->get_max()});
+        } else if (type == 2) {
+            calc_t n = read_num(sockfd);
+            vector<calc_t> vt = server->get_last_n(n); 
+            write_nums(sockfd, {vt.size()});
+            write_nums(sockfd, vt);
+        } else if (type == 3) {
+            calc_t len = read_num(sockfd);
+            cerr << len << endl;
+            segment seg = server->ask_to_calculate(len);
+            cerr << seg.left << " " << seg.right << endl;
+            write_nums(sockfd, {seg.left});
+            cerr << "pidoras";
+            calc_t n = read_num(sockfd);
+            cerr << n << endl;
+            vector<calc_t> vt = read_nums(sockfd, n);
+            for (calc_t d: vt) {
+                cerr << d << " ";
+            }
+            cerr << endl;
+            server->add_calculated(vt);
+        }
     }
 }
 

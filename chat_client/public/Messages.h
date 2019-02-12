@@ -9,7 +9,7 @@
 #include <string>
 
 struct Message {
-  enum MessageType : uint16_t {
+  enum MessageType : uint8_t {
     LOG_IN = 0x00, SINGLE_MESSAGE = 0x01, BROADCAST_MESSAGE = 0x02
   };
 

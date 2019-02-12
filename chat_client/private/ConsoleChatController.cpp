@@ -53,13 +53,13 @@ void ConsoleChatController::print_message(ServerMessage &message) {
   output_mutex.lock();
   switch (message.type) {
     case ServerMessage::BROADCAST_MESSAGE:
-      std::cout << message.user << ": " << message.message_text << std::endl;
+      std::cout << *message.user << ": " << *message.message_text << std::endl;
       break;
     case ServerMessage::SINGLE_MESSAGE:
-      std::cout << '@' << message.user << "@: " << message.message_text << std::endl;
+      std::cout << '@' << *message.user << "@: " << *message.message_text << std::endl;
       break;
     case ServerMessage::ERROR_MESSAGE:
-      std::cout << "ERROR: " << message.message_text << std::endl;
+      std::cout << "ERROR: " << *message.message_text << std::endl;
       break;
     case ServerMessage::DISCONNECT:
       std::cout << "You has been disconnected from server" << std::endl;
@@ -72,8 +72,8 @@ void ConsoleChatController::print_message(ServerMessage &message) {
 
 void ConsoleChatController::get_user_input(std::string &result) {
   do {
-    std::cin >> result;
-  } while (result.length() > 0);
+    std::getline(std::cin, result);
+  } while (result.length() == 0);
 }
 
 void ConsoleChatController::disconnect() {
@@ -90,6 +90,7 @@ void ConsoleChatController::startWork() {
 
 void ConsoleChatController::work_cycle() {
   while (true) {
+    std::cout << "type your command" << std::endl;
     char command;
     std::cin >> command;
     switch (command) {
@@ -98,6 +99,7 @@ void ConsoleChatController::work_cycle() {
         break;
       case 'b':
         send_broadcast();
+        break;
       case 'q':
         return;
       default:

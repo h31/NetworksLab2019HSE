@@ -93,11 +93,9 @@ void Server::failed_to_calculate(segment seg) {
 void Server::add_calculated(vector<calc_t> _calculated) {
     pthread_mutex_lock(&mutex);
     for (calc_t d: _calculated) {
-        cerr << d << " ";
         calculated.push_back(d);
         max_val = max(max_val, d);
     }
-    cerr << "\n";
     pthread_mutex_unlock(&mutex);
 }
 
@@ -106,8 +104,8 @@ calc_t read_num(int sockfd) {
     bzero(buffer, sizeof(calc_t) * 2);
     ssize_t n;
     n = read(sockfd, buffer, sizeof(calc_t));
-    if (n < 0) {
-        throw new rw_exception("ERROR reading from socket");
+    if (n <= 0) {
+        throw rw_exception("ERROR reading from socket");
     }
     return buffer[0];
 }
@@ -122,7 +120,7 @@ vector<calc_t> read_nums(int sockfd, calc_t num) {
         n = read(sockfd, buffer, sizeof(calc_t) * m);
         cerr << "bytes read: " << n << endl;
         if (n < 0) {
-            throw new rw_exception("ERROR reading from socket");
+            throw rw_exception("ERROR reading from socket");
         }
         n /= 8;
         for (int i = 0; i < n; i++) {
@@ -143,7 +141,7 @@ void write_nums(int sockfd, vector<calc_t> nums) {
         }
         n = write(sockfd, buffer, sizeof(calc_t) * j);
         if (n < 0) {
-            throw new rw_exception("ERROR writing to socket");
+            throw rw_exception("ERROR writing to socket");
         }
         i += j;
     }
@@ -160,7 +158,7 @@ void *doit(void *args) {
         calc_t type = 0;
         try {
             type = read_num(sockfd);
-        } catch(rw_exception e) {
+        } catch (const rw_exception &e) {
             cerr << "Connection closed" << endl;
             break;
         }
@@ -168,7 +166,7 @@ void *doit(void *args) {
         if (type == 1) {
             try {
                 write_nums(sockfd, {server->get_max()});
-            } catch(rw_exception e) {
+            } catch(const rw_exception &e) {
                 cerr << e.what() << endl;
                 break;
             }
@@ -178,7 +176,7 @@ void *doit(void *args) {
             try {
                 write_nums(sockfd, {vt.size()});
                 write_nums(sockfd, vt);
-            } catch(rw_exception e) {
+            } catch(const rw_exception &e) {
                 cerr << e.what() << endl;
                 break;
             }
@@ -186,7 +184,7 @@ void *doit(void *args) {
             calc_t len = 0;
             try {
                 len = read_num(sockfd);
-            } catch(rw_exception e) {
+            } catch(const rw_exception &e) {
                 cerr << e.what() << endl;
                 break;
             }
@@ -198,16 +196,18 @@ void *doit(void *args) {
                 calc_t n = read_num(sockfd);
                 cout << "Got " << n << " numbers" << endl;
                 vector<calc_t> vt = read_nums(sockfd, n);
-                for (calc_t d: vt) {
+                /*for (calc_t d: vt) {
                     cout << d << " ";
-                }
-                cout << endl;
+                }*/
+                //cout << endl;
                 server->add_calculated(vt);
-            } catch(rw_exception e) {
+            } catch(const rw_exception &e) {
                 cerr << e.what() << endl;
                 server->failed_to_calculate(seg);
                 break;
             }
+        } else {
+            cerr << "Invalid command" << endl;
         }
     }
 }

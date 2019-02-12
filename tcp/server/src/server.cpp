@@ -54,7 +54,7 @@ void Server::Run()
 
 void Server::Stop()
 {
-    shutdown(sockfd_, SHUT_RD);
+    shutdown(sockfd_, SHUT_RDWR);
     exit_ = 1;
 }
 
@@ -95,6 +95,7 @@ void Server::ClientLifeCycle(int newsockfd)
 
     try
     {
+        shutdown(newsockfd, SHUT_RDWR);
         close(newsockfd);
     }
     catch (...)

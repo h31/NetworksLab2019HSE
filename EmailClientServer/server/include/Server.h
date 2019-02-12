@@ -16,6 +16,7 @@ private:
     std::atomic_uint32_t idCounter;
     tbb::concurrent_unordered_map<uint32_t, EmailWithId> emails;
     std::set<int> sockets;
+    std::atomic_bool onShutdown;
 public:
     explicit Server(uint16_t port);
 

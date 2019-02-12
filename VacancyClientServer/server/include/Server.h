@@ -26,6 +26,7 @@ namespace vacancy {
         tbb::concurrent_unordered_map<int32_t, model::SpecialityInfo> specialities;
         tbb::concurrent_unordered_map<int32_t, WrappedVacancyInfo> vacancies;
         std::set<int> sockets;
+        std::atomic_bool onShutdown;
 
     public:
         explicit Server(uint16_t port);

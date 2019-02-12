@@ -14,7 +14,7 @@ using namespace request;
 using namespace response;
 using namespace serialization;
 
-Server::Server(uint16_t port) : port(port), clientIdCounter(0), idCounter(0), emails(), sockets() {}
+Server::Server(uint16_t port) : port(port), clientIdCounter(0), idCounter(0), emails(), sockets(), onShutdown(false) {}
 
 void Server::runServer() {
     int serverSocket, clientSocket;
@@ -52,8 +52,12 @@ void Server::runServer() {
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
     while (true) {
         if ((clientSocket = accept(serverSocket, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
-            perror("accept");
-            continue;
+            if (onShutdown) {
+                break;
+            } else {
+                perror("accept");
+                continue;
+            }
         }
         uint32_t clientId = clientIdCounter++;
 #ifdef DEBUG_MODE
@@ -68,6 +72,7 @@ void Server::runServer() {
 }
 
 void Server::shutdown() {
+    onShutdown = true;
     for (int socket : sockets) {
         close(socket);
     }

@@ -24,7 +24,8 @@ vacancy::Server::Server(uint16_t port)
     , specialityIdCounter(0)
     , clientIdCounter(0)
     , specialities()
-    , vacancies() {}
+    , vacancies()
+    , onShutdown(false) {}
 
 void vacancy::Server::runServer() {
     int serverSocket, clientSocket;
@@ -63,8 +64,12 @@ void vacancy::Server::runServer() {
     while (true) {
         try {
             if ((clientSocket = accept(serverSocket, (struct sockaddr *) &address, (socklen_t *) &addrlen)) < 0) {
-                perror("accept");
-                continue;
+                if (onShutdown) {
+                    break;
+                } else {
+                    perror("accept");
+                    continue;
+                }
             }
             uint32_t clientId = clientIdCounter++;
             cout << "Client " << clientId << " connected" << endl;
@@ -80,6 +85,7 @@ void vacancy::Server::runServer() {
 }
 
 void vacancy::Server::shutdown() {
+    onShutdown = true;
     for (int socket : sockets) {
         close(socket);
     }

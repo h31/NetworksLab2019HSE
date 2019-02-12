@@ -6,7 +6,7 @@
 
 #ifdef linux
 MySocket* MySocket::create_socket(std::string &host, std::string port) {
-  return new WindowsSocket(host, port);
+  return new LinuxSocket(host, port);
 }
 #endif
 
@@ -38,5 +38,6 @@ int LinuxSocket::receive(void *data, int size) {
 }
 
 void LinuxSocket::close() {
-  closesocket(socket_connection);
+  shutdown(socket_connection, SHUT_RDWR);
+  socket_connection = -1;
 }

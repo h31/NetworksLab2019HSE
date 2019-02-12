@@ -3,6 +3,14 @@ project(chat_client)
 
 set(CMAKE_CXX_STANDARD 14)
 
+if (UNIX)
+SET(GCC_COVERAGE_COMPILE_FLAGS "-pthread")
+endif()
+
+
+SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
+SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}")
+
 if(WIN32)
     set(PLATFORM_SPECIFIC_SOURCE_FILES private/socket/WindowsSocket.cpp public/socket/WindowsSocket.h)
 elseif(UNIX)
@@ -10,6 +18,7 @@ elseif(UNIX)
 endif()
 
 add_executable(chat_client private/main.cpp ${PLATFORM_SPECIFIC_SOURCE_FILES} public/Communicator.h private/Communicator.cpp private/ConsoleChatController.cpp public/ConsoleChatController.h public/Messages.h public/socket/MySocket.h)
+
 if(WIN32)
 target_link_libraries(chat_client -lws2_32)
 endif()

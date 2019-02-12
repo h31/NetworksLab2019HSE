@@ -35,11 +35,16 @@ void Server::listenClient() {
         int clientSockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
 
         if (clientSockfd < 0) {
+            if (errno == EINVAL) {
+                return;
+            }
             perror("ERROR on accept");
             exit(1);
         }
         ClientWorker *worker = new ClientWorker(this, clientSockfd, workerCounter++);
+        pthread_mutex_lock(&workersMutex);
         workers.push_back(worker);
+        pthread_mutex_unlock(&workersMutex);
         worker->startThread();
     }
 }
@@ -60,34 +65,43 @@ void Server::start() {
 void Server::stop() {
     for (auto worker: workers) {
         worker->stop();
+        pthread_join(worker->tid, NULL);
     }
+    printLog("Shut down and close server socket");
     shutdown(sockfd, SHUT_RDWR);
+    close(sockfd);
+    pthread_join(serverThreadId, NULL);
 }
 
 
 bool Server::kickClient(std::string login) {
+    pthread_mutex_lock(&workersMutex);
     for (auto ptr = workers.begin(); ptr < workers.end(); ptr++) {
         if ((*ptr.base())->login == login) {
+            delete(*ptr.base());
             workers.erase(ptr);
-            delete (this);
+            pthread_mutex_unlock(&workersMutex);
             return true;
         }
     }
+    pthread_mutex_unlock(&workersMutex);
     return false;
 }
 
 std::vector<std::string> Server::getUsers() {
+    pthread_mutex_lock(&workersMutex);
     std::vector<std::string> res = std::vector<std::string>();
     for (auto worker: workers) {
         if (worker->login != "") {
             res.push_back(worker->login);
         }
     }
+    pthread_mutex_unlock(&workersMutex);
     return res;
 }
 
 Server::~Server() {
-    std::cout << "Closing server socket" << std::endl;
+    std::cout << "Closing server socket on desctructor" << std::endl;
     close(sockfd);
 }
 
@@ -102,13 +116,22 @@ void Server::ClientWorker::startThread() {
 
 
 void Server::ClientWorker::removeFromVector() {
+    pthread_mutex_lock(&mutex);
+    if (closed) {
+        pthread_mutex_unlock(&mutex);
+        return;
+    }
+    pthread_mutex_unlock(&mutex);
+    pthread_mutex_lock(&server->workersMutex);
     for (auto ptr = server->workers.begin(); ptr < server->workers.end(); ptr++) {
         if ((*ptr.base())->tid == tid) {
             server->workers.erase(ptr);
             delete (this);
+            pthread_mutex_unlock(&server->workersMutex);
             return;
         }
     }
+    pthread_mutex_unlock(&server->workersMutex);
 }
 
 void Server::ClientWorker::work() {
@@ -123,7 +146,7 @@ void Server::ClientWorker::work() {
             exit(1);
         }
         if (n == 0) {
-            log("read - n = 0");
+            log("read - n == 0");
             removeFromVector();
             return;
         }
@@ -217,8 +240,12 @@ bool Server::ClientWorker::answerRequest(std::string commandCode, std::string bo
                 }
             }
         } else if (commandCode == "LAST") {
-            responseStatus = "OK";
-            responseBody = tests->getLastResult().toString();
+            if (!tests->isCurrentTestFinished() || tests->getLastResult().marks.empty()) {
+                responseStatus = "NT";
+            } else {
+                responseStatus = "OK";
+                responseBody = tests->getLastResult().toString();
+            }
 
         } else {
             // unknown commandCode
@@ -240,11 +267,19 @@ bool Server::ClientWorker::answerRequest(std::string commandCode, std::string bo
 }
 
 void Server::ClientWorker::stop() {
-    log("Closing socket");
+    pthread_mutex_lock(&mutex);
+    if (closed) {
+        pthread_mutex_unlock(&mutex);
+        return;
+    }
+    log("Shut down and close socket");
     if (tests) {
         tests->isAuthorized = false;
     }
     shutdown(clientSockfd, SHUT_RDWR);
+    close(clientSockfd);
+    closed = true;
+    pthread_mutex_unlock(&mutex);
 }
 
 

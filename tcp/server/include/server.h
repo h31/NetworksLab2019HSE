@@ -20,6 +20,7 @@
 #include <map>
 #include <string>
 #include <signal.h>
+#include <errno.h>
 
 void printLog(const std::string &s);
 
@@ -119,6 +120,7 @@ private:
         Server *server;
         UserTests *tests;
         int number;
+        pthread_mutex_t mutex;
 
         std::string login;
 
@@ -140,6 +142,7 @@ private:
 
     private:
         int clientSockfd;
+        bool closed = false;
 
         bool handleRequest(std::string request);
 
@@ -168,6 +171,7 @@ private:
     TestContainer testContainer = TestContainer();
     int workerCounter = 0;
     char SPLIT;
+    pthread_mutex_t workersMutex;
 };
 
 

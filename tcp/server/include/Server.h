@@ -17,8 +17,6 @@ class Client;
 class Server {
 
 private:
-    static constexpr const char *EXIT_COMMAND = "exit";
-    static const int BACKLOG_SIZE = 5;
     int server_socket_fd;
     std::unordered_map<std::string, Client *> active_clients;
     std::mutex active_clients_mtx;

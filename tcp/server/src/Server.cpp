@@ -2,17 +2,25 @@
 #include <Server.h>
 #include <mutex>
 
-
 #include "Acceptor.h"
 #include "serverMessages/GroupMessageMessage.h"
 #include "serverMessages/DisconnectMessage.h"
 #include "Server.h"
 #include "Client.h"
 
+static const int TRUE_VALUE = 1;
+static constexpr const char *EXIT_COMMAND = "exit";
+static const int BACKLOG_SIZE = 5;
+
 Server::Server(unsigned short port) {
     server_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_socket_fd < 0) {
         perror("Error opening socket");
+        return;
+    }
+    if (setsockopt(server_socket_fd, SOL_SOCKET, SO_REUSEADDR, &TRUE_VALUE, sizeof(TRUE_VALUE)) < 0) {
+        perror("Error setting SO_REUSEADDR");
+        ShutdownSocket();
         return;
     }
     struct sockaddr_in address{};

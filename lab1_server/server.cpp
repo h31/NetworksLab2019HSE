@@ -107,8 +107,7 @@ calc_t read_num(int sockfd) {
     ssize_t n;
     n = read(sockfd, buffer, sizeof(calc_t));
     if (n < 0) {
-        perror("ERROR reading from socket");
-        exit(1);
+        throw new rw_exception("ERROR reading from socket");
     }
     return buffer[0];
 }
@@ -123,8 +122,7 @@ vector<calc_t> read_nums(int sockfd, calc_t num) {
         n = read(sockfd, buffer, sizeof(calc_t) * m);
         cerr << "bytes read: " << n << endl;
         if (n < 0) {
-            perror("ERROR reading from socket");
-            exit(1);
+            throw new rw_exception("ERROR reading from socket");
         }
         n /= 8;
         for (int i = 0; i < n; i++) {
@@ -137,12 +135,16 @@ vector<calc_t> read_nums(int sockfd, calc_t num) {
 
 void write_nums(int sockfd, vector<calc_t> nums) {
     calc_t buffer[256];
+    ssize_t n;
     for (int i = 0; i < nums.size();) {
         int j = 0;
         for (; j < 255 && i + j < nums.size(); j++) {
             buffer[j] = nums[i + j];
         }
-        write(sockfd, buffer, sizeof(calc_t) * j);
+        n = write(sockfd, buffer, sizeof(calc_t) * j);
+        if (n < 0) {
+            throw new rw_exception("ERROR writing to socket");
+        }
         i += j;
     }
 }
@@ -153,33 +155,59 @@ void *doit(void *args) {
 
     while(true) {
  
-        printf("wait, it's read\n");
-        fflush(stdout);
+        cout << "Waiting for read" << endl;
 
-        calc_t type = read_num(sockfd);
-        cerr << type << endl;
+        calc_t type = 0;
+        try {
+            type = read_num(sockfd);
+        } catch(rw_exception e) {
+            cerr << "Connection closed" << endl;
+            break;
+        }
+        cout << "Request type = " << type << endl;
         if (type == 1) {
-          write_nums(sockfd, {server->get_max()});
+            try {
+                write_nums(sockfd, {server->get_max()});
+            } catch(rw_exception e) {
+                cerr << e.what() << endl;
+                break;
+            }
         } else if (type == 2) {
             calc_t n = read_num(sockfd);
             vector<calc_t> vt = server->get_last_n(n); 
-            write_nums(sockfd, {vt.size()});
-            write_nums(sockfd, vt);
-        } else if (type == 3) {
-            calc_t len = read_num(sockfd);
-            cerr << len << endl;
-            segment seg = server->ask_to_calculate(len);
-            cerr << seg.left << " " << seg.right << endl;
-            write_nums(sockfd, {seg.left});
-            cerr << "pidoras";
-            calc_t n = read_num(sockfd);
-            cerr << n << endl;
-            vector<calc_t> vt = read_nums(sockfd, n);
-            for (calc_t d: vt) {
-                cerr << d << " ";
+            try {
+                write_nums(sockfd, {vt.size()});
+                write_nums(sockfd, vt);
+            } catch(rw_exception e) {
+                cerr << e.what() << endl;
+                break;
             }
-            cerr << endl;
-            server->add_calculated(vt);
+        } else if (type == 3) {
+            calc_t len = 0;
+            try {
+                len = read_num(sockfd);
+            } catch(rw_exception e) {
+                cerr << e.what() << endl;
+                break;
+            }
+            cout << "Asked to calculate segment with len = " << len << endl;
+            segment seg = server->ask_to_calculate(len);
+            cout << "Calculating segment from " << seg.left << " to " << seg.right << endl;
+            try {
+                write_nums(sockfd, {seg.left});
+                calc_t n = read_num(sockfd);
+                cout << "Got " << n << " numbers" << endl;
+                vector<calc_t> vt = read_nums(sockfd, n);
+                for (calc_t d: vt) {
+                    cout << d << " ";
+                }
+                cout << endl;
+                server->add_calculated(vt);
+            } catch(rw_exception e) {
+                cerr << e.what() << endl;
+                server->failed_to_calculate(seg);
+                break;
+            }
         }
     }
 }
@@ -197,14 +225,13 @@ void Server::run() {
         clilen = sizeof(cli_addr);
 
 
-        printf("wait, it's accept\n");
-        fflush(stdout);
+        cout << "Wait for accept" << endl;
         /* Accept actual connection from the client */
         sockfd = accept(server_sockfd, (struct sockaddr *) &cli_addr, &clilen);
 
         if (sockfd < 0) {
-            perror("ERROR on accept");
-            exit(1);
+            cerr << "ERROR on accept" << endl;
+            continue;
         }
 
         pthread_t *thread = (pthread_t*) malloc(sizeof(pthread_t));
@@ -215,3 +242,5 @@ void Server::run() {
 task_args::task_args(Server* server, int sockfd): server(server), sockfd(sockfd) {}
 
 segment::segment(calc_t left, calc_t right): left(left), right(right) {}
+
+rw_exception::rw_exception(const string &what): runtime_error(what) {}

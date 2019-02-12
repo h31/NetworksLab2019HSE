@@ -9,16 +9,21 @@
 
 #include <pthread.h>
 
+#include <string>
+#include <stdexcept>
 #include <set>
 #include <vector>
 #include <iostream>
 
+using std::string;
 using std::set;
 using std::vector;
 using std::max;
 using std::min;
+using std::cout;
 using std::cerr;
 using std::endl;
+using std::runtime_error;
 
 typedef unsigned long long calc_t;
 const calc_t MAX_CALC = 1e18;
@@ -47,6 +52,10 @@ public:
     void failed_to_calculate(segment seg);
     void add_calculated(vector<calc_t> calculated);
     void run();
+};
+
+struct rw_exception : runtime_error {
+    rw_exception(const string &what);
 };
 
 struct task_args {

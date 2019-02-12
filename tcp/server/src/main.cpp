@@ -1,6 +1,6 @@
 #include "../include/server.h"
 
-Server* server = NULL;
+Server *server = NULL;
 
 void handleCtrlC(int s) {
     printLog("Ctrl C cought!!");
@@ -27,8 +27,25 @@ int main(int argc, char *argv[]) {
     while (true) {
         std::cin >> s;
         if (s == "kick") {
-
+            std::string login;
+            std::cin >> login;
+            bool res = server->kickClient(login);
+            if (res) {
+                printLog("Client " + login + " has been kicked");
+            } else {
+                printLog("Client " + login + " doesn't exist");
+            }
+        } else if (s == "exit") {
+            server->stop();
+            return 0;
+        } else if (s == "list") {
+            printLog("Users:");
+            auto res = server->getUsers();
+            for (auto &user: res) {
+                printLog(user);
+            }
+        } else {
+            printLog("Unknown command: " + s);
         }
     }
-    return 0;
 }

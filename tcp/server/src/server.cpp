@@ -39,7 +39,7 @@ void Server::listenClient() {
             exit(1);
         }
         printLog("Got a client!!!");
-        ClientWorker *worker = new ClientWorker(this, clientSockfd);
+        ClientWorker *worker = new ClientWorker(this, clientSockfd, workerCounter++);
         workers.push_back(worker);
         worker->startThread();
     }
@@ -54,7 +54,7 @@ void Server::start() {
         perror("ERROR on creating server thread");
         exit(1);
     }
-    printLog("Listener-thread started with tid " + std::to_string(serverThreadId));\
+    printLog("Listener-thread started");
 
 }
 
@@ -62,12 +62,19 @@ void Server::stop() {
     for (auto worker: workers) {
         worker->stop();
     }
-    close(sockfd);
+    shutdown(sockfd, SHUT_RDWR);
 }
 
 
 bool Server::kickClient(std::string login) {
-
+    for (auto ptr = workers.begin(); ptr < workers.end(); ptr++) {
+        if ((*ptr.base())->login == login) {
+            workers.erase(ptr);
+            delete (this);
+            return true;
+        }
+    }
+    return false;
 }
 
 std::vector<std::string> Server::getUsers() {
@@ -99,14 +106,14 @@ void Server::ClientWorker::removeFromVector() {
     for (auto ptr = server->workers.begin(); ptr < server->workers.end(); ptr++) {
         if ((*ptr.base())->tid == tid) {
             server->workers.erase(ptr);
-            delete(this);
+            delete (this);
             return;
         }
     }
 }
 
 void Server::ClientWorker::work() {
-    printLog("Client worker started with tid " + std::to_string(tid));
+    printLog("Client worker # " + std::to_string(number) + " started");
     char buffer[256];
     while (true) {
         std::string command = "";
@@ -138,10 +145,10 @@ void Server::ClientWorker::work() {
 
 bool Server::ClientWorker::handleRequest(std::string request) {
     if (request.length() < 5 || request[4] != ' ') {
-        printLog("BAD request: " + request);
+        printLog("BAD REQUEST: " + request);
         return false;
     }
-    printLog("CORRECT request: " + request);
+    printLog("Correct request: " + request);
     std::string commandCode = request.substr(0, 4);
     if (commandCode == "GBYE") {
         return true;
@@ -225,11 +232,11 @@ void Server::ClientWorker::answerRequest(std::string commandCode, std::string bo
 }
 
 void Server::ClientWorker::stop() {
-    std::cout << "Closing socket from client worker with tid " << tid << std::endl;
+    std::cout << "Closing socket from client worker # " << number << std::endl;
     if (tests) {
         tests->isAuthorized = false;
     }
-    close(clientSockfd);
+    shutdown(clientSockfd, SHUT_RDWR);
 }
 
 

@@ -123,6 +123,7 @@ private:
         pthread_attr_t attr;
         Server *server;
         UserTests *tests;
+        int number;
 
         std::string login;
 
@@ -133,8 +134,8 @@ private:
         void stop();
 
 
-        ClientWorker(Server *server, int clientSockfd) : clientSockfd(clientSockfd), server(server) {
-            printLog("Worker!!");
+        ClientWorker(Server *server, int clientSockfd, int number) : clientSockfd(clientSockfd),
+                                                                     server(server), number(number) {
             pthread_attr_init(&attr);
         }
 
@@ -163,9 +164,10 @@ private:
     int sockfd;
     struct sockaddr_in serv_addr;
     pthread_t serverThreadId;
-    std::vector<ClientWorker*> workers;
+    std::vector<ClientWorker *> workers;
     std::map<std::string, UserTests> users;
     TestContainer testContainer = TestContainer();
+    int workerCounter = 0;
 };
 
 

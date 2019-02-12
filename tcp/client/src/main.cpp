@@ -13,6 +13,7 @@ void help() { std::cerr << "List of commands:\n"
                            "\ta croupier <key-phrase>\n"
                            "\tbet <N> (odd|even|<X>)\n"
                            "\tspin\n"
+                           "\tfinish\n"
                            "\tlist\n"
                            "\tbye\n"; }
 
@@ -45,12 +46,12 @@ int main(int argc, char *argv[]) {
         } else if (line == "bye") {
             client.Quit();
             return 0;
+        } else if (sscanf(line.c_str(), "bet %d %d", &sum, &number) == 2 and sum > 0) {
+            client.NewBet(std::to_string(number), sum);
         } else if (sscanf(line.c_str(), "bet %d odd", &sum) and sum > 0) {
             client.NewBet("odd", sum);
         } else if (sscanf(line.c_str(), "bet %d even", &sum) and sum > 0) {
             client.NewBet("even", sum);
-        } else if (sscanf(line.c_str(), "bet %d %d", &sum, &number) == 2 and sum > 0) {
-            client.NewBet(std::to_string(number), sum);
         } else {
             help();
         }

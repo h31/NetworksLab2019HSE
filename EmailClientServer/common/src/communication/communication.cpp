@@ -18,9 +18,14 @@ uint32_t util::readMessageSize(int socket) {
 }
 
 void util::readToBuffer(int socket, uint8_t *buffer, size_t size) {
-    ssize_t valread = read(socket, buffer, size);
-    if (valread < 0) {
-        throw "Can't read from socket";
+    size_t offset = 0;
+    while (size > 0) {
+        ssize_t valRead = read(socket, buffer + offset, size);
+        if (valRead < 0) {
+            throw "Can't read from socket";
+        }
+        offset += valRead;
+        size -= valRead;
     }
 }
 

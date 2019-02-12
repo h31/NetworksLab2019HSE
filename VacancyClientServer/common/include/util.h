@@ -15,9 +15,10 @@ namespace util {
     nlohmann::json communicate(int socket, const nlohmann::json &message);
     nlohmann::json receiveMessage(int socket);
     void sendMessage(int socket, const nlohmann::json &message);
-
+    
     void writeToSocket(int socket, const void *buffer, uint32_t size);
-    void readFromSocket(int socket, void *buffer, uint32_t size);
+    template <class T>
+    void readFromSocket(int socket, T *buffer, uint32_t size);
 
     std::shared_ptr<uint8_t[]> encodeNumber(uint32_t number);
     uint32_t decodeNumber(const uint8_t * buffer);

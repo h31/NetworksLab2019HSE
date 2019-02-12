@@ -42,10 +42,16 @@ void util::writeToSocket(int socket, const void *buffer, uint32_t size) {
     }
 }
 
-void util::readFromSocket(int socket, void *buffer, uint32_t size) {
-    ssize_t valRead = read(socket, buffer, size);
-    if (valRead < 0) {
-        throw "Can't read from socket";
+template <class T>
+void util::readFromSocket(int socket, T *buffer, uint32_t size) {
+    size_t offset = 0;
+    while (size > 0) {
+        ssize_t valRead = read(socket, buffer + offset, size);
+        if (valRead < 0) {
+            throw "Can't read from socket";
+        }
+        offset += valRead;
+        size -= valRead;
     }
 }
 

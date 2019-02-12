@@ -143,9 +143,13 @@ private:
 
         bool handleRequest(std::string request);
 
-        void answerRequest(std::string commandCode, std::string body);
+        bool answerRequest(std::string commandCode, std::string body);
 
         void removeFromVector();
+
+        void log(const std::string& s) {
+            std::cout << "Worker # " << number << " : " << s << std::endl;
+        }
     };
 
     static void *listenClientStatic(void *server) {

@@ -25,7 +25,6 @@ Server::Server(uint16_t port, char split) {
         perror("ERROR on binding");
         exit(1);
     }
-    printLog("Socket binded");
 }
 
 void Server::listenClient() {
@@ -39,7 +38,6 @@ void Server::listenClient() {
             perror("ERROR on accept");
             exit(1);
         }
-        printLog("Got a client!!!");
         ClientWorker *worker = new ClientWorker(this, clientSockfd, workerCounter++);
         workers.push_back(worker);
         worker->startThread();
@@ -114,7 +112,7 @@ void Server::ClientWorker::removeFromVector() {
 }
 
 void Server::ClientWorker::work() {
-    printLog("Client worker # " + std::to_string(number) + " started");
+    log("Started");
     char buffer[256];
     while (true) {
         std::string command = "";
@@ -125,6 +123,7 @@ void Server::ClientWorker::work() {
             exit(1);
         }
         if (n == 0) {
+            log("read - n = 0");
             removeFromVector();
             return;
         }
@@ -146,20 +145,19 @@ void Server::ClientWorker::work() {
 
 bool Server::ClientWorker::handleRequest(std::string request) {
     if (request.length() < 5 || request[4] != ' ') {
-        printLog("BAD REQUEST: " + request);
+        log("BAD REQUEST: \"" + request + "\"");
         return false;
     }
-    printLog("Correct request: " + request);
+    log("Correct request: \"" + request + "\"");
     std::string commandCode = request.substr(0, 4);
     if (commandCode == "GBYE") {
         return true;
     }
     std::string body = request.substr(5);
-    answerRequest(commandCode, body);
-    return false;
+    return answerRequest(commandCode, body);
 }
 
-void Server::ClientWorker::answerRequest(std::string commandCode, std::string body) {
+bool Server::ClientWorker::answerRequest(std::string commandCode, std::string body) {
     std::string responseStatus;
     std::string responseBody = "";
     if (commandCode == "REGI") {
@@ -225,15 +223,21 @@ void Server::ClientWorker::answerRequest(std::string commandCode, std::string bo
         }
     }
     std::string result = commandCode + ' ' + responseStatus + ' ' + responseBody + server->SPLIT;
+    log("Sending back: \"" + result.substr(0, result.length() - 1) + "\"");
     int n = write(clientSockfd, result.c_str(), result.size());
     if (n < 0) {
         perror("ERROR writing to socket");
         exit(1);
     }
+    if (n == 0) {
+        log("write - n = 0");
+        return true;
+    }
+    return false;
 }
 
 void Server::ClientWorker::stop() {
-    std::cout << "Closing socket from client worker # " << number << std::endl;
+    log("Closing socket");
     if (tests) {
         tests->isAuthorized = false;
     }

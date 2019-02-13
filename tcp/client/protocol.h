@@ -6,19 +6,13 @@
 #include <cstring>
 
 namespace Protocol {
-    enum class ClientOperationTypes {
-        REGISTER = 0,
-        SEND_MESSAGE = 1,
-        RECIEVED_MESSAGE = 2,
-        DISCONNECT = 3
+    enum class OperationType {
+        REGISTRATION = 0,
+        NEW_MESSAGE = 1,
+        MESSAGE_CONFIRMATION = 2,
+        DISCONNECTION = 3
     };
 
-    enum class ServerOperationTypes {
-        REGISTERED = 0,
-        SEND_MESSAGE = 1,
-        RECIEVED_MESSAGE = 2,
-        DISCONNECT = 3
-    };
 
     class ClientHeader {
     public:
@@ -31,19 +25,6 @@ namespace Protocol {
         uint32_t type;
         uint32_t username_length;
         char* username;
-    };
-
-    class ServerHeader {
-    public:
-        ServerHeader() = default;
-        ServerHeader(uint32_t type) : type(type) {};
-
-        void read_from_fd(int fd);
-        uint32_t get_type() {
-            return type;
-        }
-    private:
-        uint32_t type = 5;
     };
 };
 

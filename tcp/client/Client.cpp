@@ -13,6 +13,12 @@
 #include <iostream>
 #include <fcntl.h>
 #include "protocol.h"
+#include "IncomingEvent.h"
+
+int64_t get_timestamp() {
+    time_t t = std::time(nullptr);
+    return static_cast<int64_t> (t);
+}
 
 int fd_set_blocking(int fd, int blocking) {
     int flags = fcntl(fd, F_GETFL, 0);
@@ -57,10 +63,9 @@ Client Client::create_client(const char *hostname, uint16_t port, const char *us
 
     /* Register username on server */
     Protocol::ClientHeader client_header = Protocol::ClientHeader(0, username);
-    client_header.write_to_fd(sockfd, static_cast<int>(Protocol::ClientOperationTypes::REGISTER));
-    Protocol::ServerHeader server_header = Protocol::ServerHeader();
-    server_header.read_from_fd(sockfd);
-    std::cout << "Server returned: " << server_header.get_type();
+    client_header.write_to_fd(sockfd, static_cast<int>(Protocol::OperationType::REGISTRATION));
+    int32_t type = 0;
+    read(sockfd, (char *) &type, sizeof(type));
 
     //TODO
 
@@ -69,45 +74,90 @@ Client Client::create_client(const char *hostname, uint16_t port, const char *us
 
 Client::Client(int sockfd, const Protocol::ClientHeader header) : sockfd(sockfd), client_header(header) {}
 
-void Client::send_message(size_t reciever_length, char* reciever, size_t message_length, char* message) {
+void Client::send_message(size_t reciever_length, const char* reciever, size_t message_length, const char* message) {
     client_header.write_to_fd(sockfd, /* type */ 1);
     write(sockfd, (char *)reciever_length, sizeof(reciever_length));
     write(sockfd, reciever, reciever_length);
     write(sockfd, (char *)message_length, sizeof(message_length));
     write(sockfd, message, message_length);
 
-    time_t t = std::time(nullptr);
-    auto now = static_cast<int64_t> (t);
+    int64_t now = get_timestamp();
     write(sockfd, (char *) now, sizeof(now));
 
     processing_messages.insert(std::pair<std::string, int64_t>(std::string(reciever_length, reciever_length), now));
 }
 
-void Client::disconnect() {
-    client_header.write_to_fd(sockfd, static_cast<int>(Protocol::ClientOperationTypes::DISCONNECT));
-    close(sockfd);
-}
 
-bool Client::has_new_message() {
+IncomingEvent Client::get_incoming_event() {
     fd_set_blocking(sockfd, true);
-    int32_t operation_type = 0;
-    ssize_t n = read(sockfd, (char *) &operation_type, sizeof(operation_type));
+    int32_t type = 0;
+    ssize_t n = read(sockfd, (char *) &type, sizeof(type));
     if (n == 0)
-        return false;
+        return {};
     fd_set_blocking(sockfd, false);
 
-    switch (Protocol::ServerOperationTypes(operation_type)) {
-        case Protocol::ServerOperationTypes::REGISTERED:
-            printf("Warning: unexpected registration confirmation");
-            break;
-        case Protocol::ServerOperationTypes::SEND_MESSAGE:
-            return true;
-        case Protocol::ServerOperationTypes::RECIEVED_MESSAGE:
-            break;
-        case Protocol::ServerOperationTypes::DISCONNECT:
-            exit(1);
+    auto operation_type = Protocol::OperationType(type);
+    switch (operation_type) {
+        case Protocol::OperationType::REGISTRATION:
+            return {IncomingEventType::ERROR, "Warning: unexpected registration confirmation"};
+        case Protocol::OperationType::NEW_MESSAGE:
+            return {IncomingEventType::NEW_MESSAGE, read_message()};
+        case Protocol::OperationType::MESSAGE_CONFIRMATION:
+            return {IncomingEventType::MESSAGE_CONFIRMED, read_confirmation()};
+        case Protocol::OperationType::DISCONNECTION:
+            return {IncomingEventType::SERVER_DISCONNECTED, "Server disconnected"};
     }
-    return false;
 }
 
-void Client::read_message() {}
+void Client::shut_down() {
+    close(sockfd);
+
+}
+
+void Client::disconnect() {
+    client_header.write_to_fd(sockfd, static_cast<int>(Protocol::OperationType::DISCONNECTION));
+    shut_down();
+}
+
+std::string Client::read_confirmation() {
+    int32_t username_length;
+    int64_t now;
+
+    read(sockfd, (char *) &username_length, sizeof(username_length));
+    char username[username_length + /* for \0 sign */1];
+    read(sockfd, username, static_cast<size_t>(username_length));
+
+    read(sockfd, (char *) &now, sizeof(now));
+
+    auto str_username = std::string(username);
+
+    processing_messages.erase(std::make_pair(str_username, now));
+
+    return "Delivered message for " + std::string(str_username) + " sent at " + std::to_string(now);
+}
+
+std::string Client::read_message() {
+    int32_t username_length, message_length;
+    int64_t now;
+
+    read(sockfd, (char *) &username_length, sizeof(username_length));
+    char username[username_length + /* for \0 sign */1];
+    read(sockfd, username, static_cast<size_t>(username_length));
+
+    read(sockfd, (char *) &message_length, sizeof(message_length));
+    char message[message_length + /* for \0 sign */1];
+    read(sockfd, message, static_cast<size_t>(message_length));
+
+    read(sockfd, (char *) &now, sizeof(now));
+
+    write_confirmation(username_length, username, now);
+
+    return "At " + std::to_string(now) + ": " + username + ": " + message;
+}
+
+void Client::write_confirmation(int32_t username_length, const char *username, int64_t now) {
+    client_header.write_to_fd(sockfd, static_cast<int32_t>(Protocol::OperationType::MESSAGE_CONFIRMATION));
+
+    write(sockfd, (char *) &username_length, sizeof(username_length));
+    write(sockfd, username, static_cast<size_t>(username_length));
+}

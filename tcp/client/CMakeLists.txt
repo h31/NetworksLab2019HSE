@@ -4,4 +4,4 @@ project(client)
 set(CMAKE_CXX_STANDARD 14)
 
 add_executable(client
-        main.cpp Client.cpp Client.h protocol.cpp protocol.h)
+        main.cpp Client.cpp Client.h protocol.cpp protocol.h IncomingEvent.h)

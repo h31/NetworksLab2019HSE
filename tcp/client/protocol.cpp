@@ -16,13 +16,9 @@ namespace Protocol {
         delete [] this->username;
     }
 
-    void ClientHeader::write_to_fd(int fd, int type) {
+    void ClientHeader::write_to_fd(int fd, int32_t type) {
         write(fd, (char *) &type, sizeof(type));
         write(fd, (char *) &username_length, sizeof(username_length));
         write(fd, username, username_length);
-    }
-
-    void ServerHeader::read_from_fd(int fd) {
-        read(fd, (char *) &type, sizeof(type));
     }
 };

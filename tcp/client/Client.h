@@ -12,36 +12,26 @@
 #include <string.h>
 #include <set>
 #include "protocol.h"
-
-struct Message {
-    uint64_t timestamp;
-    uint32_t sender_len;
-    const char* sender;
-    uint32_t message_len;
-    const char* message;
-
-    ~Message() {
-        delete [] sender;
-        delete [] message;
-    }
-};
+#include "IncomingEvent.h"
 
 class Client {
 public:
     static Client create_client(const char *hostname, uint16_t port, const char *nickname);
 
-    void send_message(size_t reciever_length, char* reciever, size_t message_length, char* message);
-    bool has_new_message();
-    void read_message();
+    void send_message(size_t reciever_length, const char* reciever, size_t message_length, const char* message);
+    IncomingEvent get_incoming_event();
     void disconnect();
-
-    ~Client() {};
+    void shut_down();
 private:
-    Client(int sockfd, const Protocol::ClientHeader header);
+    Client(int sockfd, Protocol::ClientHeader header);
 
     int sockfd = -1;
     std::set<std::pair<std::string, int64_t>> processing_messages;
     Protocol::ClientHeader client_header;
+
+    std::string read_message();
+    std::string read_confirmation();
+    void write_confirmation(int32_t username_length, const char *username, int64_t now);
 };
 
 

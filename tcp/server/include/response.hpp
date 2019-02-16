@@ -16,7 +16,7 @@ struct dctp_response_header {
 enum return_code {
     OK = 0,
     WAIT_FOR_RESULT,
-    OVERFLOW,
+    OVERFLOW,   // not used
     DIV_BY_ZERO,
     FACT_OF_NEGATIVE,
     SQRT_OF_NEGATIVE,

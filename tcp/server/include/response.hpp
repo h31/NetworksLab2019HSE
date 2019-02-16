@@ -2,6 +2,7 @@
 
 #include <cstdint>
 
+#pragma pack(0)
 struct dctp_response_header {
     uint8_t return_code;
     uint8_t operation_type;

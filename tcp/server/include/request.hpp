@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cstdint>
+
+#pragma pack(0)
 struct dctp_request_header {
     uint8_t type;
     uint32_t id;

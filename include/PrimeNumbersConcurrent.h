@@ -8,6 +8,7 @@
 
 #include <PrimeNumbers.h>
 #include <mutex>
+#include <memory>
 
 class PrimeNumbersConcurrent  {
 public:
@@ -20,7 +21,7 @@ public:
     bool add_prime_numbers(std::vector<int64_t> numbers);
 
 private:
-    std::mutex prime_numbers_mutex;
+    std::shared_ptr<std::mutex> prime_numbers_mutex = std::make_shared<std::mutex>();
     PrimeNumbers prime_numbers;
 };
 

@@ -6,20 +6,19 @@
 #define NETWORKSLAB2019HSE_CURRENCYCLIENTAPPLICATION_H
 
 
-#include "Client.h"
 #include "Server.h"
 
 class PrimesServerApplication {
 public:
     void run();
 
-    PrimesServerApplication(uint16_t portno);
+    explicit PrimesServerApplication(uint16_t portno);
     PrimesServerApplication();
 
 private:
     const static uint16_t DEFAULT_PORTNO = 5001;
     uint16_t portno;
-    Server server = Server(portno);
+    Server server;
 
     void printUsage();
 };

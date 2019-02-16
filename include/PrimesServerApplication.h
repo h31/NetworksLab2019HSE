@@ -7,17 +7,19 @@
 
 
 #include "Client.h"
+#include "Server.h"
 
-class CurrencyClientApplication {
+class PrimesServerApplication {
 public:
     void run();
 
-    CurrencyClientApplication(const std::string &host, uint16_t portno);
+    PrimesServerApplication(uint16_t portno);
+    PrimesServerApplication();
 
 private:
-    std::string host;
+    const static uint16_t DEFAULT_PORTNO = 5001;
     uint16_t portno;
-    Client client = Client(host, portno);
+    Server server = Server(portno);
 
     void printUsage();
 };

@@ -72,7 +72,9 @@ void server::start() {
         }
         log("Server: new socket connected. " + std::to_string(new_socket_descriptor));
         std::thread *thread = new std::thread(&server::client_handler, this, new_socket_descriptor);
+        socket_pool_lock.lock();
         socket_pool.push_back(thread);
+        socket_pool_lock.unlock();
     }
 }
 
@@ -83,6 +85,10 @@ void server::client_handler(int socket_descriptor) {
         if (c < 0) {
             log_error("failed to read request.");
             continue;
+        }
+        if (c != sizeof(request)) {
+            log_error("socket has been closed unexpectedly.");
+            break;
         }
 
         log("Server: socket " + std::to_string(socket_descriptor) + " sent request: " + request_to_string(request));
@@ -114,12 +120,16 @@ void server::client_handler(int socket_descriptor) {
             case FACT:
                 response = {WAIT_FOR_RESULT, SLOW, request.id, 0};
                 thread = new std::thread(&server::process_fact, this, socket_descriptor, request);
+                slow_pool_lock.lock();
                 slow_ops_pool.push_back(thread);
+                slow_pool_lock.unlock();
                 break;
             case SQRT:
                 response = {WAIT_FOR_RESULT, SLOW, request.id, 0};
                 thread = new std::thread(&server::process_sqrt, this, socket_descriptor, request);
+                slow_pool_lock.lock();
                 slow_ops_pool.push_back(thread);
+                slow_pool_lock.unlock();
                 break;
             default:
                 response = {UNKNOWN_OPERATION, FAST, request.id, 0};
@@ -136,9 +146,14 @@ void server::client_handler(int socket_descriptor) {
         if (c < 0) {
             log_error("can't write to socket");
         }
+        if (c != sizeof(response)) {
+            log_error("socket has been closed unexpectedly.");
+            break;
+        }
     }
 
     close(socket_descriptor);
+    log("Server: closed socket " + std::to_string(socket_descriptor));
 }
 
 void server::process_sqrt(int socket_descriptor, struct dctp_request_header request) {
@@ -161,6 +176,9 @@ void server::process_sqrt(int socket_descriptor, struct dctp_request_header requ
     if (c < 0) {
         log_error("can't write to socket");
     }
+    if (c != sizeof(response)) {
+        log_error("socket has been closed unexpectedly.");
+    }
 }
 
 void server::process_fact(int socket_descriptor, struct dctp_request_header request) {
@@ -169,8 +187,8 @@ void server::process_fact(int socket_descriptor, struct dctp_request_header requ
     if (request.first_operand < 0) {
         response = {FACT_OF_NEGATIVE, SLOW, request.id, 0};
     } else {
-        auto result = 1;
-        for (int i = 1; i < fmin(request.first_operand, 20); i++) {
+        int64_t result = 1;
+        for (int i = 1; i <= fmin(request.first_operand, 20); i++) {
             result *= i;
         }
         response = {OK, SLOW, request.id, result};
@@ -186,7 +204,8 @@ void server::process_fact(int socket_descriptor, struct dctp_request_header requ
     if (c < 0) {
         log_error("can't write to socket");
     }
+    if (c != sizeof(response)) {
+        log_error("socket has been closed unexpectedly.");
+    }
 }
-
-
 

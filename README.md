@@ -81,11 +81,16 @@
         type: 501
         content: int bug_id
         
+  - Задача уже закрыта
+
+        type: 502
+        content: int bug_status
+        
 - Прием новой ошибки
 
       type: 600
       content:
-               int user_id
+               int developer_id
                int project_id
                int description length
                char[] description

@@ -77,7 +77,7 @@ int64_t Client::getCalculationInterval(int64_t len) {
     return start;
 }
 
-void Client::processInterval(int64_t start, int64_t len) {
+bool Client::processInterval(int64_t start, int64_t len) {
     int64_t primes[len];
     int64_t cnt = calculatePrimesInInterval(start, len, primes);
 
@@ -91,6 +91,8 @@ void Client::processInterval(int64_t start, int64_t len) {
 
     int8_t success = readInt8();
     readMessageDelimeter();
+    
+    return (bool)success;
 }
 
 int64_t Client::calculatePrimesInInterval(int64_t start, int64_t len, int64_t *dst) {

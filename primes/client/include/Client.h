@@ -14,7 +14,7 @@ public:
     
     int64_t getCalculationInterval(int64_t len);
     
-    void processInterval(int64_t start, int64_t len);
+    bool processInterval(int64_t start, int64_t len);
 
 private:
     int64_t calculatePrimesInInterval(int64_t start, int64_t len, int64_t *dst);

@@ -8,19 +8,23 @@
 
 #include <string.h>
 
+#include <cmath>
 #include <thread>
 #include <server.h>
 #include <request.hpp>
 #include <response.hpp>
 #include <iostream>
 
+#include <util.hpp>
+
 
 server::server(uint16_t port_number) : port_number(port_number) {
-    socket_descriptor = socket(AF_INET, SOCK_STREAM, 0);
+    log("Server: initialization begin.");
 
+    socket_descriptor = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_descriptor < 0) {
-        perror("ERROR opening socket");
-        exit(1);
+        log_error("can't open socket.");
+        return;
     }
 
     bzero((char *) &server_addr, sizeof(server_addr));
@@ -29,12 +33,17 @@ server::server(uint16_t port_number) : port_number(port_number) {
     server_addr.sin_port = htons(port_number);
 
     if (bind(socket_descriptor, (struct sockaddr *) &server_addr, sizeof(server_addr)) < 0) {
-        perror("ERROR on binding");
-        exit(1);
+        log_error("can't bind.");
+        return;
     }
+    isInitialized = true;
+
+    log("Server: initialization success.");
 }
 
 server::~server() {
+    log("Server: destruction begin.");
+
     for (auto slow_operation : this->slow_ops_pool) {
         slow_operation->join();
     }
@@ -44,37 +53,41 @@ server::~server() {
     for (auto socket_thread : this->socket_pool) {
         socket_thread->join();
     }
+
+    log("Server: destruction success.");
 }
 
 void server::start() {
+    if (!this->isInitialized) {
+        return;
+    }
     listen(socket_descriptor, 5);
 
     while (!this->isTerminated) {
         socklen_t client_size = sizeof(client_addr);
         int new_socket_descriptor = accept(socket_descriptor, (struct sockaddr *) &client_addr, &client_size);
         if (new_socket_descriptor < 0) {
-            perror("ERROR on accept");
-            exit(1);
+            log_error("failed to accept");
+            continue;
         }
-
+        log("Server: new socket connected. " + std::to_string(new_socket_descriptor));
         std::thread *thread = new std::thread(&server::client_handler, this, new_socket_descriptor);
         socket_pool.push_back(thread);
     }
 }
 
 void server::client_handler(int socket_descriptor) {
-    while (true) {
+    while (!this->isTerminated) {
         struct dctp_request_header request{};
         ssize_t c = read(socket_descriptor, &request, sizeof(request));
-
         if (c < 0) {
-            perror("ERROR reading from socket");
-            exit(1);
+            log_error("failed to read request.");
+            continue;
         }
 
+        log("Server: socket " + std::to_string(socket_descriptor) + " sent request: " + request_to_string(request));
+
         struct dctp_response_header response{};
-        std::cout << "kek\n";
-        std::cout << request.type << " " << request.id << request.first_operand << request.second_operand << "\n";
         int64_t result;
         std::thread *thread;
         switch (request.type) {
@@ -108,27 +121,71 @@ void server::client_handler(int socket_descriptor) {
                 thread = new std::thread(&server::process_sqrt, this, socket_descriptor, request);
                 slow_ops_pool.push_back(thread);
                 break;
-            default:break;
+            default:
+                response = {UNKNOWN_OPERATION, FAST, request.id, 0};
+                break;
         }
-        std::cout << response.return_code << " " << response.id << " " << response.result << "\n";
 
         c = write(socket_descriptor, &response, sizeof(response));
-        std::cout << c << std::endl;
-        std::cout << sizeof(response) << std::endl;
-        if (c < 0) {
-            perror("ERROR writing from socket");
-            exit(1);
-        }
 
+        log("Server: sent to socket "
+        + std::to_string(socket_descriptor)
+        + " response (size = " + std::to_string(c) + "): "
+        + response_to_string(response));
+
+        if (c < 0) {
+            log_error("can't write to socket");
+        }
     }
+
+    close(socket_descriptor);
 }
 
 void server::process_sqrt(int socket_descriptor, struct dctp_request_header request) {
+    sleep(2);
+    struct dctp_response_header response{};
+    if (request.first_operand < 0) {
+        response = {SQRT_OF_NEGATIVE, SLOW, request.id, 0};
+    } else {
+        auto result = static_cast<int64_t>(sqrt(request.first_operand));
+        response = {OK, SLOW, request.id, result};
+    }
 
+    ssize_t c = write(socket_descriptor, &response, sizeof(response));
+
+    log("Server: sent to socket "
+        + std::to_string(socket_descriptor)
+        + " response (size = " + std::to_string(c) + "): "
+        + response_to_string(response));
+
+    if (c < 0) {
+        log_error("can't write to socket");
+    }
 }
 
 void server::process_fact(int socket_descriptor, struct dctp_request_header request) {
+    sleep(2);
+    struct dctp_response_header response{};
+    if (request.first_operand < 0) {
+        response = {FACT_OF_NEGATIVE, SLOW, request.id, 0};
+    } else {
+        auto result = 1;
+        for (int i = 1; i < fmin(request.first_operand, 20); i++) {
+            result *= i;
+        }
+        response = {OK, SLOW, request.id, result};
+    }
 
+    ssize_t c = write(socket_descriptor, &response, sizeof(response));
+
+    log("Server: sent to socket "
+        + std::to_string(socket_descriptor)
+        + " response (size = " + std::to_string(c) + "): "
+        + response_to_string(response));
+
+    if (c < 0) {
+        log_error("can't write to socket");
+    }
 }
 
 

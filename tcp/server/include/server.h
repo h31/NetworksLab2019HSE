@@ -23,6 +23,7 @@ private:
     int socket_descriptor;
     sockaddr_in server_addr{};
     sockaddr_in client_addr{};
+    bool isInitialized = false;
     bool isTerminated = false;
 
     std::vector<std::thread*> socket_pool{};

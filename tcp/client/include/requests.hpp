@@ -3,13 +3,14 @@
 #include <cstdint>
 #include <string>
 
-#pragma pack(0)
+#pragma pack(push, 1)
 struct CalculatorResponse {
     uint8_t errorCode;
     uint8_t operationType;
     uint32_t computationId;
     int64_t result;
 };
+#pragma pack(pop)
 
 enum OperationType {
     FAST = 1,
@@ -27,13 +28,14 @@ enum ErrorCode {
 
 std::string errorCodeToString(uint8_t code);
 
-#pragma pack(0)
+#pragma pack(push, 1)
 struct CalculatorRequest {
     uint8_t type;
     uint32_t computationId;
     int64_t firstOperand;
     int64_t secondOperand;
 };
+#pragma pack(pop)
 
 enum RequestType {
     PLUS = 1,

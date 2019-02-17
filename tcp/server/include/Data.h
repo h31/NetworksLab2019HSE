@@ -12,7 +12,8 @@
 
 
 enum HistoryEventType {
-    REMITTANCE_REQUEST
+    REMITTANCE_REQUEST,
+    NOTHING
 };
 
 struct HistoryEvent {
@@ -60,15 +61,25 @@ class Data {
 public:
     void addNewWaller(Wallet wallet);
 
+    HistoryEvent getEvent(uint64_t id);
+
     void addHistoryEvents(uint64_t numFrom, uint64_t numTo, uint64_t count, HistoryEventType historyEventType);
 
     bool isExist(uint64_t num, std::string password);
+
+    bool setHistoryStatus(uint64_t id, bool isClosed);
 
     uint64_t getMoney(uint64_t num, std::string password);
 
     uint64_t getFreeNumber();
 
-    bool incMoney(uint64_t num, int64_t count);
+    void print();
+
+    bool decMoney(uint64_t num, uint64_t count);
+
+    bool incMoney(uint64_t num, uint64_t count);
+
+    std::set<HistoryEvent> getRequests(uint64_t num);
 
     uint64_t getEnvetId() {
         return events.size();

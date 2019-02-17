@@ -42,6 +42,14 @@ private:
     Response sendTransfer(uint8_t *inputBuffer, uint32_t type, ssize_t countRead);
 
     Response requestTransfer(uint8_t *inputBuffer, uint32_t type, ssize_t countRead);
+
+    Response acceptTransfer(uint8_t *inputBuffer, uint32_t type, ssize_t countRead);
+
+    Response getWalletInfo(uint8_t *inputBuffer, uint32_t type, ssize_t countRead);
+
+    Response getRequests(uint8_t *inputBuffer, uint32_t type, ssize_t countRead);
+
+    bool trassfer(uint64_t from, uint64_t to, std::string passwordFrom, uint64_t count);
     std::shared_mutex &mutex_;
     std::shared_mutex &historyMutex;
     Data data;

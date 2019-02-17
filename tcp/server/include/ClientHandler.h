@@ -12,6 +12,7 @@
 #include <iostream>
 #include <mutex>
 #include <shared_mutex>
+#include "model/ReadWriteHelper.h"
 #include "Data.h"
 
 struct Response {
@@ -29,8 +30,9 @@ public:
     void operator()(int clientSocketFd);
 
 private:
+    static ReadWriteHelper readWriteHelper;
     Response getWalletNumbers(int clientSocketFd, uint32_t type);
-    Response addWallet(int clientSocketFd, uint32_t type);
+    Response addWallet(uint8_t *inputBuffer, uint32_t type, ssize_t countRead);
     std::shared_mutex &mutex_;
     Data data;
 };

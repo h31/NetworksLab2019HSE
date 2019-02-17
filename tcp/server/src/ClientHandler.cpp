@@ -6,23 +6,25 @@
 
 #include "../include/ClientHandler.h"
 
+ReadWriteHelper ClientHandler::readWriteHelper;
 
 void ClientHandler::operator()(int clientSocketFd) {
     if (clientSocketFd < 0) {
         throw ClientHandlerException("ERROR on accept");
     }
     ssize_t countRead;
-    int32_t requestType = 0;
+    uint8_t buffer[256];
+    bzero(buffer, 256);
+    countRead = read(clientSocketFd, buffer, sizeof(buffer));
 
-    countRead = read(clientSocketFd, &requestType, sizeof(requestType));
-
-    if (countRead < sizeof(requestType)) {
+    if (countRead < 1) {
         throw ClientHandlerException("ERROR reading from socket");
     }
+    uint32_t requestType = readWriteHelper.get4Bytes(buffer, 0);
     ssize_t n;
     switch (requestType) {
         case 0: {
-            Response response = addWallet(clientSocketFd, 1);
+            Response response = addWallet(buffer, requestType, countRead);
             n = write(clientSocketFd, response.buffer, response.count);
             break;
         }
@@ -72,29 +74,26 @@ Response ClientHandler::getWalletNumbers(int clientSocketFd, uint32_t type) {
 }
 
 
-Response ClientHandler::addWallet(int clientSocketFd, uint32_t type) {
-
-    // тип: 4 байта ; результат: 4 байтa ; номер: 8
-    const auto bufferSize = static_cast<uint32_t>(4 + 4 + 8);
-    auto buffer = new uint8_t[bufferSize];
-    bzero(buffer, bufferSize);
+Response ClientHandler::addWallet(uint8_t *inputBuffer, uint32_t type, ssize_t countRead) {
+    uint8_t buffer[256];
+    bzero(buffer, 256);
 
     //записываем тип
-    memcpy(buffer, &type, sizeof(type));
-    int shift = sizeof(type);
-
+    readWriteHelper.set4Bytes(buffer, 0, type);
+    int offset = 4;
     uint32_t isSuccess = 0;
     std::uint64_t walletNumber = 0;
-
-
-    try {
-        ssize_t countRead;
+    if (countRead < 36) {
+        isSuccess = 0;
+    } else {
         char password[32];
-        std::cout << sizeof(password) << std::endl;
-        countRead = read(clientSocketFd, &password, sizeof(password));
-        if (countRead < sizeof(password)) {
-            throw ClientHandlerException("ERROR reading from socket");
+        bzero(password, 32);
+        int offsetForChar = 4;
+        for (char &i : password) {
+            i = (char) readWriteHelper.getByte(inputBuffer, offsetForChar);
+            offsetForChar++;
         }
+        std::cout << password;
         std::string passwordString(password);
         mutex_.lock();
         walletNumber = data.getFreeNumber();
@@ -103,18 +102,14 @@ Response ClientHandler::addWallet(int clientSocketFd, uint32_t type) {
         mutex_.unlock();
         isSuccess = 1;
     }
-    catch (ClientHandlerException e) {
-        isSuccess = 0;
-    }
 
     //записали результат
-    memcpy(buffer + shift, &isSuccess, sizeof(isSuccess));
-    shift += sizeof(isSuccess);
+    readWriteHelper.set4Bytes(buffer, offset, isSuccess);
+    offset += 4;
 
     //записали номер
-    memcpy(buffer + shift, &walletNumber, sizeof(walletNumber));
-    shift += sizeof(walletNumber);
+    readWriteHelper.set8Bytes(buffer, offset, walletNumber);
 
-    return {buffer, bufferSize};
+    return {buffer, 256};
 }
 

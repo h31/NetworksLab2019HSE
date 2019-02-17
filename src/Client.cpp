@@ -118,7 +118,8 @@ void insert_bytes(std::vector<int8_t> &container, const T &value) {
 }
 
 int32_t read_int32(std::vector<int8_t>::iterator &it) {
-    int32_t val = it[0] | (it[1] << 8) | (it[2] << 16) | (it[3] << 24);
+    int8_t bytes[] = {it[0], it[1], it[2], it[3]};
+    int32_t val = *((int*)bytes);
     it += sizeof(int32_t);
     return val;
 }

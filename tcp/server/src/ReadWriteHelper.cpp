@@ -3,7 +3,7 @@
 //
 
 
-#include "../../include/model/ReadWriteHelper.h"
+#include "../include/ReadWriteHelper.h"
 
 uint64_t ReadWriteHelper::get8Bytes(uint8_t *buffer, int offset) {
     uint64_t x = 0;

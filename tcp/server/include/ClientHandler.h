@@ -12,7 +12,7 @@
 #include <iostream>
 #include <mutex>
 #include <shared_mutex>
-#include "model/ReadWriteHelper.h"
+#include "ReadWriteHelper.h"
 #include "Data.h"
 
 struct Response {

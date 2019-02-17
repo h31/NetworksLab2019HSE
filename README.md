@@ -56,7 +56,7 @@
         type: 302
         content: int bug_status
         
-   - Ошибки с таким кодом не существует
+  - Ошибки с таким кодом не существует
         
         type: 303
         content: int bug_id

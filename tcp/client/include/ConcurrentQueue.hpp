@@ -24,7 +24,7 @@ public:
         m_queueMutex.lock();
         bool isEmpty = m_resultsQueue.empty();
         m_queueMutex.unlock();
-        return !isEmpty;
+        return isEmpty;
     }
 
 private:

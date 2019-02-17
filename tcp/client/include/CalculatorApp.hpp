@@ -28,4 +28,6 @@ private:
 
     uint32_t m_currentComputation = 0;
     CalcuatorServerDriver m_driver;
+
+    void printResponse(const CalculatorResponse &response);
 };

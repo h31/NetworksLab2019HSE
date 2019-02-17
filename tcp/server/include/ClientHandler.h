@@ -24,18 +24,28 @@ struct Response {
 
 class ClientHandler {
 public:
-    explicit ClientHandler(Data &data1, std::shared_mutex &mutex_) : data(data1),
-                                                                     mutex_(mutex_) {};
+    explicit ClientHandler(Data &data1,
+                           std::shared_mutex &mutex_,
+                           std::shared_mutex &historyMutex) : data(data1),
+                                                              mutex_(mutex_),
+                                                              historyMutex(historyMutex) {};
 
     void operator()(int clientSocketFd);
 
 private:
     static ReadWriteHelper readWriteHelper;
+
     Response addWallet(uint8_t *inputBuffer, uint32_t type, ssize_t countRead);
+
     Response getWalletNumbers(uint32_t type);
+
     Response sendTransfer(uint8_t *inputBuffer, uint32_t type, ssize_t countRead);
+
+    Response requestTransfer(uint8_t *inputBuffer, uint32_t type, ssize_t countRead);
     std::shared_mutex &mutex_;
+    std::shared_mutex &historyMutex;
     Data data;
+
 };
 
 

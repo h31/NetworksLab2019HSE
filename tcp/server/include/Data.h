@@ -17,17 +17,28 @@ enum HistoryEventType {
 
 struct HistoryEvent {
     HistoryEventType eventType;
-    uint8_t walletNumberFrom;
-    uint8_t walletNumberTo;
-    uint8_t count;
+    uint64_t walletNumberFrom;
+    uint64_t walletNumberTo;
+    uint64_t count;
+    uint64_t id;
+    bool isClosed;
+
+    HistoryEvent(HistoryEventType eventType,
+                 uint64_t walletNumberFrom,
+                 uint64_t walletNumberTo,
+                 uint64_t count,
+                 uint64_t id,
+                 bool isClosed) : eventType(eventType),
+                                  walletNumberFrom(walletNumberFrom),
+                                  walletNumberTo(walletNumberTo),
+                                  count(count),
+                                  id(id),
+                                  isClosed(isClosed) {}
+
 };
 
 inline bool operator<(const HistoryEvent &historyEvent1, const HistoryEvent &historyEvent2) {
-    if (historyEvent1.walletNumberTo != historyEvent2.walletNumberTo) {
-        return historyEvent1.walletNumberTo < historyEvent2.walletNumberTo;
-    }
-
-    return historyEvent1.walletNumberFrom < historyEvent2.walletNumberFrom;
+    return historyEvent1.id < historyEvent2.id;
 }
 
 struct Wallet {
@@ -49,12 +60,23 @@ class Data {
 public:
     void addNewWaller(Wallet wallet);
 
+    void addHistoryEvents(uint64_t numFrom, uint64_t numTo, uint64_t count, HistoryEventType historyEventType);
+
+    bool isExist(uint64_t num, std::string password);
+
+    uint64_t getMoney(uint64_t num, std::string password);
+
     uint64_t getFreeNumber();
+
+    bool incMoney(uint64_t num, int64_t count);
+
+    uint64_t getEnvetId() {
+        return events.size();
+    }
 
     std::set<uint64_t> getNumbers();
 
 private:
-
     std::set<Wallet> wallets;
     std::set<HistoryEvent> events;
 };

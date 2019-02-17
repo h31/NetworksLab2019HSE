@@ -37,7 +37,16 @@ void ClientHandler::operator()(int clientSocketFd) {
                 n = write(clientSocketFd, response.buffer, response.count);
                 break;
             }
-            case 2:
+            case 2: {
+                Response response = sendTransfer(buffer, requestType, countRead);
+                n = write(clientSocketFd, response.buffer, response.count);
+                break;
+            }
+            case 3: {
+                Response response = requestTransfer(buffer, requestType, countRead);
+                n = write(clientSocketFd, response.buffer, response.count);
+                break;
+            }
             default : {
                 n = write(clientSocketFd, "I got your message", 18);
                 break;
@@ -73,7 +82,7 @@ Response ClientHandler::addWallet(uint8_t *inputBuffer, uint32_t type, ssize_t c
         std::string passwordString(password);
         mutex_.lock();
         walletNumber = data.getFreeNumber();
-        Wallet wallet(walletNumber, passwordString, 0);
+        Wallet wallet(walletNumber, passwordString, 100);
         ClientHandler::data.addNewWaller(wallet);
         mutex_.unlock();
         std::cout << (passwordString);
@@ -93,15 +102,11 @@ Response ClientHandler::addWallet(uint8_t *inputBuffer, uint32_t type, ssize_t c
 Response ClientHandler::getWalletNumbers(uint32_t type) {
 
     mutex_.lock_shared();
-    std::set<uint64_t> walletNumbers;/*ClientHandler::data.getNumbers();*/
-    walletNumbers.insert(1);
-    walletNumbers.insert(2);
-    walletNumbers.insert(5);
+    std::set<uint64_t> walletNumbers = ClientHandler::data.getNumbers();
     mutex_.unlock_shared();
 
-    const auto bufferSize = static_cast<uint32_t>(4 + 8 + 8 * walletNumbers.size());
-    auto buffer = new uint8_t[bufferSize];
-    bzero(buffer, bufferSize);
+    uint8_t buffer[1024];
+    bzero(buffer, 1024);
 
     // записываем тип
     readWriteHelper.set4Bytes(buffer, 0, type);
@@ -113,15 +118,91 @@ Response ClientHandler::getWalletNumbers(uint32_t type) {
 
     //записываем все номера кошельков
     for (auto walletNumber : walletNumbers) {
+        if (offset > 1024) {
+            break;
+        }
         readWriteHelper.set8Bytes(buffer, offset, walletNumber);
         offset += 8;
     }
 
-    return {buffer, bufferSize};
+    return {buffer, 1024};
 }
 
 
 Response ClientHandler::sendTransfer(uint8_t *inputBuffer, uint32_t type, ssize_t countRead) {
-    return Response(nullptr, 0);
+    uint8_t buffer[256];
+    bzero(buffer, 256);
+    readWriteHelper.set4Bytes(buffer, 0, type);
+    int writeOffset = 4;
+    int readOffset = 4;
+    uint32_t isSuccess = 0;
+    if (countRead < 4 + 8 + 8 + 32 + 8) {
+        return Response(buffer, 256);
+    }
+    uint64_t numFrom = readWriteHelper.get8Bytes(inputBuffer, readOffset);
+    readOffset += 8;
+    uint64_t numTo = readWriteHelper.get8Bytes(inputBuffer, readOffset);
+    readOffset += 8;
+    char password[32];
+    bzero(password, 32);
+    for (char &i : password) {
+        i = (char) readWriteHelper.getByte(inputBuffer, readOffset);
+        readOffset++;
+    }
+    std::string passwordString(password);
+    int64_t countMoney = readWriteHelper.get8Bytes(inputBuffer, readOffset);
+
+
+    mutex_.lock();
+    if (countMoney < 0
+        || !ClientHandler::data.isExist(numFrom, password)
+        || ClientHandler::data.getMoney(numFrom, password) < countMoney) {
+        mutex_.unlock();
+        return Response(buffer, 256);
+    }
+    ClientHandler::data.incMoney(numTo, countMoney);
+    mutex_.unlock();
+    isSuccess = 1;
+    readWriteHelper.set4Bytes(buffer, writeOffset, isSuccess);
+    return Response(buffer, 256);
+}
+
+Response ClientHandler::requestTransfer(uint8_t *inputBuffer, uint32_t type, ssize_t countRead) {
+    uint8_t buffer[256];
+    bzero(buffer, 256);
+    readWriteHelper.set4Bytes(buffer, 0, type);
+    int writeOffset = 4;
+    int readOffset = 4;
+    uint32_t isSuccess = 0;
+    if (countRead < 4 + 8 + 8 + 32 + 8) {
+        return Response(buffer, 256);
+    }
+    uint64_t numFrom = readWriteHelper.get8Bytes(inputBuffer, readOffset);
+    readOffset += 8;
+    uint64_t numTo = readWriteHelper.get8Bytes(inputBuffer, readOffset);
+    readOffset += 8;
+    char password[32];
+    bzero(password, 32);
+    for (char &i : password) {
+        i = (char) readWriteHelper.getByte(inputBuffer, readOffset);
+        readOffset++;
+    }
+    std::string passwordString(password);
+    uint64_t countMoney = readWriteHelper.get8Bytes(inputBuffer, readOffset);
+
+    mutex_.lock_shared();
+    if (countMoney < 0
+        || !ClientHandler::data.isExist(numFrom, password)) {
+        mutex_.unlock_shared();
+        return Response(buffer, 256);
+    }
+    mutex_.unlock_shared();
+
+    historyMutex.lock();
+    ClientHandler::data.addHistoryEvents(numFrom, numTo, countMoney, REMITTANCE_REQUEST);
+    historyMutex.unlock();
+    isSuccess = 1;
+    readWriteHelper.set4Bytes(buffer, writeOffset, isSuccess);
+    return Response(buffer, 256);
 }
 

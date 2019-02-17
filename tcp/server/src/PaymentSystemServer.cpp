@@ -24,9 +24,10 @@ void PaymentSystemServer::run(int portNo) {
     listen(sockfd, 5);
     clilen = sizeof(cli_addr);
     std::shared_mutex mutex_;
+    std::shared_mutex historyMutex;
     while(isEnabled) {
         newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
-        ClientHandler clientHandler(data, mutex_);
+        ClientHandler clientHandler(data, mutex_, historyMutex);
         std::thread thread(clientHandler, newsockfd);
         thread.detach();
     }

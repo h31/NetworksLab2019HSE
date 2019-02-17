@@ -26,6 +26,10 @@ void Server::run() {
         perror("ERROR opening socket");
         exit(1);
     }
+    int enable = 1;
+    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0) {
+        perror("ERROR setting socket option to SO_REUSEADDR");
+    }
     struct sockaddr_in serv_addr{};
     bzero((char *) &serv_addr, sizeof(serv_addr));
 
@@ -52,8 +56,8 @@ void Server::run() {
             std::cout << "New client with id = " << clientsockfd << "\n";
             client_handlers_with_tasks_mutex.lock();
             client_sockets.push_back(clientsockfd);
-            client_handlers.emplace_back(clientsockfd, prime_numbers);
-            client_handler_tasks.emplace_back(&ClientHandler::run, std::ref(client_handlers.back()));
+            client_handlers.push_back(new ClientHandler(clientsockfd, prime_numbers));
+            client_handler_tasks.emplace_back(&ClientHandler::run, client_handlers.back());
             client_handlers_with_tasks_mutex.unlock();
         }
     }
@@ -88,6 +92,9 @@ Server::~Server() {
     }
     client_handlers_with_tasks_mutex.unlock();
     close(sockfd);
+    for (auto client_handler : client_handlers) {
+        delete client_handler;
+    }
 }
 
 void Server::finish_client_handlers() {

@@ -37,7 +37,7 @@ private:
     const int max_number_of_pending_connections;
     std::mutex client_handlers_with_tasks_mutex;
     std::vector<int> client_sockets;
-    std::vector<ClientHandler> client_handlers;
+    std::vector<ClientHandler*> client_handlers;
     std::vector<std::thread> client_handler_tasks;
 
     void finish_client_handlers();

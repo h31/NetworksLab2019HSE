@@ -21,7 +21,7 @@ public:
     bool add_prime_numbers(std::vector<int64_t> numbers);
 
 private:
-    std::shared_ptr<std::mutex> prime_numbers_mutex = std::make_shared<std::mutex>();
+    std::mutex prime_numbers_mutex;
     PrimeNumbers prime_numbers;
 };
 

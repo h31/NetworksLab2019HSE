@@ -8,12 +8,12 @@
 
 class ClientHandler {
 public:
-    ClientHandler(int sockfd, PrimeNumbersConcurrent &prime_numbers);
+    ClientHandler(int client_sockfd, PrimeNumbersConcurrent &prime_numbers);
 
     void run() const;
 
 private:
-    int sockfd;
+    int client_sockfd;
     PrimeNumbersConcurrent &prime_numbers;
 
     int32_t read_command() const;

@@ -25,8 +25,11 @@ bool PrimeNumbers::add_prime_numbers(std::vector<int64_t> numbers) {
     if (numbers.empty()) {
         return true;
     }
-    if (numbers[0] == prime_numbers.back()) {
-        prime_numbers.insert(prime_numbers.end(), prime_numbers.begin() + 1, prime_numbers.end());
+    else if (prime_numbers.empty()) {
+        prime_numbers.insert(prime_numbers.end(), numbers.begin(), numbers.end());
+        return true;
+    } else if (numbers[0] == prime_numbers.back()) {
+        prime_numbers.insert(prime_numbers.end(), numbers.begin() + 1, numbers.end());
         return true;
     }
     return false;

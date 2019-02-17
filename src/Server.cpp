@@ -12,13 +12,16 @@
 #include <future>
 #include <iostream>
 #include <Server.h>
+#include <fstream>
 
 
 #include "Server.h"
 #include "ClientHandler.h"
 
 Server::Server(uint16_t portno, int max_number_of_pending_connections) : portno(portno),
-max_number_of_pending_connections(max_number_of_pending_connections) {}
+max_number_of_pending_connections(max_number_of_pending_connections) {
+    restore_previous_session();
+}
 
 void Server::run() {
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -95,6 +98,7 @@ Server::~Server() {
     for (auto client_handler : client_handlers) {
         delete client_handler;
     }
+    save_current_session();
 }
 
 void Server::finish_client_handlers() {
@@ -103,4 +107,32 @@ void Server::finish_client_handlers() {
         shutdown(client_socket, SHUT_RDWR);
     }
     client_handlers_with_tasks_mutex.unlock();
+}
+
+void Server::restore_previous_session() {
+    std::ifstream file_to_restore(SESSION_FILE_NAME);
+    if (file_to_restore.is_open()) {
+        std::vector<int64_t> prime_numbers_to_add;
+        while (file_to_restore.peek() != std::ifstream::traits_type::eof() && !file_to_restore.eof()) {
+            int64_t prime_number;
+            file_to_restore >> prime_number;
+            prime_numbers_to_add.push_back(prime_number);
+        }
+        prime_numbers.add_prime_numbers(prime_numbers_to_add);
+    }
+    file_to_restore.close();
+}
+
+void Server::save_current_session() {
+    std::ofstream file_to_restore(SESSION_FILE_NAME);
+    if (file_to_restore.is_open()) {
+        auto numbers = prime_numbers.get_all();
+        for (size_t i = 0; i < numbers.size(); i++) {
+            file_to_restore << numbers[i];
+            if (i != numbers.size() - 1) {
+                file_to_restore << " ";
+            }
+        }
+    }
+    file_to_restore.close();
 }

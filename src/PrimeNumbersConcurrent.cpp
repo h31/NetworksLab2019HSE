@@ -1,4 +1,6 @@
 #include <utility>
+#include <PrimeNumbersConcurrent.h>
+
 
 //
 // Created by mikhail on 16.02.19.
@@ -30,6 +32,13 @@ int64_t PrimeNumbersConcurrent::get_bound_for_calculation() {
 bool PrimeNumbersConcurrent::add_prime_numbers(std::vector<int64_t> numbers) {
     prime_numbers_mutex.lock();
     bool result = prime_numbers.add_prime_numbers(std::move(numbers));
+    prime_numbers_mutex.unlock();
+    return result;
+}
+
+std::vector<int64_t> PrimeNumbersConcurrent::get_all() {
+    prime_numbers_mutex.lock();
+    std::vector<int64_t> result = prime_numbers.get_all();
     prime_numbers_mutex.unlock();
     return result;
 }

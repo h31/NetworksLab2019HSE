@@ -34,3 +34,7 @@ bool PrimeNumbers::add_prime_numbers(std::vector<int64_t> numbers) {
     }
     return false;
 }
+
+std::vector<int64_t> PrimeNumbers::get_all() const {
+    return prime_numbers;
+}

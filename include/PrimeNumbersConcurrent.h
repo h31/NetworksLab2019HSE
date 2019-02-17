@@ -20,6 +20,8 @@ public:
 
     bool add_prime_numbers(std::vector<int64_t> numbers);
 
+    std::vector<int64_t> get_all();
+
 private:
     std::mutex prime_numbers_mutex;
     PrimeNumbers prime_numbers;

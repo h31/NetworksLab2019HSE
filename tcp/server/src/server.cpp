@@ -1,7 +1,5 @@
 #include "server.h"
 
-#include <stdlib.h>
-
 #include <netdb.h>
 #include <netinet/in.h>
 #include <unistd.h>
@@ -26,6 +24,10 @@ server::server(uint16_t port_number) : port_number(port_number) {
         log_error("can't open socket.");
         return;
     }
+    int k = 1;
+    if (setsockopt(socket_descriptor, SOL_SOCKET, SO_REUSEADDR, &k, sizeof(int)) < 0) {
+        log_error("setsockopt(SO_REUSEADDR) failed");
+    }
 
     bzero((char *) &server_addr, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
@@ -43,12 +45,12 @@ server::server(uint16_t port_number) : port_number(port_number) {
 
 server::~server() {
     log("Server: destruction begin.");
+    this->isTerminated = true;
+    close(socket_descriptor);
 
     for (auto slow_operation : this->slow_ops_pool) {
         slow_operation->join();
     }
-
-    close(socket_descriptor);
 
     for (auto socket_thread : this->socket_pool) {
         socket_thread->join();

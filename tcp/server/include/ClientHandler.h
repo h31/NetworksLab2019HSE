@@ -49,7 +49,7 @@ private:
 
     Response getRequests(uint8_t *inputBuffer, uint32_t type, ssize_t countRead);
 
-    bool trassfer(uint64_t from, uint64_t to, std::string passwordFrom, uint64_t count);
+    uint32_t transfer(uint64_t from, uint64_t to, std::string passwordFrom, uint64_t count);
     std::shared_mutex &mutex_;
     std::shared_mutex &historyMutex;
     Data data;

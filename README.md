@@ -22,7 +22,7 @@
   - Неизвестный тип пользователя
 
         type: 102
-        content: user_type
+        content: int user_type
 
 - Выдача тестеру списка ошибок: bug_status - 0 - активная, 1 - закрытая
 

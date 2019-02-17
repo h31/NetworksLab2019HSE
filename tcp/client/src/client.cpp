@@ -54,7 +54,7 @@ uint32_t Client::sendRequest(){
     uint32_t message_type;
     std::cin >> message_type;
     
-    bzero(buffer, 128);
+    bzero(buffer, 256);
     readWriteHelper.set4Bytes(buffer, 0, message_type);
 
     switch(message_type) {

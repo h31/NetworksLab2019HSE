@@ -21,6 +21,7 @@ int main(int argc, char *argv[]) {
     cout << "lastn N -- get last N primes on server" << endl;
     cout << "calc N -- get interval start from server and check next N numbers, sending result to server" << endl;
     cout << "exit -- exit" << endl;
+    cout << endl;
     
     try {
         while (true) {
@@ -38,9 +39,9 @@ int main(int argc, char *argv[]) {
                 }
 
                 int64_t lastPrimes[n];
-                client.getLastPrimes(n, lastPrimes);
+                int64_t m = client.getLastPrimes(n, lastPrimes);
                 
-                for (int64_t i = 0; i < n; i++) {
+                for (int64_t i = 0; i < m; i++) {
                     cout << lastPrimes[i] << " ";            
                 }
 

@@ -241,18 +241,16 @@ int32_t Server::ClientHandler::readCurrencyRate() {
 }
 
 int32_t Server::ClientHandler::readInt32() {
-    bzero(buffer, 4);
-    int n = read(sockfd, buffer, 4); // recv on Windows
+    int32_t intValue = 0;
+    int n = read(sockfd, &intValue, sizeof(intValue)); // recv on Windows
     checkStatus(n);
-    int32_t intValue = buffer[0] | (buffer[1] << 8) | (buffer[2] << 16) | (buffer[3] << 24);
     return intValue;
 }
 
 int16_t Server::ClientHandler::readInt16() {
-    bzero(buffer, 2);
-    int n = read(sockfd, buffer, 2); // recv on Windows
+    int16_t intValue = 0;
+    int n = read(sockfd, &intValue, sizeof(intValue)); // recv on Windows
     checkStatus(n);
-    int16_t intValue = buffer[0] | (buffer[1] << 8);
     return intValue;
 }
 
@@ -276,12 +274,12 @@ void Server::ClientHandler::sendString(const string &message, size_t len) {
 }
 
 void Server::ClientHandler::sendInt32(int32_t d) {
-    int n = write(sockfd, &d, 4); // send on Windows
+    int n = write(sockfd, &d, sizeof(d)); // send on Windows
     checkStatus(n);
 }
 
 void Server::ClientHandler::sendInt8(int8_t d) {
-    int n = write(sockfd, &d, 1); // send on Windows
+    int n = write(sockfd, &d, sizeof(d)); // send on Windows
     checkStatus(n);
 }
 

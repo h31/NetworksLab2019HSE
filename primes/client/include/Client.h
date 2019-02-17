@@ -10,7 +10,7 @@ public:
      
     int64_t getMaxPrime();
     
-    void getLastPrimes(int64_t n, int64_t *dst);
+    int64_t getLastPrimes(int64_t n, int64_t *dst);
     
     int64_t getCalculationInterval(int64_t len);
     

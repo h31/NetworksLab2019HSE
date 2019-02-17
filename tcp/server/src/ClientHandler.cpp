@@ -17,10 +17,12 @@ void ClientHandler::operator()(int clientSocketFd) {
     bzero(buffer, 256);
     countRead = read(clientSocketFd, buffer, sizeof(buffer));
 
-    if (countRead < 1) {
+    if (countRead < 4) {
         throw ClientHandlerException("ERROR reading from socket");
     }
+
     uint32_t requestType = readWriteHelper.get4Bytes(buffer, 0);
+
     ssize_t n;
     switch (requestType) {
         case 0: {
@@ -29,7 +31,7 @@ void ClientHandler::operator()(int clientSocketFd) {
             break;
         }
         case 1: {
-            Response response = getWalletNumbers(clientSocketFd, 1);
+            Response response = getWalletNumbers(requestType);
             n = write(clientSocketFd, response.buffer, response.count);
             break;
         }
@@ -44,30 +46,31 @@ void ClientHandler::operator()(int clientSocketFd) {
     }
 }
 
-Response ClientHandler::getWalletNumbers(int clientSocketFd, uint32_t type) {
+Response ClientHandler::getWalletNumbers(uint32_t type) {
 
     mutex_.lock_shared();
-    std::set<uint64_t> walletNumbers = ClientHandler::data.getNumbers();
+    std::set<uint64_t> walletNumbers;/*ClientHandler::data.getNumbers();*/
+    walletNumbers.insert(1);
+    walletNumbers.insert(2);
+    walletNumbers.insert(5);
     mutex_.unlock_shared();
 
-    // тип: 4 байта ; размер : 8 байт ; 8 * на кол-во всех номеров
     const auto bufferSize = static_cast<uint32_t>(4 + 8 + 8 * walletNumbers.size());
     auto buffer = new uint8_t[bufferSize];
     bzero(buffer, bufferSize);
 
-    //записываем тип
-    memcpy(buffer, &type, sizeof(type));
-    int shift = sizeof(type);
+    // записываем тип
+    readWriteHelper.set4Bytes(buffer, 0, type);
+    int offset = 4;
 
     //записываем кол-во кошельков
-    uint64_t size = walletNumbers.size();
-    memcpy(buffer + shift, &size, sizeof(size));
-    shift += sizeof(size);
+    readWriteHelper.set8Bytes(buffer, offset, walletNumbers.size());
+    offset += 8;
 
     //записываем все номера кошельков
     for (auto walletNumber : walletNumbers) {
-        memcpy(buffer + shift, &walletNumber, sizeof(walletNumber));
-        shift += sizeof(walletNumber);
+        readWriteHelper.set8Bytes(buffer, offset, walletNumber);
+        offset += 8;
     }
 
     return {buffer, bufferSize};
@@ -93,7 +96,6 @@ Response ClientHandler::addWallet(uint8_t *inputBuffer, uint32_t type, ssize_t c
             i = (char) readWriteHelper.getByte(inputBuffer, offsetForChar);
             offsetForChar++;
         }
-        std::cout << password;
         std::string passwordString(password);
         mutex_.lock();
         walletNumber = data.getFreeNumber();

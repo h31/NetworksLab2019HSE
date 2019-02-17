@@ -31,7 +31,7 @@ public:
 
 private:
     static ReadWriteHelper readWriteHelper;
-    Response getWalletNumbers(int clientSocketFd, uint32_t type);
+    Response getWalletNumbers(uint32_t type);
     Response addWallet(uint8_t *inputBuffer, uint32_t type, ssize_t countRead);
     std::shared_mutex &mutex_;
     Data data;

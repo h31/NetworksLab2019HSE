@@ -22,7 +22,7 @@
   - Пользователь не найден
 
         type: 102
-        content: int user_type
+        content: int user_id
 
 - Выдача тестеру списка ошибок: bug_status - 0 - активная, 1 - закрытая
 

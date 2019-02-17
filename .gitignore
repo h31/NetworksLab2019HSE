@@ -38,6 +38,10 @@
 ### CMake ###
 CMakeCache.txt
 CMakeFiles
+server
+server.cbp
+client
+client.cbp
 CMakeScripts
 Testing
 Makefile

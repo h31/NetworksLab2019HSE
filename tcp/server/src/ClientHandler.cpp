@@ -337,7 +337,7 @@ Response ClientHandler::getRequests(uint8_t *inputBuffer, uint32_t type, ssize_t
             writeOffset += 8;
         }
     }
-    return Response(buffer, 256);
+    return Response(buffer, 1024);
 }
 
 

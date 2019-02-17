@@ -53,6 +53,7 @@ bool Client::sendRequest(){
 
     uint32_t message_type;
     std::cin >> message_type;
+    std::cout << message_type;
     
     bzero(buffer, 128);
     readWriteHelper.set4Bytes(buffer, 0, message_type);
@@ -83,9 +84,7 @@ bool Client::sendRequest(){
         default:
             std::cout << "wrong message type";
             return false;
-    } 
-
-    std::cout << "kek\n";
+    }
     ssize_t n = write(sockfd, buffer, sizeof(buffer));
 
     if (n < 0) {
@@ -97,7 +96,7 @@ bool Client::sendRequest(){
 
 void Client::getResponse() {
     bzero(buffer, 256);
-    ssize_t n = read(sockfd, buffer, 255);
+    ssize_t n = read(sockfd, buffer, 256);
 
     if (n < 0) {
         perror("ERROR reading from socket");

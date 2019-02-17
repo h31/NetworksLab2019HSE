@@ -23,36 +23,20 @@ void check_connection_status(ssize_t read_bytes_number) {
 }
 
 int64_t read_int64(int sockfd) {
-    const size_t buffer_size = sizeof(int64_t);
-    char buffer[buffer_size];
-    bzero(buffer, buffer_size);
-    check_connection_status(read(sockfd, buffer, buffer_size));
-    int64_t int_value = (int64_t)buffer[0] |
-                       ((int64_t)buffer[1] << 8) |
-                       ((int64_t)buffer[2] << 16) |
-                       ((int64_t)buffer[3] << 24) |
-                       ((int64_t)buffer[4] << 32) |
-                       ((int64_t)buffer[5] << 40) |
-                       ((int64_t)buffer[6] << 48) |
-                       ((int64_t)buffer[7] << 54);
+    int64_t int_value = 0;
+    check_connection_status(read(sockfd, &int_value, sizeof(int_value)));
     return int_value;
 }
 
 int32_t read_int32(int sockfd) {
-    const size_t buffer_size = sizeof(int32_t);
-    char buffer[buffer_size];
-    bzero(buffer, buffer_size);
-    check_connection_status(read(sockfd, buffer, buffer_size));
-    int32_t int_value = buffer[0] | (buffer[1] << 8) | (buffer[2] << 16) | (buffer[3] << 24);
+    int32_t int_value = 0;
+    check_connection_status(read(sockfd, &int_value, sizeof(int_value)));
     return int_value;
 }
 
 int16_t read_int16(int sockfd) {
-    const size_t buffer_size = sizeof(int16_t);
-    char buffer[buffer_size];
-    bzero(buffer, buffer_size);
-    check_connection_status(read(sockfd, buffer, buffer_size));
-    int16_t int_value = buffer[0] | (buffer[1] << 8);
+    int16_t int_value = 0;
+    check_connection_status(read(sockfd, &int_value, sizeof(int_value)));
     return int_value;
 }
 

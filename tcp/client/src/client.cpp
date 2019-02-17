@@ -1,6 +1,7 @@
 #include <utility>
 
 #include "client.h"
+#include "ReadWriteHelper.h"
 
 #include <iostream>
 #include <stdio.h>
@@ -16,6 +17,9 @@ Client::Client(char* host_name, int port_number){
 	this->host_name = host_name;
 	this->port_number = port_number;
 }
+
+ReadWriteHelper Client::readWriteHelper;
+
 
 bool Client::connect(){
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -47,11 +51,11 @@ bool Client::sendRequest(){
     std::cout << "0 -- add user\n1 -- get all wallets\n2 -- sent to user\n3 -- ask from user\n"
          << "4 -- confirm sent request\n5 -- check money\n6 -- check sent requests\n7 -- disconnect\n\n Enter message type: ";
 
-    int32_t message_type;
+    uint32_t message_type;
     std::cin >> message_type;
     
     bzero(buffer, 128);
-    std::memcpy(buffer, &message_type, 4);
+    readWriteHelper.set4Bytes(buffer, 0, message_type);
 
     switch(message_type) {
         case 0: 
@@ -81,7 +85,8 @@ bool Client::sendRequest(){
             return false;
     } 
 
-    ssize_t n = write(sockfd, buffer, strlen(buffer));
+    std::cout << "kek\n";
+    ssize_t n = write(sockfd, buffer, sizeof(buffer));
 
     if (n < 0) {
         perror("ERROR writing to socket");
@@ -103,7 +108,7 @@ void Client::getResponse() {
 
     switch(message_type) {
         case 0: 
-            addUserRerponse();
+            addUserResponse();
             break;
         case 1:
             getAllWalletsResponse();
@@ -175,8 +180,10 @@ void Client::readPassword(int offset) {
         	break;
         }
     }
-    char const *c = password.c_str();
-    std::memcpy(buffer + offset, c, 32);
+    for (char &i : password) {
+        readWriteHelper.setByte(buffer, offset, static_cast<uint32_t>(i));
+        offset++;
+    }
 }
 
 void Client::readClientWallet(int offset) {
@@ -185,58 +192,48 @@ void Client::readClientWallet(int offset) {
 
 void Client::readWallet(int offset, std::string whoseWallet) {
 	std::cout << whoseWallet;
-    int64_t walletNumber;
+    uint64_t walletNumber;
     std::cin >> walletNumber;
-    std::memcpy(buffer + offset, &walletNumber, 8);
+    readWriteHelper.set8Bytes(buffer, offset, walletNumber);
 }
 
 void Client::readMoney(int offset) {
     std::cout << "Enter how much to send: ";
-    int32_t money;
+    uint32_t money;
     std::cin >> money;
-    std::memcpy(buffer + offset, &money, 4);
+    readWriteHelper.set4Bytes(buffer, offset, money);
 }
 
 void Client::readConfirm(int offset) {
     std::cout << "Do you want to confirm request?\n 1 - yes\n 0 - no\n: ";
-    int32_t confirmation;
+    uint32_t confirmation;
     std::cin >> confirmation;
-    std::memcpy(buffer + offset, &confirmation, 4);
+    readWriteHelper.set4Bytes(buffer, offset, confirmation);
 }
 
 void Client::readRequestId(int offset) {
 	std::cout << "Enter request ID: ";
-    int64_t walletNumber;
+    uint64_t walletNumber;
     std::cin >> walletNumber;
-    std::memcpy(buffer + offset, &walletNumber, 8);
+    readWriteHelper.set8Bytes(buffer, offset, walletNumber);
 }
 
-void Client::addUserRerponse() {
+void Client::addUserResponse() {
 	successResponse();
-	int64_t number = longNumberResponse(8);
+	uint64_t number = longNumberResponse(8);
 	std::cout << "Your wallet number: " << number << "\n";
 }
 
-int64_t Client::longNumberResponse(int offset) {
-    return int64_t((unsigned char)(buffer[offset]) << 56 |
-            (unsigned char)(buffer[offset + 1]) << 48 |
-            (unsigned char)(buffer[offset + 2]) << 40 |
-            (unsigned char)(buffer[offset + 3]) << 32 |
-            (unsigned char)(buffer[offset + 4]) << 24 |
-            (unsigned char)(buffer[offset + 5]) << 16 |
-            (unsigned char)(buffer[offset + 6]) << 8 |
-            (unsigned char)(buffer[offset + 7]));
+uint64_t Client::longNumberResponse(int offset) {
+    return readWriteHelper.get8Bytes(buffer, offset);
 }
 
-int32_t Client::shortNumberResponse(int offset) {
-    return int32_t((unsigned char)(buffer[offset]) << 24 |
-            (unsigned char)(buffer[offset + 1]) << 16 |
-            (unsigned char)(buffer[offset + 2]) << 8 |
-            (unsigned char)(buffer[offset + 3]));
+uint32_t Client::shortNumberResponse(int offset) {
+    return readWriteHelper.get4Bytes(buffer, offset);
 }
 
 void Client::getAllWalletsResponse() {
-    int64_t walletsNumber = longNumberResponse(4);
+    uint64_t walletsNumber = longNumberResponse(4);
     for (int i = 0; i < walletsNumber; i++) {
     	std::cout << longNumberResponse(4 + 8 * (i + 1)) << "\n";
     }

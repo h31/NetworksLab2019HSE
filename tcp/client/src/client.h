@@ -2,6 +2,8 @@
 #include <string>
 #include <netinet/in.h>
 
+#include "ReadWriteHelper.h"
+
 class Client {
 
   public:
@@ -15,7 +17,8 @@ class Client {
     const char* host_name;
     int port_number;
     int sockfd;
-    char buffer[256];
+    uint8_t buffer[256];
+    static ReadWriteHelper readWriteHelper;
     void addUser();
     void sendMoney();
     void requestMoney();
@@ -28,9 +31,9 @@ class Client {
     void readMoney(int offset);
     void readConfirm(int offset);
     void readRequestId(int offset);
-    void addUserRerponse();
-    int64_t longNumberResponse(int offset);
-    int32_t shortNumberResponse(int offset);
+    void addUserResponse();
+    uint64_t longNumberResponse(int offset);
+    uint32_t shortNumberResponse(int offset);
     void getAllWalletsResponse();
     void successResponse();
     void checkRequestsResponse();

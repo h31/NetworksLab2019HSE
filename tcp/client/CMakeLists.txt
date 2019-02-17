@@ -3,4 +3,4 @@ project(client)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(client src/main.cpp src/Client.cpp src/client.h)
+add_executable(client src/main.cpp src/Client.cpp src/client.h src/ReadWriteHelper.cpp src/ReadWriteHelper.h)

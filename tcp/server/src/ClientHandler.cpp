@@ -14,36 +14,80 @@ void ClientHandler::operator()(int clientSocketFd) {
     }
     ssize_t countRead;
     uint8_t buffer[256];
+    while (true) {
+        bzero(buffer, 256);
+
+        countRead = read(clientSocketFd, buffer, sizeof(buffer));
+
+        if (countRead < 4) {
+            break;
+        }
+
+        uint32_t requestType = readWriteHelper.get4Bytes(buffer, 0);
+
+        ssize_t n;
+        switch (requestType) {
+            case 0: {
+                Response response = addWallet(buffer, requestType, countRead);
+                n = write(clientSocketFd, response.buffer, response.count);
+                break;
+            }
+            case 1: {
+                Response response = getWalletNumbers(requestType);
+                n = write(clientSocketFd, response.buffer, response.count);
+                break;
+            }
+            case 2:
+            default : {
+                n = write(clientSocketFd, "I got your message", 18);
+                break;
+            }
+        }
+        if (n < 0) {
+            perror("ERROR writing to socket");
+            break;
+        }
+    }
+
+}
+
+Response ClientHandler::addWallet(uint8_t *inputBuffer, uint32_t type, ssize_t countRead) {
+    uint8_t buffer[256];
     bzero(buffer, 256);
-    countRead = read(clientSocketFd, buffer, sizeof(buffer));
 
-    if (countRead < 4) {
-        throw ClientHandlerException("ERROR reading from socket");
+    //записываем тип
+    readWriteHelper.set4Bytes(buffer, 0, type);
+    int offset = 4;
+    uint32_t isSuccess = 0;
+    std::uint64_t walletNumber = 0;
+    if (countRead < 36) {
+        isSuccess = 0;
+    } else {
+        char password[32];
+        bzero(password, 32);
+        int offsetForChar = 4;
+        for (char &i : password) {
+            i = (char) readWriteHelper.getByte(inputBuffer, offsetForChar);
+            offsetForChar++;
+        }
+        std::string passwordString(password);
+        mutex_.lock();
+        walletNumber = data.getFreeNumber();
+        Wallet wallet(walletNumber, passwordString, 0);
+        ClientHandler::data.addNewWaller(wallet);
+        mutex_.unlock();
+        std::cout << (passwordString);
+        isSuccess = 1;
     }
 
-    uint32_t requestType = readWriteHelper.get4Bytes(buffer, 0);
+    //записали результат
+    readWriteHelper.set4Bytes(buffer, offset, isSuccess);
+    offset += 4;
 
-    ssize_t n;
-    switch (requestType) {
-        case 0: {
-            Response response = addWallet(buffer, requestType, countRead);
-            n = write(clientSocketFd, response.buffer, response.count);
-            break;
-        }
-        case 1: {
-            Response response = getWalletNumbers(requestType);
-            n = write(clientSocketFd, response.buffer, response.count);
-            break;
-        }
-        default : {
-            n = write(clientSocketFd, "I got your message", 18);
-            break;
-        }
-    }
-    if (n < 0) {
-        perror("ERROR writing to socket");
-        exit(1);
-    }
+    //записали номер
+    readWriteHelper.set8Bytes(buffer, offset, walletNumber);
+
+    return {buffer, 256};
 }
 
 Response ClientHandler::getWalletNumbers(uint32_t type) {
@@ -77,41 +121,7 @@ Response ClientHandler::getWalletNumbers(uint32_t type) {
 }
 
 
-Response ClientHandler::addWallet(uint8_t *inputBuffer, uint32_t type, ssize_t countRead) {
-    uint8_t buffer[256];
-    bzero(buffer, 256);
-
-    //записываем тип
-    readWriteHelper.set4Bytes(buffer, 0, type);
-    int offset = 4;
-    uint32_t isSuccess = 0;
-    std::uint64_t walletNumber = 0;
-    if (countRead < 36) {
-        isSuccess = 0;
-    } else {
-        char password[32];
-        bzero(password, 32);
-        int offsetForChar = 4;
-        for (char &i : password) {
-            i = (char) readWriteHelper.getByte(inputBuffer, offsetForChar);
-            offsetForChar++;
-        }
-        std::string passwordString(password);
-        mutex_.lock();
-        walletNumber = data.getFreeNumber();
-        Wallet wallet(walletNumber, passwordString, 0);
-        ClientHandler::data.addNewWaller(wallet);
-        mutex_.unlock();
-        isSuccess = 1;
-    }
-
-    //записали результат
-    readWriteHelper.set4Bytes(buffer, offset, isSuccess);
-    offset += 4;
-
-    //записали номер
-    readWriteHelper.set8Bytes(buffer, offset, walletNumber);
-
-    return {buffer, 256};
+Response ClientHandler::sendTransfer(uint8_t *inputBuffer, uint32_t type, ssize_t countRead) {
+    return Response(nullptr, 0);
 }
 

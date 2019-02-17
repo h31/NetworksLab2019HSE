@@ -75,7 +75,11 @@
                     int description length
                     char[] description
                  ]
-
+  - Неизвестный id разработчика
+         
+        type: 402
+        content: int user_id
+        
 - Исправления активной ошибки разработчиком
 
       type: 500

@@ -15,7 +15,11 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    while(client.sendRequest()) {
-        client.getResponse();
+    while(true) {
+        uint32_t type = client.sendRequest();
+        if (type == 7) {
+            break;
+        }
+        client.getResponse(type);
     }
 }

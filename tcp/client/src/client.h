@@ -10,8 +10,8 @@ class Client {
     Client(char* host_name, int port_number);
 
     bool connect();
-    bool sendRequest();
-    void getResponse();
+    uint32_t sendRequest();
+    void getResponse(uint32_t sent_message_type);
 
   private:
     const char* host_name;

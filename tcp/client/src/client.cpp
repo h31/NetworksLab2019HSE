@@ -47,13 +47,12 @@ bool Client::connect(){
 }
 
 
-bool Client::sendRequest(){
+uint32_t Client::sendRequest(){
     std::cout << "0 -- add user\n1 -- get all wallets\n2 -- sent to user\n3 -- ask from user\n"
          << "4 -- confirm sent request\n5 -- check money\n6 -- check sent requests\n7 -- disconnect\n\n Enter message type: ";
 
     uint32_t message_type;
     std::cin >> message_type;
-    std::cout << message_type;
     
     bzero(buffer, 128);
     readWriteHelper.set4Bytes(buffer, 0, message_type);
@@ -80,10 +79,10 @@ bool Client::sendRequest(){
             checkRequests(); 
             break;
         case 7:
-            return false;
+            return 7;
         default:
             std::cout << "wrong message type";
-            return false;
+            return message_type;
     }
     ssize_t n = write(sockfd, buffer, sizeof(buffer));
 
@@ -91,19 +90,25 @@ bool Client::sendRequest(){
         perror("ERROR writing to socket");
         exit(1);
     }
-    return true;
+    return message_type;
 }
 
-void Client::getResponse() {
-    bzero(buffer, 256);
-    ssize_t n = read(sockfd, buffer, 256);
+void Client::getResponse(uint32_t sent_message_type) {
+    ssize_t n;
+    if (sent_message_type == 1) {
+        bzero(buffer, 1024);
+        n = read(sockfd, buffer, 1024);
+    } else {
+        bzero(buffer, 256);
+        n = read(sockfd, buffer, 256);
+    }
 
     if (n < 0) {
         perror("ERROR reading from socket");
         exit(1);
     }
 
-    int32_t message_type = shortNumberResponse(0);
+    uint32_t message_type = shortNumberResponse(0);
 
     switch(message_type) {
         case 0: 

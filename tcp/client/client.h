@@ -42,10 +42,9 @@ private:
     int short_sockfd_;
     std::unordered_map<uint64_t, double> long_op_res_;
     std::unordered_map<uint64_t, UnaryExpression> long_op_descr_;
-    std::atomic_bool is_interrupted_(0);
+    std::atomic_bool is_interrupted_ = {0};
     mutable std::mutex long_expression_mutex_;
-    const static std::unordered_map<char, char> OP_CODES = {{'+', 1}, {'*', 2}, {'-', 3}, {'/', 4}, {'!', 5}, {'s', 6},
-                                                            {'e', 100}};
+    const static std::unordered_map<char, char> OP_CODES;
     const static char OK = 0;
     const static char ERR_INCORRECT_ACTION = 1;
     const static char ERR_DIV_BY_ZERO = 2;

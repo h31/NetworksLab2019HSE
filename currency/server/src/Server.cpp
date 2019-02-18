@@ -63,6 +63,7 @@ void Server::start() {
 
 void Server::stop() const {
     shutdown(sockfd, SHUT_RDWR);
+    close(sockfd);
 }
 
 void Server::finish() const {
@@ -109,6 +110,7 @@ void Server::ClientHandler::run() {
 
 void Server::ClientHandler::stop() const {
     shutdown(sockfd, SHUT_RDWR);
+    close(sockfd);
 }
 
 void Server::ClientHandler::processCurrencyListQuery() {

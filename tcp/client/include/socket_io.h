@@ -8,8 +8,6 @@
 #include <string>
 #include <strings.h>
 #include <boost/lexical_cast.hpp>
-#include "socket_reading_exception.h"
-#include "socket_writing_exception.h"
 
 
 class socket_io {
@@ -34,6 +32,8 @@ class socket_io {
         void write_size_t(size_t n);
 
         void write_string(const std::string &string);
+
+        void close();
 };
 
 #endif //SERVER_SOCKETIO_H

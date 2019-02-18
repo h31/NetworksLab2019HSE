@@ -1,18 +1,19 @@
 #include "../include/socket_io.h"
+#include "../include/network_exception.h"
 
 
 void socket_io::read_bytes(char *bytes, size_t amount) {
     bzero(bytes, amount);
     ssize_t result = read(socket_fd, bytes, amount);
     if (result <= 0) {
-        throw socket_reading_exception();
+        throw network_exception("Disconnected from server");
     }
 }
 
 void socket_io::write_bytes(const char *bytes, size_t amount) {
     ssize_t result = write(socket_fd, bytes, amount);
     if (result <= 0) {
-        throw socket_writing_exception();
+        throw network_exception("Disconnected from server");
     }
 }
 
@@ -50,5 +51,12 @@ void socket_io::write_size_t(size_t n) {
 
 void socket_io::write_string(const std::string &string) {
     write_bytes(string.c_str(), string.length());
+}
+
+void socket_io::close() {
+    if (socket_fd != -1) {
+        shutdown(socket_fd, SHUT_RDWR);
+        socket_fd = -1;
+    }
 }
 

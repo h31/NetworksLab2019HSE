@@ -11,7 +11,7 @@ private:
     class Client {
     public:
         const int sock_fd;
-        UserService::User user;
+        User user;
 
         explicit Client(int socket_fd, UserService* userService);
 

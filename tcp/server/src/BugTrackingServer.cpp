@@ -118,10 +118,10 @@ bool BugTrackingServer::bugsTesterList(BugTrackingServer::Client &client) {
         writeInt32(sock_fd, 2);
         return false;
     }
-    if (client.user.role != UserService::User::Role::TESTER) {
+    if (client.user.role != User::Role::TESTER) {
         std::cout << "User with id " << client.user.id << " is not tester and cannot see bugs\n";
         writeInt32(sock_fd, 3);
-        writeInt32(sock_fd, UserService::User::Role::TESTER);
+        writeInt32(sock_fd, User::Role::TESTER);
         return false;
     }
     std::vector<Bug> bugsList;
@@ -151,10 +151,10 @@ bool BugTrackingServer::bugVerification(BugTrackingServer::Client &client) {
         writeInt32(sock_fd, 2);
         return false;
     }
-    if (client.user.role != UserService::User::Role::TESTER) {
+    if (client.user.role != User::Role::TESTER) {
         std::cout << "Client with id " << client.user.id << " is not tester and cannot verify bug: " << bugId << "\n";
         writeInt32(sock_fd, 3);
-        writeInt32(sock_fd, UserService::User::Role::TESTER);
+        writeInt32(sock_fd, User::Role::TESTER);
         return false;
     }
     _bugs_mutex.lock();
@@ -207,10 +207,10 @@ bool BugTrackingServer::bugsDeveloperList(BugTrackingServer::Client &client) {
         writeInt32(sock_fd, 2);
         return false;
     }
-    if (client.user.role != UserService::User::Role::DEVELOPER) {
+    if (client.user.role != User::Role::DEVELOPER) {
         std::cout << "User with id " << client.user.id << " is not developer and does not have bugs\n";
         writeInt32(sock_fd, 3);
-        writeInt32(sock_fd, UserService::User::Role::DEVELOPER);
+        writeInt32(sock_fd, User::Role::DEVELOPER);
         return false;
     }
     std::vector<Bug> clientBugs;
@@ -239,10 +239,10 @@ bool BugTrackingServer::bugFix(BugTrackingServer::Client &client) {
         writeInt32(sock_fd, 2);
         return false;
     }
-    if (client.user.role != UserService::User::Role::DEVELOPER) {
+    if (client.user.role != User::Role::DEVELOPER) {
         std::cout << "User with id " << client.user.id << " is not developer and cannot fix bug: " << bugId << "\n";
         writeInt32(sock_fd, 3);
-        writeInt32(sock_fd, UserService::User::Role::DEVELOPER);
+        writeInt32(sock_fd, User::Role::DEVELOPER);
         return false;
     }
     _bugs_mutex.lock();
@@ -284,10 +284,10 @@ bool BugTrackingServer::bugRegister(BugTrackingServer::Client &client) {
         writeInt32(sock_fd, 2);
         return false;
     }
-    if (client.user.role != UserService::User::Role::TESTER) {
+    if (client.user.role != User::Role::TESTER) {
         std::cout << "User with id " << client.user.id << " is not tester and cannot register bugs" << bug.id << "\n";
         writeInt32(sock_fd, 3);
-        writeInt32(sock_fd, UserService::User::Role::TESTER);
+        writeInt32(sock_fd, User::Role::TESTER);
         return false;
     }
     _bugs_mutex.lock();
@@ -385,12 +385,12 @@ BugTrackingServer::Client::Client(
 ) : sock_fd(socket_fd),  _userService(userService) {}
 
 bool BugTrackingServer::Client::isAuthorized() {
-    return user.isEmpty();
+    return user.role != User::Role::NONE;
 }
 
 bool BugTrackingServer::Client::authorize(int id) {
-    UserService::User newUser = _userService->getUser(id);
-    if (newUser.isEmpty()) {
+    User newUser = _userService->getUser(id);
+    if (newUser.role == User::Role::NONE) {
         return false;
     }
     user = newUser;

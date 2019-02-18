@@ -3,27 +3,11 @@
 
 #include <map>
 #include <mutex>
+#include "User.h"
 
 class UserService {
 public:
-    UserService();
-
-    class User {
-        public:
-            enum Role {
-                NONE, DEVELOPER, TESTER
-            };
-
-            User();
-            User(int id, Role role);
-
-            int id;
-            Role role;
-
-            bool isEmpty();
-
-            static User emptyUser();
-    };
+    explicit UserService(std::string filename);
 
     User getUser(int id);
 

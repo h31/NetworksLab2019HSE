@@ -8,7 +8,7 @@ int main(int argc, char* argv[]) {
         std::cout << "Invalid arguments number\n";
         return 0;
     }
-    UserService userService;
+    UserService userService("../users.txt");
 
     uint16_t port_number = static_cast<uint16_t>(std::stoi(argv[1]));
 

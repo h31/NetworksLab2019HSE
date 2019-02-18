@@ -75,8 +75,6 @@ void server::request_response_cycle(int client_socket_fd) {
 
     try {
         while (true) {
-            boost::this_thread::interruption_point();
-
             int command = io.read_int();
             switch (command) {
                 case 1:
@@ -91,10 +89,6 @@ void server::request_response_cycle(int client_socket_fd) {
                 case 4:
                     add_news(io);
                     break;
-                case 5: {
-                    close(client_socket_fd);
-                    return;
-                }
                 default:
                     break;
             }

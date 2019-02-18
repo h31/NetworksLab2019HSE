@@ -52,6 +52,22 @@ int main(int argc, char* argv[]) {
                 for (const auto &news_title : client.list_news(topic)) {
                     std::cout << "id: " << news_title.id << "\ntitle: " << news_title.title << "\n" << std::endl;
                 }
+            } else if (command == NEWS_CONTENT_COMMAND) {
+                std::cout << "Enter id:" << std::endl;
+                int id;
+                std::cin >> id;
+                std::cout << client.get_news_text(id) << std::endl;
+            } else if (command == ADD_NEWS_COMMAND) {
+                std::cout << "Enter news topic:" << std::endl;
+                std::string topic;
+                std::getline(std::cin, topic);
+                std::cout << "Enter news title:" << std::endl;
+                std::string title;
+                std::getline(std::cin, title);
+                std::cout << "Enter news text:" << std::endl;
+                std::string text;
+                std::getline(std::cin, text);
+                client.add_news(topic, title, text);
             } else if (command == EXIT_COMMAND) {
                 return 0;
             } else {

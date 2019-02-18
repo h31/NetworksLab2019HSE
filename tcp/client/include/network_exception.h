@@ -9,14 +9,14 @@
 
 class network_exception: public std::exception {
     private:
-        std::string message_;
+        std::string message;
 
     public:
-        explicit network_exception(std::string message) : message_(std::move(message)) {
+        explicit network_exception(std::string message) : message(std::move(message)) {
         };
 
         const char* what() const noexcept override {
-            return message_.c_str();
+            return message.c_str();
         }
 };
 

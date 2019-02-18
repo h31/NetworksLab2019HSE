@@ -33,7 +33,7 @@ client::~client() {
 }
 
 void client::add_news(const std::string &topic, const std::string &title, const std::string &text) {
-    io->write_int(3);
+    io->write_int(4);
     io->write_size_t(topic.length());
     io->write_string(topic);
     io->write_size_t(title.length());
@@ -56,7 +56,7 @@ std::vector<client::news_title> client::list_news(const std::string &topic) {
     io->write_string(topic);
 
     size_t news_number = io->read_size_t();
-    std::vector<news_title> news_titles(news_number);
+    std::vector<news_title> news_titles;
     for (int i = 0; i < news_number; i++) {
         int news_id = io->read_int();
         size_t news_title_length = io->read_size_t();

@@ -27,14 +27,14 @@ int main(int argc, char* argv[]) {
 
     char *end;
     errno = 0;
-    intmax_t port = strtoimax(argv[1], &end, 10);
+    intmax_t port = strtoimax(argv[2], &end, 10);
     if (errno == ERANGE || port < 0 || port > UINT16_MAX || end == argv[1] || *end != '\0') {
         std::cout << "Malformed port.";
         return 1;
     }
 
     try {
-        client client(argv[0], (uint16_t) port);
+        client client(argv[1], (uint16_t) port);
         print_usage();
 
         while (true) {

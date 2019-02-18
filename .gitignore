@@ -36,6 +36,10 @@
 *.app
 
 ### CMake ###
+server
+server.cbp
+client
+client.cbp
 CMakeCache.txt
 CMakeFiles
 CMakeScripts

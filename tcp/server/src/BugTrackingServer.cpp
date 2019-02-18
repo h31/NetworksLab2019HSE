@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <fstream>
 #include <iostream>
+#include <vector>
 
 BugTrackingServer::BugTrackingServer(UserService* userService) : _userService(userService) {}
 
@@ -62,25 +63,22 @@ void BugTrackingServer::process_client(int sock_fd) {
         } else {
             if (code == 100) {
                 authorize(client);
-            } else if (!client.isAuthorized()) {
-                // process unauthorized
+            } else if (code == 200) {
+                bugsTesterList(client);
+            } else if (code == 300) {
+                bugVerification(client);
+            } else if (code == 400) {
+                bugsDeveloperList(client);
+            } else if (code == 500) {
+                bugFix(client);
+            } else if (code == 600) {
+                bugRegister(client);
+            } else if (code == 700) {
+                close(client);
+                break;
             } else {
-                if (code == 200) {
-
-                } else if (code == 300) {
-
-                } else if (code == 400) {
-
-                } else if (code == 500) {
-
-                } else if (code == 600) {
-
-                } else if (code == 700) {
-                    close(client);
-                    break;
-                } else {
-                    writeInt32(sock_fd, 1);
-                }
+                std::cout << "Client with id " << sock_fd << " has sent unknown request ";
+                writeInt32(sock_fd, 1);
             }
         }
     }
@@ -90,13 +88,16 @@ bool BugTrackingServer::authorize(BugTrackingServer::Client& client) {
     int sock_fd = client.sock_fd;
     uint32_t id;
     readInt32(sock_fd, id);
-    if (client.user.id != id) {
-        // process double authorization
+    if (client.isAuthorized()) {
+        std::cout << "Client on socket " << sock_fd << " is already authorized with id " << client.user.id;
+        writeInt32(sock_fd, 101);
+        writeInt32(sock_fd, static_cast<uint32_t>(client.user.id));
+        writeInt32(sock_fd, client.user.role);
         return false;
     }
     if (client.authorize(id)) {
         writeInt32(sock_fd, 101);
-        writeInt32(sock_fd, static_cast<uint32_t>(client.user.role));
+        writeInt32(sock_fd, client.user.role);
         std::cout << "Client on socket " << sock_fd << " has authorized with id " << client.user.id;
         std::cout << " and role " << client.user.role << "\n";
         return true;
@@ -105,6 +106,204 @@ bool BugTrackingServer::authorize(BugTrackingServer::Client& client) {
         writeInt32(sock_fd, id);
         std::cout << "Client on socket " << sock_fd << " has failed authorization\n";
         return false;
+    }
+}
+
+bool BugTrackingServer::bugsTesterList(BugTrackingServer::Client &client) {
+    int sock_fd = client.sock_fd;
+    uint32_t bugStatus;
+    readInt32(sock_fd, bugStatus);
+    if (!client.isAuthorized()) {
+        std::cout << "Request from unauthorized client " << client.sock_fd << "\n";
+        writeInt32(sock_fd, 2);
+        return false;
+    }
+    if (client.user.role != UserService::User::Role::TESTER) {
+        std::cout << "User with id " << client.user.id << " is not tester and cannot see bugs\n";
+        writeInt32(sock_fd, 3);
+        writeInt32(sock_fd, UserService::User::Role::TESTER);
+        return false;
+    }
+    std::vector<Bug> bugsList;
+    _bugs_mutex.lock();
+    for (const auto &entry : _bugs) {
+        if (entry.second.developer_id == client.user.id && entry.second.status == bugStatus) {
+            bugsList.push_back(entry.second);
+        }
+    }
+    _bugs_mutex.unlock();
+    std::cout << "Tester with id " << client.user.id << " requested bugs with status " << bugStatus << "\n";
+    writeInt32(sock_fd, static_cast<uint32_t>(bugsList.size()));
+    for (const auto &bug : bugsList) {
+        writeInt32(sock_fd, bug.id);
+        writeString(sock_fd, bug.description);
+    }
+    return true;
+}
+
+bool BugTrackingServer::bugVerification(BugTrackingServer::Client &client) {
+    int sock_fd = client.sock_fd;
+    uint32_t bugId, verificationCode;
+    readInt32(sock_fd, bugId);
+    readInt32(sock_fd, verificationCode);
+    if (!client.isAuthorized()) {
+        std::cout << "Request from unauthorized client " << client.sock_fd << "\n";
+        writeInt32(sock_fd, 2);
+        return false;
+    }
+    if (client.user.role != UserService::User::Role::TESTER) {
+        std::cout << "Client with id " << client.user.id << " is not tester and cannot verify bug: " << bugId << "\n";
+        writeInt32(sock_fd, 3);
+        writeInt32(sock_fd, UserService::User::Role::TESTER);
+        return false;
+    }
+    _bugs_mutex.lock();
+    if (_bugs.find(bugId) == _bugs.end()) {
+        _bugs_mutex.unlock();
+        std::cout << "Client with id " << client.user.id << " tried to verify non existing bug with id " << bugId << "\n";
+        writeInt32(sock_fd, 303);
+        writeInt32(sock_fd, bugId);
+        return false;
+    } else {
+        if (_bugs[bugId].status == Bug::BugStatus::NEW) {
+            _bugs_mutex.unlock();
+            std::cout << "Tester with id " << client.user.id << " tried to verify not fixed bug with id " << bugId << "\n";
+            writeInt32(sock_fd, 304);
+            writeInt32(sock_fd, bugId);
+            return false;
+        } else if (_bugs[bugId].status == Bug::BugStatus::QA){
+            if (verificationCode == 0) {
+                _bugs[bugId].status = Bug::BugStatus::NEW;
+                _bugs_mutex.unlock();
+                std::cout << "Tester with id " << client.user.id << " has rejected bug fix with id " << bugId << "\n";
+            } else if (verificationCode == 1) {
+                _bugs[bugId].status = Bug::BugStatus::FIXED;
+                _bugs_mutex.unlock();
+                std::cout << "Tester with id " << client.user.id << " has approved bug fix with id " << bugId << "\n";
+            } else {
+                _bugs_mutex.unlock();
+                std::cout << "Tester with id " << client.user.id << " has sent illegal verification code " << verificationCode << "\n";
+                writeInt32(sock_fd, 304);
+                writeInt32(sock_fd, verificationCode);
+                return false;
+            }
+            writeInt32(sock_fd, 301);
+            writeInt32(sock_fd, bugId);
+            writeInt32(sock_fd, verificationCode);
+            return true;
+        } else {
+            std::cout << "Tester with id " << client.user.id << " tried to verify closed bug with id " << bugId << "\n";
+            writeInt32(sock_fd, 302);
+            writeInt32(sock_fd, bugId);
+            return false;
+        }
+    }
+}
+
+bool BugTrackingServer::bugsDeveloperList(BugTrackingServer::Client &client) {
+    int sock_fd = client.sock_fd;
+    if (!client.isAuthorized()) {
+        std::cout << "Request from unauthorized client " << client.sock_fd << "\n";
+        writeInt32(sock_fd, 2);
+        return false;
+    }
+    if (client.user.role != UserService::User::Role::DEVELOPER) {
+        std::cout << "User with id " << client.user.id << " is not developer and does not have bugs\n";
+        writeInt32(sock_fd, 3);
+        writeInt32(sock_fd, UserService::User::Role::DEVELOPER);
+        return false;
+    }
+    std::vector<Bug> clientBugs;
+    _bugs_mutex.lock();
+    for (const auto &entry : _bugs) {
+        if (entry.second.developer_id == client.user.id && entry.second.status == Bug::BugStatus::NEW) {
+            clientBugs.push_back(entry.second);
+        }
+    }
+    _bugs_mutex.unlock();
+    std::cout << "Developer with id " << client.user.id << " requested his bug-list\n";
+    writeInt32(sock_fd, static_cast<uint32_t>(clientBugs.size()));
+    for (const auto &bug : clientBugs) {
+        writeInt32(sock_fd, bug.id);
+        writeString(sock_fd, bug.description);
+    }
+    return true;
+}
+
+bool BugTrackingServer::bugFix(BugTrackingServer::Client &client) {
+    int sock_fd = client.sock_fd;
+    uint32_t bugId;
+    readInt32(sock_fd, bugId);
+    if (!client.isAuthorized()) {
+        std::cout << "Request from unauthorized client " << client.sock_fd << "\n";
+        writeInt32(sock_fd, 2);
+        return false;
+    }
+    if (client.user.role != UserService::User::Role::DEVELOPER) {
+        std::cout << "User with id " << client.user.id << " is not developer and cannot fix bug: " << bugId << "\n";
+        writeInt32(sock_fd, 3);
+        writeInt32(sock_fd, UserService::User::Role::DEVELOPER);
+        return false;
+    }
+    _bugs_mutex.lock();
+    if (_bugs.find(bugId) == _bugs.end()) {
+        _bugs_mutex.unlock();
+        std::cout << "Developer with id " << client.user.id << " tried to fix non existing bug with id " << bugId << "\n";
+        writeInt32(sock_fd, 503);
+        writeInt32(sock_fd, bugId);
+        return false;
+    } else {
+        if (_bugs[bugId].status != Bug::BugStatus::NEW) {
+            Bug::BugStatus status = _bugs[bugId].status;
+            _bugs_mutex.unlock();
+            std::cout << "Developer with id " << client.user.id << " tried to fix not actual bug with id " << bugId << "\n";
+            writeInt32(sock_fd, 502);
+            writeInt32(sock_fd, status);
+            return false;
+        } else {
+            _bugs[bugId].status = Bug::BugStatus::QA;
+            _bugs_mutex.unlock();
+            std::cout << "Developer with id " << client.user.id << " has fixed bug with id " << bugId << "\n";
+            writeInt32(sock_fd, 501);
+            writeInt32(sock_fd, bugId);
+            return true;
+        }
+    }
+}
+
+bool BugTrackingServer::bugRegister(BugTrackingServer::Client &client) {
+    int sock_fd = client.sock_fd;
+    std::string description;
+    Bug bug;
+    readInt32(sock_fd, bug.id);
+    readInt32(sock_fd, bug.developer_id);
+    readInt32(sock_fd, bug.project_id);
+    readString(sock_fd, bug.description);
+    if (!client.isAuthorized()) {
+        std::cout << "Request from unauthorized client " << client.sock_fd << "\n";
+        writeInt32(sock_fd, 2);
+        return false;
+    }
+    if (client.user.role != UserService::User::Role::TESTER) {
+        std::cout << "User with id " << client.user.id << " is not tester and cannot register bugs" << bug.id << "\n";
+        writeInt32(sock_fd, 3);
+        writeInt32(sock_fd, UserService::User::Role::TESTER);
+        return false;
+    }
+    _bugs_mutex.lock();
+    if (_bugs.find(bug.id) != _bugs.end()) {
+        _bugs_mutex.unlock();
+        std::cout << "Tester with id " << client.user.id << " tried to register existing bug with id " << bug.id << "\n";
+        writeInt32(sock_fd, 602);
+        writeInt32(sock_fd, bug.id);
+        return false;
+    } else {
+        _bugs[bug.id] = bug;
+        _bugs_mutex.unlock();
+        writeInt32(sock_fd, 601);
+        writeInt32(sock_fd, bug.id);
+        std::cout << "Tester with id " << client.user.id << " has registered new bug with id " << bug.id << '\n';
+        return true;
     }
 }
 

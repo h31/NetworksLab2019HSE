@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <map>
 #include "UserService.h"
+#include "Bug.h"
 
 class BugTrackingServer {
 private:
@@ -28,12 +29,25 @@ public:
 
     bool authorize(Client& client);
 
+    bool bugsTesterList(Client& client);
+
+    bool bugVerification(Client& client);
+
+    bool bugsDeveloperList(Client& client);
+
+    bool bugFix(Client& client);
+
+    bool bugRegister(Client& client);
+
     bool close(Client& client);
 
 private:
     UserService* _userService;
     std::map<int, Client*> _clients;
     std::mutex _clients_mutex;
+
+    std::map<int, Bug> _bugs;
+    std::mutex _bugs_mutex;
 
     void process_client(int sock_fd);
 

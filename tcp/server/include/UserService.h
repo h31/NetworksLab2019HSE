@@ -10,18 +10,20 @@ public:
 
     class User {
         public:
+            enum Role {
+                NONE, DEVELOPER, TESTER
+            };
+
             User();
-            User(int id, int role);
+            User(int id, Role role);
 
             int id;
-            int role;
+            Role role;
 
             bool isEmpty();
 
             static User emptyUser();
     };
-
-    User registerNewUser(int id, int role);
 
     User getUser(int id);
 

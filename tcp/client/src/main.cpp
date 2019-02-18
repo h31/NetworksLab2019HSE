@@ -16,7 +16,7 @@ void print_usage() {
               << LIST_NEWS_COMMAND << " - list all news on specified topic\n"
               << NEWS_CONTENT_COMMAND << " - get news text\n"
               << ADD_NEWS_COMMAND << " - add news\n"
-              << EXIT_COMMAND << " - stop application" << std::endl;
+              << EXIT_COMMAND << " - stop application\n" << std::endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -43,8 +43,9 @@ int main(int argc, char* argv[]) {
             if (command == LIST_TOPICS_COMMAND) {
                 std::vector<std::string> topics = client.list_topics();
                 for (const auto &topic : topics) {
-                    std::cout << topic << std::endl;
+                    std::cout << topic << "\n" ;
                 }
+                std::cout << std::endl;
             } else if (command == LIST_NEWS_COMMAND) {
                 std::cout << "Enter topic:" << std::endl;
                 std::string topic;
@@ -54,9 +55,13 @@ int main(int argc, char* argv[]) {
                 }
             } else if (command == NEWS_CONTENT_COMMAND) {
                 std::cout << "Enter id:" << std::endl;
-                int id;
-                std::cin >> id;
-                std::cout << client.get_news_text(id) << std::endl;
+                std::string id;
+                std::getline(std::cin, id);
+                try {
+                    std::cout << client.get_news_text(std::stoi(id)) << "\n" << std::endl;
+                } catch (std::invalid_argument &e) {
+                    std::cout << "id must be an integer\n" << std::endl;
+                }
             } else if (command == ADD_NEWS_COMMAND) {
                 std::cout << "Enter news topic:" << std::endl;
                 std::string topic;
@@ -68,6 +73,7 @@ int main(int argc, char* argv[]) {
                 std::string text;
                 std::getline(std::cin, text);
                 client.add_news(topic, title, text);
+                std::cout << std::endl;
             } else if (command == EXIT_COMMAND) {
                 return 0;
             } else {

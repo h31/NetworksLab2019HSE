@@ -7,7 +7,7 @@
 
 class client {
     private:
-        socket_io* io;
+        socket_io *io;
 
     public:
         explicit client(const std::string &host, uint16_t port);

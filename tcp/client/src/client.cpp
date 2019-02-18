@@ -8,8 +8,14 @@
 client::client(const std::string &host, uint16_t port) {
     struct hostent *server = gethostbyname(host.c_str());
     if (server == nullptr) {
-        throw network_exception("No such host exception");
+        throw network_exception("No such host");
     }
+
+    int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (socket_fd < 0) {
+        throw network_exception("Unable to open socket");
+    }
+    io = new socket_io(socket_fd);
 
     struct sockaddr_in server_address{};
     bzero(&server_address, sizeof(server_address));
@@ -17,14 +23,9 @@ client::client(const std::string &host, uint16_t port) {
     bcopy(server->h_addr, &server_address.sin_addr.s_addr, (size_t) server->h_length);
     server_address.sin_port = htons(port);
 
-    int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (socket_fd < 0) {
-        throw network_exception("Unable to open socket");
-    }
     if (connect(socket_fd, (struct sockaddr *) &server_address, sizeof(server_address)) < 0) {
         throw network_exception("Unable to connect to the server");
     }
-    io = new socket_io(socket_fd);
 }
 
 client::~client() {

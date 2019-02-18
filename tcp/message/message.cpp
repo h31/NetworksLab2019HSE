@@ -19,3 +19,25 @@ std::string RequestMessage::GetBody() const {
 int32_t RequestMessage::GetReceiverId() const {
     return receiver_id_;
 }
+
+
+
+ResponseMessage ResponseMessage::CONNECT_FAIL() {
+    return ResponseMessage(ResponseType::CONNECT_FAIL);
+}
+
+ResponseMessage ResponseMessage::CONNECT_OK() {
+    return ResponseMessage(ResponseType::CONNECT_OK);
+}
+
+ResponseType ResponseMessage::GetType() const {
+    return type_;
+}
+
+std::string ResponseMessage::GetBody() const {
+    return body_;
+}
+
+int32_t ResponseMessage::GetSenderId() const {
+    return sender_id_;
+}

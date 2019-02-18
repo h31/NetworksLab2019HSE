@@ -49,7 +49,7 @@ bool Client::connect(){
 
 uint32_t Client::sendRequest(){
     std::cout << "0 -- add user\n1 -- get all wallets\n2 -- sent to user\n3 -- ask from user\n"
-         << "4 -- confirm sent request\n5 -- check money\n6 -- check sent requests\n7 -- disconnect\n\n Enter message type: ";
+         << "4 -- confirm sent request\n5 -- check money\n6 -- check sent requests\n7 -- disconnect\n\nEnter message type: ";
 
     uint32_t message_type;
     std::cin >> message_type;
@@ -84,6 +84,7 @@ uint32_t Client::sendRequest(){
             std::cout << "wrong message type";
             return message_type;
     }
+    std::cout << "\n";
     ssize_t n = write(sockfd, buffer, sizeof(buffer));
 
     if (n < 0) {
@@ -95,7 +96,7 @@ uint32_t Client::sendRequest(){
 
 void Client::getResponse(uint32_t sent_message_type) {
     ssize_t n;
-    if (sent_message_type == 1) {
+    if (sent_message_type == 1 || sent_message_type == 6) {
         bzero(buffer, 1024);
         n = read(sockfd, buffer, 1024);
     } else {
@@ -127,7 +128,7 @@ void Client::getResponse(uint32_t sent_message_type) {
         	successResponse();
             break;
         case 5: 
-            std::cout << "You have " << longNumberResponse(4);
+            std::cout << "You have " << longNumberResponse(4) << "\n";
             break;
         case 6:
             checkRequestsResponse(); 
@@ -136,6 +137,7 @@ void Client::getResponse(uint32_t sent_message_type) {
             std::cout << "wrong message type";
             return;
     }
+    std::cout << "\n";
 }  
 
 void Client::addUser() {
@@ -202,7 +204,7 @@ void Client::readWallet(int offset, std::string whoseWallet) {
 }
 
 void Client::readMoney(int offset) {
-    std::cout << "Enter how much to send: ";
+    std::cout << "Enter how much: ";
     uint32_t money;
     std::cin >> money;
     readWriteHelper.set4Bytes(buffer, offset, money);
@@ -256,8 +258,8 @@ void Client::successResponse() {
 void Client::checkRequestsResponse() {
 	int64_t requestNumber = longNumberResponse(4);
     for (int i = 0; i < requestNumber; i++) {
-    	std::cout << "id: " << longNumberResponse(8 + 24 * i) 
-    	<< " from: " << longNumberResponse(8 + 24 * i + 8) 
-    	<< "money: " << longNumberResponse(8 + 24 * i + 16) << "\n";
+    	std::cout << "id: " << longNumberResponse(12 + 24 * i)
+    	<< " from: " << longNumberResponse(12 + 24 * i + 8)
+    	<< " money: " << longNumberResponse(12 + 24 * i + 16) << "\n";
     }
 }

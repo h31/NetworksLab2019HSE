@@ -1,16 +1,15 @@
-
 #ifndef ROULETTE_CLIENT_H
 #define ROULETTE_CLIENT_H
 
 
 #include <cstdint>
-#include <../include/message.h>
 #include <shared_mutex>
 #include <map>
 #include <thread>
 #include <boost/thread/sync_queue.hpp>
+#include <../include/message.h>
 
-class RouletteClient {
+class MarketClient {
 public:
 
     bool StartClient(const char *host, uint16_t port_number);
@@ -27,28 +26,38 @@ private:
 
     std::mutex io_mutex_;
 
+    Message SendMessage(Message::Type type);
+
+    Message SendMessage(Message::Type type, const std::string& text);
+
 public:
-    void AuthorisePlayer(const std::string &name);
+    bool AuthoriseCustomer(const std::string& name);
 
-    void AuthoriseCroupier(const std::string &key);
+    bool AuthoriseFreelancer(const std::string& name);
 
-    void StartDraw();
+    void ListMyOrders();
 
-    void FinishDraw();
+    void ListOpenOrders();
 
-    void NewBet(const std::string &type, int sum);
+    void NewOrder(const std::string& description);
+
+    void RequestOrder(int order_id);
+
+    void StartOrder(int order_id);
+
+    void FinishOrder(int order_id);
+
+    void GiveOrder(int order_id);
+
+    void ApproveDoneOrder(int order_id);
 
     void HandleIncorrectMessage(const Message &response);
 
     void HandleUnauthorised();
 
-    void PrintResults(const Message &response);
-
     void HandleUnexpectedServerResponse(const Message &response);
 
     void HandleResponse(const Message &response);
-
-    void ListBets();
 
     void Quit();
 

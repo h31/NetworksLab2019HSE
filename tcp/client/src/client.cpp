@@ -1,10 +1,9 @@
 #include <netdb.h>
-#include <boost/lockfree/queue.hpp>
 #include <thread>
+#include <boost/lockfree/queue.hpp>
 #include "../include/client.h"
 
-bool RouletteClient::StartClient(const char *host, uint16_t port_number) {
-
+bool MarketClient::StartClient(const char* host, uint16_t port_number) {
     sockfd_ = socket(AF_INET, SOCK_STREAM, 0);
 
     if (sockfd_ < 0) {
@@ -46,14 +45,14 @@ bool RouletteClient::StartClient(const char *host, uint16_t port_number) {
         while (!responses_.closed()) {
             try {
                 Message m = Message::Read(sockfd_);
-                if (m.type == Message::DRAW_RESULTS) {
-                    int number, win;
-                    std::sscanf(m.body.c_str(), "%d %d", &number, &win);
-                    PrintHeader("DRAW ENDED\nWINNING NUMBER " + std::to_string(number) +
-                                "\nYOUR PROFIT " + std::to_string(win));
-                } else {
+//                if (m.type == Message::DRAW_RESULTS) {
+//                    int number, win;
+//                    std::sscanf(m.body.c_str(), "%d %d", &number, &win);
+//                    PrintHeader("DRAW ENDED\nWINNING NUMBER " + std::to_string(number) +
+//                                "\nYOUR PROFIT " + std::to_string(win));
+//                } else {
                     responses_.push(m);
-                }
+                //}
             } catch (boost::sync_queue_is_closed &) {
                 break;
             }
@@ -63,121 +62,72 @@ bool RouletteClient::StartClient(const char *host, uint16_t port_number) {
     return true;
 }
 
-void RouletteClient::AuthorisePlayer(const std::string &name) {
-    Message request{Message::NEW_PLAYER, name};
-    requests_.push(request);
-    Message response = responses_.pull();
+bool MarketClient::AuthoriseCustomer(const std::string& name) {
+    Message response = SendMessage(Message::NEW_CUSTOMER, name);
     switch (response.type) {
-        case Message::PLAYER_ADDED:
-            Cout("enjoy the game, " + name);
-            return;
-        case Message::CANT_ADD_PLAYER:
-            Cout(response.body.empty() ? "sorry, this name is taken" : response.body);
-            return;
+        case Message::CUSTOMER_ADDED:
+            Cout("Authorisation successful, you can create orders now, " + name);
+            return true;
+        case Message::CANT_ADD_CUSTOMER:
+            Cout(response.body.empty() ? "Sorry, something went wrong" : response.body);
+            return false;
         default:
             HandleResponse(response);
-            return;
+            return false;
     }
 
 }
 
-void RouletteClient::AuthoriseCroupier(const std::string &key) {
-    Message request{Message::NEW_CROUPIER, key};
-    requests_.push(request);
-    Message response = responses_.pull();
+bool MarketClient::AuthoriseFreelancer(const std::string& name) {
+    Message response = SendMessage(Message::NEW_FREELANCER, name);
     switch (response.type) {
-        case Message::CROUPIER_ADDED:
-            Cout("welcome ruler");
-            return;
-        case Message::CANT_ADD_CROUPIER:
-            Cout(response.body.empty() ? "wrong password" : response.body);
-            return;
-        case Message::CROUPIER_ALREADY_EXISTS:
-            Cout(response.body.empty() ? "there can't be two masters" : response.body);
-            return;
+        case Message::FREELANCER_ADDED:
+            Cout("You can look for orders now");
+            return true;
+        case Message::CANT_ADD_FREELANCER:
+            Cout(response.body.empty() ? "Sorry, something went wrong" : response.body);
+            return false;
         default:
             HandleResponse(response);
-            return;
+            return false;
     }
 }
 
-void RouletteClient::StartDraw() {
-    Message request{Message::START_DRAW};
-    requests_.push(request);
-    Message response = responses_.pull();
+void MarketClient::ListMyOrders() {
+    Message response = SendMessage(Message::GET_MY_ORDERS);
     switch (response.type) {
-        case Message::DRAW_STARTED:
-            Cout("whirrr!");
-            return;
-        case Message::CANT_START_DRAW:
-            Cout(response.body.empty() ? "draw declined" : response.body);
-            return;
-        default:
-            HandleResponse(response);
-            return;
-    }
-}
-
-void RouletteClient::FinishDraw() {
-    Message request{Message::END_DRAW};
-    requests_.push(request);
-    Message response = responses_.pull();
-    switch (response.type) {
-        case Message::DRAW_ENDED:
-            Cout("draw ended");
-            return;
-        case Message::CANT_END_DRAW:
-            Cout(response.body.empty() ? "can't finish" : response.body);
-            return;
-        default:
-            HandleResponse(response);
-            return;
-    }
-}
-
-void RouletteClient::NewBet(const std::string &type, int sum) {
-    Message request{Message::NEW_BET, type + " " + std::to_string(sum)};
-    requests_.push(request);
-    Message response = responses_.pull();
-    switch (response.type) {
-        case Message::BET_ACCEPTED:
-            Cout("good luck!");
-            return;
-        case Message::REPEATED_BET:
-            Cout(response.body.empty() ? "you already made a bet" : response.body);
-            return;
-        default:
-            HandleResponse(response);
-            return;
-    }
-}
-
-void RouletteClient::ListBets() {
-    Message request{Message::GET_ALL_BETS};
-    requests_.push(request);
-    Message response = responses_.pull();
-    switch (response.type) {
-        case Message::LIST_OF_BETS:
+        case Message::LIST_OF_MY_ORDERS:
             Cout(response.body);
             return;
         default:
             HandleResponse(response);
             return;
-
     }
 }
 
-void RouletteClient::HandleUnexpectedServerResponse(const Message &response) {
+void MarketClient::ListOpenOrders() {
+    Message response = SendMessage(Message::GET_OPEN_ORDERS);
+    switch (response.type) {
+        case Message::LIST_OF_OPEN_ORDERS:
+            Cout(response.body);
+            return;
+        default:
+            HandleResponse(response);
+            return;
+    }
+}
+
+void MarketClient::HandleUnexpectedServerResponse(const Message& response) {
     Cout("server responded with {type: " + std::to_string(response.type) + ", message: " + response.body + "}");
 }
 
-void RouletteClient::HandleUnauthorised() { Cout("introduce yourself"); }
+void MarketClient::HandleUnauthorised() { Cout("Please enter who u are"); }
 
-void RouletteClient::HandleIncorrectMessage(const Message &response) {
-    Cout(response.body.empty() ? "unexpected request" : response.body);
+void MarketClient::HandleIncorrectMessage(const Message& response) {
+    Cout(response.body.empty() ? "You are not permitted to do it" : response.body);
 }
 
-void RouletteClient::HandleResponse(const Message &response) {
+void MarketClient::HandleResponse(const Message& response) {
     switch (response.type) {
         case Message::INCORRECT_MESSAGE:
             HandleIncorrectMessage(response);
@@ -194,37 +144,127 @@ void RouletteClient::HandleResponse(const Message &response) {
     }
 }
 
-void RouletteClient::Quit() {
-    Cout("closing connection...");
+void MarketClient::RequestOrder(int order_id) {
+    Message response = SendMessage(Message::TAKE_ORDER, std::to_string(order_id));
+    switch (response.type) {
+        case Message::TAKE_ORDER_SUCCESSFUL:
+            Cout("Order" + response.body + " requested.");
+            return;
+        case Message::TAKE_ORDER_NOT_SUCCESSFUL:
+            Cout(response.body);
+        default:
+            HandleResponse(response);
+            return;
+    }
+}
+
+void MarketClient::StartOrder(int order_id) {
+    Message response = SendMessage(Message::WORK_STARTED, std::to_string(order_id));
+    switch (response.type) {
+        case Message::WORK_STARTED:
+            Cout("Order" + response.body + " started successfully.");
+            return;
+        case Message::WORK_STARTED_SUCCESSFUL:
+            Cout(response.body);
+        default:
+            HandleResponse(response);
+            return;
+    }
+}
+
+void MarketClient::FinishOrder(int order_id) {
+    Message response = SendMessage(Message::WORK_FINISHED, std::to_string(order_id));
+    switch (response.type) {
+        case Message::WORK_FINISHED_SUCCESSFUL:
+            Cout("Order" + response.body + " finished successfully.");
+            return;
+        case Message::WORK_FINISHED_NOT_SUCCESSFUL:
+            Cout(response.body);
+        default:
+            HandleResponse(response);
+            return;
+    }
+}
+
+void MarketClient::NewOrder(const std::string& description) {
+    Message response = SendMessage(Message::NEW_ORDER, description);
+    switch (response.type) {
+        case Message::ORDER_ACCEPTED:
+            Cout("You can now track this order by id: " + response.body);
+        default:
+            HandleResponse(response);
+            return;
+    }
+}
+
+void MarketClient::GiveOrder(int order_id) {
+    Message response = SendMessage(Message::GIVE_ORDER_TO_FREELANCER, std::to_string(order_id));
+    switch (response.type) {
+        case Message::GIVE_ORDER_SUCCESSFUL:
+            Cout("Order" + response.body + " given successfully.");
+            return;
+        case Message::GIVE_ORDER_NOT_SUCCESSFUL:
+            Cout(response.body);
+        default:
+            HandleResponse(response);
+            return;
+    }
+}
+
+void MarketClient::ApproveDoneOrder(int order_id) {
+    Message response = SendMessage(Message::WORK_ACCEPTED, std::to_string(order_id));
+    switch (response.type) {
+        case Message::WORK_ACCEPTED_SUCCESSFUL:
+            Cout("Work for order" + response.body + " accepted successfully.");
+            return;
+        case Message::WORK_ACCEPTED_NOT_SUCCESSFUL:
+            Cout(response.body);
+        default:
+            HandleResponse(response);
+            return;
+    }
+}
+
+void MarketClient::Quit() {
+    Cout("Closing connection...");
     shutdown(sockfd_, SHUT_RDWR);
     requests_.close();
     responses_.close();
     request_sender_.join();
     response_receiver_.join();
-    Cout("bye!");
+    Cout("Bye! Hope to see u again!");
 }
 
-void RouletteClient::PrintHeader(const std::string &header) {
+void MarketClient::PrintHeader(const std::string& header) {
     io_mutex_.lock();
     system("clear");
     std::cout << header + "\n> " << std::flush;
     io_mutex_.unlock();
 }
 
-void RouletteClient::PrintPrompt() {
+void MarketClient::PrintPrompt() {
     io_mutex_.lock();
     std::cout << "> " << std::flush;
     io_mutex_.unlock();
 }
 
-void RouletteClient::Cout(const std::string &message) {
+void MarketClient::Cout(const std::string& message) {
     io_mutex_.lock();
     std::cout << message << std::endl;
     io_mutex_.unlock();
 }
 
-bool RouletteClient::GetLine(std::string &message) {
+bool MarketClient::GetLine(std::string& message) {
     auto &result = getline(std::cin, message);
     return bool(result);
 }
 
+Message MarketClient::SendMessage(Message::Type type) {
+    SendMessage(type, "");
+}
+
+Message MarketClient::SendMessage(Message::Type type, const std::string& text) {
+    Message request{type, text};
+    requests_.push(request);
+    return responses_.pull();
+}

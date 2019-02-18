@@ -82,7 +82,7 @@
 - Выдача ошибок разработчику
 
       type: 400
-      content: int user_id
+      content:
       
   - Успех
 

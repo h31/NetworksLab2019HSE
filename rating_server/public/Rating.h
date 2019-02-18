@@ -11,18 +11,20 @@ struct Rating {
   };
   std::string name;
   uint32_t id;
-  uint8_t  size, capacity;
-  std::string* choices;
+  uint8_t size, capacity;
+  std::string *choices;
   uint32_t *statistics;
   State state = CLOSE;
 
-  Rating(uint32_t  id, std::string &name, uint8_t capacity);
+  Rating(uint32_t id, std::string name, uint8_t capacity);
+
+  Rating() = default;
 
   bool serialise();
 
   bool add_choice(std::string &choice);
 
-  static Rating* createRating(std::string &filename);
+  static Rating *createRating(std::string &filename);
 };
 
 

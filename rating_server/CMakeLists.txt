@@ -26,4 +26,21 @@ add_executable(rating_server
         private/Socket.cpp
         public/Socket.h
         private/Client.cpp
-        public/Client.h public/ClientMessages/ClientMessage.h private/ClientMessages/DeleteRating.cpp public/ClientMessages/DeleteRating.h private/ClientMessages/OpenRating.cpp public/ClientMessages/OpenRating.h private/ClientMessages/CloseRating.cpp public/ClientMessages/CloseRating.h private/ClientMessages/AddChoice.cpp public/ClientMessages/AddChoice.h private/ClientMessages/RatingList.cpp public/ClientMessages/RatingList.h private/ClientMessages/ShowRating.cpp public/ClientMessages/ShowRating.h private/ClientMessages/VoteRating.cpp public/ClientMessages/VoteRating.h public/Rating.cpp public/Rating.h)
+        public/Client.h
+        public/ClientMessages/ClientMessage.h
+        private/ClientMessages/DeleteRating.cpp
+        public/ClientMessages/DeleteRating.h
+        private/ClientMessages/OpenRating.cpp
+        public/ClientMessages/OpenRating.h
+        private/ClientMessages/CloseRating.cpp
+        public/ClientMessages/CloseRating.h
+        private/ClientMessages/AddChoice.cpp
+        public/ClientMessages/AddChoice.h
+        private/ClientMessages/RatingList.cpp
+        public/ClientMessages/RatingList.h
+        private/ClientMessages/ShowRating.cpp
+        public/ClientMessages/ShowRating.h
+        private/ClientMessages/VoteRating.cpp
+        public/ClientMessages/VoteRating.h
+        private/Rating.cpp public/Rating.h
+        )

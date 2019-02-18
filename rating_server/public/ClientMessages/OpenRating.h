@@ -7,6 +7,7 @@
 namespace ClientMessage {
   class OpenRating : public BaseMessage {
     uint32_t id;
+
     bool read_body(Socket &socket) override;
 
     bool process(Server *server, Client *client) override;

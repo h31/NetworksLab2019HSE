@@ -1,9 +1,6 @@
 #include <Socket.h>
-#include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-
-#include "Socket.h"
 
 bool Socket::read_string(std::string &result) {
   char c;
@@ -24,13 +21,9 @@ bool Socket::read_uint32(uint32_t &result) {
   return res;
 }
 
-bool Socket::write(const char *data, size_t len) {
-  return ::write(socket, data, len) != len;
-}
-
 bool Socket::write_uint32(const uint32_t data) {
   uint32_t h = htonl(data);
-  return write((char *)&h, sizeof(h));
+  return write((char *) &h, sizeof(h));
 }
 
 bool Socket::write_string(const std::string &data) {

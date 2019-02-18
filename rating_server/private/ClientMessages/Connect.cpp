@@ -1,6 +1,7 @@
 #include <ClientMessages/Connect.h>
 
 #include "ClientMessages/Connect.h"
+
 using namespace ClientMessage;
 
 bool Connect::read_body(Socket &socket) {

@@ -30,7 +30,9 @@ public:
     return read((char *) &result, sizeof(T));
   }
 
-  inline bool write(const char *data, size_t len);
+  inline bool write(const char *data, size_t len) {
+    return ::write(socket, data, len) != len;
+  }
 
   bool write_string(const std::string &data);
 

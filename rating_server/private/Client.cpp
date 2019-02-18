@@ -1,16 +1,8 @@
 #include "Client.h"
 
-#include <sys/socket.h>
-#include <mutex>
-#include <ServerMessage.h>
-#include <Client.h>
-#include <Socket.h>
-#include <ClientMessages/BaseMessage.h>
 #include <ClientMessages/Connect.h>
 #include <ClientMessages/NewRating.h>
 
-
-#include "Client.h"
 
 Client::Client(int socket_fd) : socket(socket_fd) {
 }

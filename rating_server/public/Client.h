@@ -33,7 +33,7 @@ public:
 
   void shutdown_socket();
 
-  Socket& getSocket();
+  Socket &getSocket();
 
   bool send_error(std::string &&message);
 

@@ -1,8 +1,10 @@
+#include <utility>
+
 #include <fstream>
 #include <sstream>
 #include "Rating.h"
 
-Rating::Rating(uint32_t  id, std::string &name, uint8_t capacity) : id(id), name(name), size(capacity) {
+Rating::Rating(uint32_t id, std::string name, uint8_t capacity) : id(id), name(std::move(name)), size(capacity) {
   choices = new std::string[capacity];
   statistics = new uint32_t[capacity];
 }

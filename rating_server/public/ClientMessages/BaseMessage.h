@@ -7,7 +7,9 @@
 #include <Socket.h>
 
 class Server;
+
 class Client;
+
 class Socket;
 
 namespace ClientMessage {

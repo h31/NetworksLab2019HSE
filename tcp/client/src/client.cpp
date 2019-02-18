@@ -1,4 +1,5 @@
 #include <iostream>
+#include <strings.h>
 #include "client.h"
 
 client::client(const char *host, uint16_t port_number) {
@@ -217,7 +218,7 @@ void client::getBugsDeveloper() {
 void client::closeBugDeveloper() {
     int bud_id;
     std::cin >> bud_id;
-    sendNum(CLOSE_BUG_DEVELOPER);
+    sendNum(6686);
     sendNum(bud_id);
     int type = getNum();
     switch (type) {

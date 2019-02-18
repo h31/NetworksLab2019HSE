@@ -1,9 +1,14 @@
 #include <fstream>
+#include <iostream>
 #include "../include/UserService.h"
 
 UserService::UserService(std::string filename) {
     std::ifstream in;
     in.open(filename);
+    if (!in) {
+        std::cerr << "File was not found\n";
+        return;
+    }
     int id, role;
     while (!in.eof()) {
         in >> id >> role;
@@ -11,6 +16,7 @@ UserService::UserService(std::string filename) {
         _users[id].id = id;
         _users[id].role = static_cast<User::Role>(role);
     }
+    in.close();
 }
 
 User UserService::getUser(int id) {

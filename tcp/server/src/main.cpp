@@ -4,11 +4,11 @@
 #include "../include/BugTrackingServer.h"
 
 int main(int argc, char* argv[]) {
-    if (argc != 2) {
+    if (argc != 3) {
         std::cout << "Invalid arguments number\n";
         return 0;
     }
-    UserService userService("../users.txt");
+    UserService userService(argv[2]);
 
     uint16_t port_number = static_cast<uint16_t>(std::stoi(argv[1]));
 

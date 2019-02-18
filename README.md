@@ -17,12 +17,18 @@
   - Успех
 
         type: 101
-        content: int user_type
+        content: int user_role
         
   - Пользователь не найден
 
         type: 102
         content: int user_id
+
+  - Пользователь уже авторизован
+
+        type: 103
+        content: int user_id
+                 int user_role
 
 - Выдача тестеру списка ошибок: bug_status - 0 - активная, 1 - закрытая
 
@@ -50,6 +56,7 @@
 
         type: 301
         content: int bug_id
+                 int verification_code
         
   - Ошибка уже не активна
         
@@ -60,6 +67,17 @@
         
         type: 303
         content: int bug_id
+
+  - Ошибки еще не исправлена
+        
+        type: 304
+        content: int bug_id
+        
+  - Неизвстный код верификации
+        
+        type: 305
+        content: int verification_code
+
 
 - Выдача ошибок разработчику
 
@@ -94,11 +112,17 @@
 
         type: 502
         content: int bug_status
-        
+
+  - Задача не найдена
+
+        type: 503
+        content: int bug_id
+
 - Прием новой ошибки
 
       type: 600
       content:
+               int bug_id
                int developer_id
                int project_id
                int description length
@@ -107,6 +131,11 @@
   - Успех
 
         type: 601
+        content: int bug_id
+        
+  - Ошибка с таким id уже существует
+
+        type: 602
         content: int bug_id
         
 - Отключение клиента
@@ -118,3 +147,12 @@
 
       type: 1
       content: int type
+      
+- Сообщение об отутсвии авторизации
+
+      type: 2
+      
+- Сообщение об отутсвии прав (неверная роль; 0 - developer, 1 - tester)
+
+      type: 3
+      content: required role

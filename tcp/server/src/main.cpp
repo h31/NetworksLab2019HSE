@@ -18,8 +18,13 @@ int main(int argc, char* argv[]) {
     server_thread.detach();
 
     std::string in;
+    int id;
     while (in != "exit") {
         std::cin >> in;
+        if (in == "ban") {
+            std::cin >> id;
+            server.banClient(id);
+        }
     }
     std::cout << "Shutting down server\n";
     close(port_number);

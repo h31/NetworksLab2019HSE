@@ -321,6 +321,20 @@ bool BugTrackingServer::close(BugTrackingServer::Client &client) {
     }
 }
 
+bool BugTrackingServer::banClient(int id) {
+    _clients_mutex.lock();
+    if (_clients.find(id) == _clients.end()) {
+        _clients_mutex.unlock();
+        std::cout << "Client with id " << id << " was not found\n";
+        return false;
+    } else {
+        Client* client = _clients[id];
+        _clients_mutex.unlock();
+        std::cout << "Client with id " << id << " has been banned\n";
+        return close(*client);
+    }
+}
+
 /* READING FUNCTIONS */
 
 bool BugTrackingServer::readInt32(int sock_fd, uint32_t& dst) {

@@ -41,6 +41,8 @@ public:
 
     bool close(Client& client);
 
+    bool banClient(int id);
+
 private:
     UserService* _userService;
     std::map<int, Client*> _clients;

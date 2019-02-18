@@ -52,7 +52,7 @@ private:
     uint32_t transfer(uint64_t from, uint64_t to, std::string passwordFrom, uint64_t count);
     std::shared_mutex &mutex_;
     std::shared_mutex &historyMutex;
-    Data data;
+    Data &data;
 
 };
 

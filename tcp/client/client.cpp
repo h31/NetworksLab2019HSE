@@ -70,6 +70,9 @@ Client::Client(hostent *server, uint16_t portno) {
 
 
 void Client::start() {
+    char start_code = 0;
+    safeWrite(long_sockfd_, &start_code, sizeof(start_code));
+    safeWrite(short_sockfd_, &start_code, sizeof(start_code));
     char l_code = 1;
     char s_code = 0;
     safeWrite(long_sockfd_, &l_code, sizeof(l_code));
@@ -98,7 +101,7 @@ void Client::start() {
             char op;
             std::cin >> op;
             if (op == '!') {
-                processLongExpression({id, '!', std::stoi(cmd)});
+                processLongExpression({id, '!', (double) std::stoi(cmd)});
                 continue;
             }
             if (op == '*' || op == '-' || op == '+' || op == '/') {
@@ -109,6 +112,9 @@ void Client::start() {
                 std::cerr << "invalid expression\n";
             }
         }
+        char exit_code = OP_CODES.find('e')->second;
+        safeWrite(long_sockfd_, &exit_code, sizeof(exit_code));
+        safeWrite(short_sockfd_, &exit_code, sizeof(exit_code));
     } catch (SocketException& e) {
         std::cerr << "Error on socket\n";
     }
@@ -123,8 +129,16 @@ void Client::processLongExpression(const UnaryExpression &expression) {
     safeWrite(long_sockfd_, &op_code, sizeof(op_code));
     uint64_t id = expression.id;
     safeWrite(long_sockfd_, &id, sizeof(id));
-    double operand = expression.operand;
-    safeWrite(long_sockfd_, &operand, sizeof(operand));
+    if (expression.op == '!') {
+        auto operand = static_cast<uint64_t>(expression.operand);
+        safeWrite(long_sockfd_, &operand, sizeof(operand));
+        std::cerr << "send long operation" << operand << "\n";
+
+    } else {
+        double operand = expression.operand;
+        safeWrite(long_sockfd_, &operand, sizeof(operand));
+        std::cerr << "send long operation" << operand << "\n";
+    }
 }
 
 
@@ -161,8 +175,13 @@ void Client::workWithLong() {
             char op;
             int n = safeRead(long_sockfd_, &op, sizeof(op));
             if (n > 0) {
-                if (op != 0) {
-                    std::cerr << "Error on server\n";
+                if (op != OK) {
+                    if (op != ERR_INCORRECT_ACTION) {
+                        uint64_t id;
+                        safeRead(long_sockfd_, &id, sizeof(id));
+                        std::cerr << id << "\n";
+                    }
+                    std::cerr << (int) op << " Error on server\n";
                     continue;
                 }
                 uint64_t id;
@@ -170,6 +189,7 @@ void Client::workWithLong() {
                 double res;
                 safeRead(long_sockfd_, &res, sizeof(res));
                 long_op_res_[id] = res;
+                std::cerr << "recieved long operation " << res << '\n';
             }
         }
     } catch (SocketException& e) {

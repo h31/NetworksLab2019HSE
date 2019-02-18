@@ -1,5 +1,6 @@
 #include <iostream>
 #include <thread>
+#include <strings.h>
 
 #include "client.h"
 
@@ -82,7 +83,7 @@ void Client::start() {
             id++;
             std::cin >> cmd;
             if (cmd == "exit") {
-                char exit_code = OP_CODES['e'];
+                char exit_code = OP_CODES.find('e')->second;
                 safeWrite(long_sockfd_, &exit_code, sizeof(exit_code));
                 safeWrite(short_sockfd_, &exit_code, sizeof(exit_code));
                 is_interrupted_ = true;
@@ -118,17 +119,17 @@ void Client::start() {
 
 void Client::processLongExpression(const UnaryExpression &expression) {
     long_op_descr_[expression.id] = expression;
-    char op_code = OP_CODES[expression.op];
+    char op_code = OP_CODES.find(expression.op)->second;
     safeWrite(long_sockfd_, &op_code, sizeof(op_code));
     uint64_t id = expression.id;
     safeWrite(long_sockfd_, &id, sizeof(id));
-    double operand = expression.arg;
+    double operand = expression.operand;
     safeWrite(long_sockfd_, &operand, sizeof(operand));
 }
 
 
 void Client::processShortExpression(const BinaryExpression &expression) {
-    char op_code = OP_CODES[expression.op];
+    char op_code = OP_CODES.find(expression.op)->second;
     safeWrite(short_sockfd_, &op_code, sizeof(op_code));
     uint64_t id = expression.id;
     safeWrite(short_sockfd_, &id, sizeof(id));
@@ -183,7 +184,7 @@ void Client::flush() {
     }
 }
 
-const Client::OP_CODES = {{'+', 1}, {'*', 2}, {'-', 3}, {'/', 4}, {'!', 5}, {'s', 6},
+const std::unordered_map<char, char> Client::OP_CODES = {{'+', 1}, {'*', 2}, {'-', 3}, {'/', 4}, {'!', 5}, {'s', 6},
                                                             {'e', 100}};
 
 

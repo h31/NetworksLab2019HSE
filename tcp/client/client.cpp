@@ -120,9 +120,9 @@ void Client::processLongExpression(const UnaryExpression &expression) {
     long_op_descr_[expression.id] = expression;
     char op_code = OP_CODES[expression.op];
     safeWrite(long_sockfd_, &op_code, sizeof(op_code));
-    uint64_t id = htole(expression.id);
+    uint64_t id = expression.id;
     safeWrite(long_sockfd_, &id, sizeof(id));
-    double operand = htole(expression.arg);
+    double operand = expression.arg;
     safeWrite(long_sockfd_, &operand, sizeof(operand));
 }
 

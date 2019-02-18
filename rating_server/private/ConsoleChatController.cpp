@@ -1,9 +1,5 @@
-//
-// Created by machine on 02-Feb-19.
-//
-
 #include <iostream>
-#include "../public/ConsoleChatController.h"
+#include "ConsoleChatController.h"
 
 void ConsoleChatController::get_user_input(std::string &result) {
   do {

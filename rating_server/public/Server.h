@@ -10,33 +10,52 @@
 #include <unistd.h>
 #include <unordered_map>
 #include <mutex>
+#include "Client.h"
+#include "Rating.h"
 
 class Client;
 
 class Server {
-
 private:
   int server_socket_fd;
   std::unordered_map<std::string, Client *> active_clients;
+  std::unordered_map<uint32_t, Rating> ratings;
   std::mutex active_clients_mtx;
+  std::mutex ratings_mtx;
+  uint32_t maxId;
 
-  void ShutdownSocket();
+  void shutdown_socket();
 
 public:
   explicit Server(unsigned short port);
-  ~Server();
-  Server(const Server &) = delete;
-  Server(Server &&) = delete;
-  Server &operator=(const Server &) = delete;
-  Server &operator=(Server &&) = delete;
 
-  int Accept();
-  void RemoveClient(const std::string &user_name);
-  bool AddClient(const std::string &user_name, Client *client);
-  void Run();
-  void SendToAll(const std::string &from, const GroupMessageMessage &message);
-  bool SendTo(const std::string &from, const std::string &to, const MessageMessage &message);
-  void ShutdownAllClients();
+  ~Server();
+
+  int accept();
+
+  void remove_client(const std::string &user_name);
+
+  bool add_client(const std::string &user_name, Client *client);
+
+  void run();
+
+  void shutdown_all_clients();
+
+  bool create_new_rating(std::string &name, uint8_t cnt, Client *client);
+
+  bool delete_rating(uint32_t id, Client *client);
+
+  bool open_rating(uint32_t id, Client *client);
+
+  bool close_rating(uint32_t id, Client *client);
+
+  bool add_choice(uint32_t id, std::string &choice, Client *client);
+
+  bool rating_list(Client *client);
+
+  bool show_rating(uint32_t i, Client *client);
+
+  bool vote_rating(uint32_t id, uint8_t choice, Client *client);
 };
 
 #endif //RATING_SERVER_SERVER_H

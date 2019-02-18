@@ -1,0 +1,13 @@
+#ifndef RATING_SERVER_CLIENTMESSAGE_H
+#define RATING_SERVER_CLIENTMESSAGE_H
+
+#include <cstdint>
+
+namespace ClientMessage {
+  enum MessageType : uint8_t {
+    CONNECT, NEW_RATING, DELETE_RATING, OPEN_RATING, CLOSE_RATING,
+    ADD_CHOICE, RATING_LIST, SHOW_RATING, VOTE_RATING
+  };
+}
+
+#endif //RATING_SERVER_CLIENTMESSAGE_H

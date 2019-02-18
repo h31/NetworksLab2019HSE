@@ -1,75 +1,83 @@
-//
-// Created by machine on 18-Feb-19.
-//
-
-#include "../public/Client.h"
+#include "Client.h"
 
 #include <sys/socket.h>
 #include <mutex>
+#include <ServerMessage.h>
+#include <Client.h>
+#include <Socket.h>
+#include <ClientMessages/BaseMessage.h>
+#include <ClientMessages/Connect.h>
+#include <ClientMessages/NewRating.h>
 
-#include "clientMessages/LoginMessage.h"
-#include "clientMessages/SingleMessageMessage.h"
-#include "clientMessages/BroadcastMessageMessage.h"
+
 #include "Client.h"
 
-Client::Client(int socket_fd) {
-  this->socket_fd = socket_fd;
+Client::Client(int socket_fd) : socket(socket_fd) {
 }
 
 Client::~Client() {
-  ShutdownSocket();
+  delete user_name;
+  shutdown_socket();
 }
 
-bool Client::IsLoggedIn() {
-  std::unique_lock<std::recursive_mutex> lock(user_name_mtx);
-  return !user_name.empty();
+void Client::shutdown_socket() {
+  socket.shutdown();
 }
 
-void Client::SetUserName(std::string &user_name) {
-  std::unique_lock<std::recursive_mutex> lock(user_name_mtx);
-  if (!IsLoggedIn()) {
-    this->user_name = user_name;
+void Client::operator()(Server *server) {
+  while (true) {
+    ClientMessage::BaseMessage *message = nullptr;
+    if (!(message = receive())) {
+      break;
+    }
+    bool result = message->process(server, this);
+    delete message;
+    if (!result) {
+      break;
+    }
   }
+  if (!user_name) server->remove_client(*user_name);
+  delete this;
 }
 
-const std::string &Client::GetUserName() {
-  return user_name;
-}
 
-void Client::ShutdownSocket() {
-  static std::mutex mtx;
-  std::unique_lock<std::mutex> lock(mtx);
-  if (socket_fd < 0) {
-    return;
+ClientMessage::BaseMessage *Client::receive() {
+  ClientMessage::MessageType type;
+  if (socket.read_default(type)) {
+    perror("Error while reading type");
+    return nullptr;
   }
-  shutdown(socket_fd, SHUT_RDWR);
-  socket_fd = -1;
-}
 
-bool Client::Send(const ServerMessage &message) {
-  return message.Write(socket_fd);
-}
-
-bool Client::Receive(ClientMessage **message) {
-  ClientMessageType type;
-  ssize_t readSize = read(socket_fd, &type, sizeof(type));
-  if (readSize < sizeof(type)) {
-    perror("Error on reading");
-    return false;
-  }
   switch (type) {
-    case ClientMessageType::LOGIN:
-      *message = new LoginMessage();
-      break;
-    case ClientMessageType::SINGLE_MESSAGE:
-      *message = new SingleMessageMessage();
-      break;
-    case ClientMessageType::BROADCAST_MESSAGE:
-      *message = new BroadcastMessageMessage();
-      break;
+    case ClientMessage::CONNECT:
+      return new ClientMessage::Connect();
+    case ClientMessage::NEW_RATING:
+      return new ClientMessage::NewRating();
+    case ClientMessage::DELETE_RATING:
+    case ClientMessage::OPEN_RATING:
+    case ClientMessage::CLOSE_RATING:
+    case ClientMessage::ADD_CHOICE:
+    case ClientMessage::RATING_LIST:
+    case ClientMessage::SHOW_RATING:
+    case ClientMessage::VOTE_RATING:
     default:
       std::cerr << "Incorrect message type: " << (unsigned char) type << std::endl;
-      return true;
+      return nullptr;
   }
-  return (*message)->ReadBody(socket_fd);
+}
+
+void Client::set_username(std::string *name) {
+  user_name = name;
+}
+
+Socket &Client::getSocket() {
+  return socket;
+}
+
+bool Client::send_error(std::string &&message) {
+  return socket.write_default(ServerMessage::ERROR) && socket.write_string(message);
+}
+
+bool Client::send_success() {
+  return socket.write_default(ServerMessage::SUCCESS);
 }

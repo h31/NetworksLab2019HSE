@@ -1,0 +1,9 @@
+#ifndef CHAT_CLIENT_MESSAGES_H
+#define CHAT_CLIENT_MESSAGES_H
+
+namespace ServerMessage {
+  enum MessageType : uint8_t {
+    SUCCESS, ERROR, DISCONNECT, RATING_LIST, RATING_UNVOTED, RATING_VOTED
+  };
+}
+#endif //CHAT_CLIENT_MESSAGES_H

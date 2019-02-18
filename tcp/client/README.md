@@ -30,7 +30,7 @@
 
 Формат ответа:
 * <**news_content_length**: size_t><**news_content**: string>
-* **news_content_length** — длина строки **news_content**, если новость с таким **id** существует, и `-1` иначе
+* **news_content_length** — длина строки **news_content**, если новость с таким **id** существует, и `0` иначе
 * **news_content** — текст новости
 
 ## Добавление новости
@@ -40,5 +40,5 @@
 * **topic** — название темы
 * **news_title_length** — длина строки **news_title**
 * **news_title** — тема новости
-* **news_content_length** — длина строки **news_content**, если новость с таким **id** существует, и `-1` иначе
+* **news_content_length** — длина строки **news_content**
 * **news_content** — текст новости

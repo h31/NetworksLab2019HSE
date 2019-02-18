@@ -35,7 +35,7 @@
 
 ## Добавление новости
 Формат сообщения:
-* <**topic_length**: size_t><**topic**: string><**news_title_length**: size_t><**news_title**: string><**news_content_length**: size_t><**news_content**: string>
+* <**4**: int><**topic_length**: size_t><**topic**: string><**news_title_length**: size_t><**news_title**: string><**news_content_length**: size_t><**news_content**: string>
 * **topic_length** — длина строки **topic**
 * **topic** — название темы
 * **news_title_length** — длина строки **news_title**

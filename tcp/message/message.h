@@ -34,7 +34,7 @@ class RequestMessage {
     private:
         RequestType type_;
 
-        std::string body_ = '';
+        std::string body_ = "";
 
         int32_t receiver_id_= 0;
 };

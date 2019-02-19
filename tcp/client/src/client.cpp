@@ -30,35 +30,6 @@ bool MarketClient::StartClient(const char* host, uint16_t port_number) {
 
     PrintHeader("AUTHORISATION");
 
-    request_sender_ = std::thread([this]() {
-        while (!requests_.closed()) {
-            try {
-                Message m = requests_.pull();
-                m.Write(sockfd_);
-            } catch (boost::sync_queue_is_closed &) {
-                break;
-            }
-        }
-    });
-
-    response_receiver_ = std::thread([this]() {
-        while (!responses_.closed()) {
-            try {
-                Message m = Message::Read(sockfd_);
-//                if (m.type == Message::DRAW_RESULTS) {
-//                    int number, win;
-//                    std::sscanf(m.body.c_str(), "%d %d", &number, &win);
-//                    PrintHeader("DRAW ENDED\nWINNING NUMBER " + std::to_string(number) +
-//                                "\nYOUR PROFIT " + std::to_string(win));
-//                } else {
-                    responses_.push(m);
-                //}
-            } catch (boost::sync_queue_is_closed &) {
-                break;
-            }
-        }
-    });
-
     return true;
 }
 
@@ -235,10 +206,6 @@ void MarketClient::ApproveDoneOrder(int order_id) {
 void MarketClient::Quit() {
     Cout("Closing connection...");
     shutdown(sockfd_, SHUT_RDWR);
-    requests_.close();
-    responses_.close();
-    request_sender_.join();
-    response_receiver_.join();
     Cout("Bye! Hope to see u again!");
 }
 
@@ -272,6 +239,6 @@ Message MarketClient::SendMessage(Message::Type type) {
 
 Message MarketClient::SendMessage(Message::Type type, const std::string& text) {
     Message request{type, text};
-    requests_.push(request);
-    return responses_.pull();
+    request.Write(sockfd_);
+    return Message::Read(sockfd_);
 }

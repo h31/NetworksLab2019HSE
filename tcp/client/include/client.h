@@ -18,12 +18,6 @@ private:
 
     int sockfd_;
 
-    boost::sync_queue<Message> requests_;
-    boost::sync_queue<Message> responses_;
-
-    std::thread request_sender_;
-    std::thread response_receiver_;
-
     std::mutex io_mutex_;
 
     Message SendMessage(Message::Type type);

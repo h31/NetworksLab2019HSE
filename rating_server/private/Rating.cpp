@@ -2,10 +2,12 @@
 
 #include <fstream>
 #include <sstream>
+#include <Rating.h>
+
 #include "Rating.h"
 
-Rating::Rating(uint32_t id, std::string name, uint8_t capacity) : id(id), name(std::move(name)), size(capacity) {
-  choices = new std::string[capacity];
+Rating::Rating(uint32_t id, std::string name, uint8_t capacity) : id(id), name(std::move(name)), capacity(capacity) {
+  choices = new std::string*[capacity];
   statistics = new uint32_t[capacity];
 }
 
@@ -26,7 +28,7 @@ bool Rating::serialise(const std::string &path) {
 
 bool Rating::add_choice(std::string &choice) {
   if (size == capacity) return false;
-  choices[size] = choice;
+  choices[size] = new std::string(choice);
   statistics[size] = 0;
   size++;
   return true;
@@ -50,5 +52,11 @@ Rating *Rating::createRating(std::string &filename) {
     file >> statistic;
     rating->add_choice(choice);
     rating->statistics[size - 1] = statistic;
+  }
+}
+
+Rating::~Rating() {
+  for (int i = 0; i < size; i++) {
+    delete choices[i];
   }
 }

@@ -189,7 +189,7 @@ bool Server::show_rating(uint32_t id, Client *client) {
   auto &r = ratings[id];
   if (!(socket.write_string(r.name) && socket.write_default(r.state) && socket.write_default(r.size))) return false;
   for (int i = 0; i < r.size; i++) {
-    if (!(socket.write_string(r.choices[i]) && socket.write_uint32(r.statistics[i]))) return false;
+    if (!(socket.write_string(*r.choices[i]) && socket.write_uint32(r.statistics[i]))) return false;
   }
   return true;
 }

@@ -12,13 +12,15 @@ struct Rating {
   std::string name;
   uint32_t id;
   uint8_t size, capacity;
-  std::string *choices;
+  std::string **choices;
   uint32_t *statistics;
   State state = CLOSE;
 
   Rating(uint32_t id, std::string name, uint8_t capacity);
 
   Rating() = default;
+
+  ~Rating();
 
   bool serialise(const std::string &path);
 

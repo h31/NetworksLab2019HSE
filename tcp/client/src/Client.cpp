@@ -198,10 +198,10 @@ bool Client::vote() {
         if (!(std::cin >> option)) {
             return false;
         }
-        if (0 < option && option < 256) {
+        if (0 <= option && option < 256) {
             break;
         }
-        std::cerr << "Invalid option index. Must be in range [1..255]" << std::endl;
+        std::cerr << "Invalid option index. Must be in range [0..255]" << std::endl;
     }
     Response response = performRequest(
             RequestType::VOTE, { RequestField(id), RequestField(static_cast<uint8_t>(option))}

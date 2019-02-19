@@ -76,7 +76,7 @@ void Response::print() {
             for (uint8_t i = 1; i < 1 + 3 * cnt; i += 3) {
                 std::cout << "#" << fields[i + 1].getInt() << ": ";
                 std::cout << fields[i].getString();
-                if (fields[i + 2].getByte()) {
+                if (!fields[i + 2].getByte()) {
                     std::cout << " (closed)";
                 }
                 std::cout << std::endl;
@@ -85,14 +85,14 @@ void Response::print() {
         }
         case ResponseType::RATING_STATS: {
             std::cout << "Rating " << fields[0].getString();
-            if (fields[1].getByte()) {
+            if (!fields[1].getByte()) {
                 std::cout << " (closed)";
             }
             std::cout << ":" << std::endl;
             uint32_t cnt = fields[2].getByte();
             for (uint8_t i = 3; i < 3 + 2 * cnt; i += 2) {
-                std::cout << "#" << (i - 3) / 2 << fields[i].getString() << ": ";
-                std::cout << fields[i + 1].getString() << std::endl;
+                std::cout << " #" << (i - 3) / 2 << " " << fields[i].getString() << ": ";
+                std::cout << fields[i + 1].getInt() << std::endl;
             }
             break;
         }

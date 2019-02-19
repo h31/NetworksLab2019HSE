@@ -35,7 +35,8 @@ bool WriteRequestMessage(int sockfd, const RequestMessage& message) {
     n = write(sockfd, (char*) &receiver_id, sizeof(receiver_id));
     if (n <= 0)
         return false;
-    if (!WriteString(sockfd, message.GetBody()))
+    std::string body = message.GetBody();
+    if (!WriteString(sockfd, &body))
         return false;
     return true;
 }

@@ -29,6 +29,10 @@ void Client::run() {
         if (!getline(std::cin, command)) {
             break;
         }
+        if (command.empty()) {
+            std::cout << std::endl;
+            continue;
+        }
         if (!commands.count(command)) {
             std::cerr << "Invalid command" << std::endl;
             help();
@@ -145,6 +149,7 @@ bool Client::addOption() {
     }
     std::cout << "Enter option title:" << std::endl;
     std::string option;
+    getline(std::cin, option); // just to skip newline
     if (!getline(std::cin, option)) {
         return false;
     }

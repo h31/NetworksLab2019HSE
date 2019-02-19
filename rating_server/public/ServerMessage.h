@@ -3,7 +3,7 @@
 
 namespace ServerMessage {
   enum MessageType : uint8_t {
-    SUCCESS, ERROR, DISCONNECT, RATING_LIST, RATING_UNVOTED, RATING_VOTED
+    SUCCESS = 0, ERROR = 1, DISCONNECT = 2, RATING_LIST = 3, RATING_STATS = 4
   };
 }
 #endif //CHAT_CLIENT_MESSAGES_H

@@ -5,6 +5,7 @@
 #include <vector>
 #include <fstream>
 #include <Server.h>
+#include <experimental/filesystem>
 
 
 static const int TRUE_VALUE = 1;
@@ -163,6 +164,7 @@ bool Server::add_choice(uint32_t id, std::string &choice, Client *client) {
 bool Server::rating_list(Client *client) {
   std::unique_lock<std::mutex> lock(ratings_mtx);
   Socket &socket = client->getSocket();
+  socket.write_default(ServerMessage::RATING_LIST);
   if (!socket.write_uint32((uint32_t) ratings.size())) return false;
   for (auto &rating : ratings) {
     Rating &r = rating.second;
@@ -177,6 +179,7 @@ bool Server::show_rating(uint32_t id, Client *client) {
     return client->send_error(NO_SUCH_RATING_MESSAGE);
   }
   Socket &socket = client->getSocket();
+  socket.write_default(ServerMessage::RATING_STATS);
   auto &r = ratings[id];
   if (!(socket.write_string(r.name) && socket.write_default(r.state) && socket.write_default(r.size))) return false;
   for (int i = 0; i < r.size; i++) {

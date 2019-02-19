@@ -1,4 +1,5 @@
 #include <thread>
+#include <boost/thread/csbl/vector.hpp>
 #include "../include/tcp_server.h"
 
 void TcpServer::StartServer(uint16_t port_number) {

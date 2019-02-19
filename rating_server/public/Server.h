@@ -22,7 +22,7 @@ private:
   std::unordered_map<uint32_t, Rating> ratings;
   std::mutex active_clients_mtx;
   std::mutex ratings_mtx;
-  uint32_t maxId;
+  uint32_t max_id;
 
   void shutdown_socket();
 
@@ -60,6 +60,8 @@ public:
   void save_all_state();
 
   void load_state();
+
+  void read_data_file();
 };
 
 #endif //RATING_SERVER_SERVER_H

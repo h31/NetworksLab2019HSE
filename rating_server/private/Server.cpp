@@ -42,7 +42,9 @@ Server::Server(unsigned short port) {
 }
 
 Server::~Server() {
+  shutdown_all_clients();
   shutdown_socket();
+  save_all_state();
 }
 
 void Server::run() {
@@ -123,8 +125,8 @@ int Server::accept() {
 
 bool Server::create_new_rating(std::string &name, uint8_t cnt, Client *client) {
   std::unique_lock<std::mutex> lock(ratings_mtx);
-  ratings[maxId] = Rating(maxId, name, cnt);
-  maxId++;
+  ratings[max_id] = Rating(max_id, name, cnt);
+  max_id++;
   return client->send_success();
 }
 
@@ -209,19 +211,33 @@ bool Server::vote_rating(uint32_t id, uint8_t choice, Client *client) {
 
 void Server::save_all_state() {
   std::unique_lock<std::mutex> lock(ratings_mtx);
+  std::cout << "saving state" << std::endl;
   for (auto &p : ratings) {
     Rating &r = p.second;
     r.serialise(data_folder);
   }
   std::ofstream sds(data_folder + data_file);
-  sds << maxId;
+  sds << max_id;
 }
 
 void Server::load_state() {
+  std::unique_lock<std::mutex> lock(ratings_mtx);
   fs::create_directory(data_folder);
   for (const auto &entry : fs::directory_iterator(data_folder)) {
-    std::cout << entry.path().filename() << std::endl;
+    std::string fname = entry.path().filename().string();
+    if (fname == data_file) {
+      read_data_file();
+    } else {
+      Rating* r =  Rating::createRating(data_folder, fname);
+      ratings[r->id] = *r;
+      delete r;
+    }
   }
+}
+
+void Server::read_data_file() {
+  std::ifstream fs(data_folder + data_file);
+  fs >> max_id;
 }
 
 

@@ -26,7 +26,7 @@ struct Rating {
 
   bool add_choice(std::string &choice);
 
-  static Rating *createRating(std::string &filename);
+  static Rating *createRating(const std::string &folder, const std::string &filename);
 };
 
 

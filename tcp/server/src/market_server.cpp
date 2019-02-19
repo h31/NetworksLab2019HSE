@@ -76,11 +76,10 @@ void MarketServer::WorkWithFreelancer(Freelancer *freelancer) {
             case Message::WORK_STARTED: {
                 orders_mutex_.lock();
                 int id = stoi(message.body);
-                Order *o = orders[id];
                 if (orders.count(id) and
-                    o->state == Order::ASSIGNED and
-                    o->workers.count(freelancer->name)) {
-                    o->state = Order::IN_PROGRESS;
+                    orders[id]->state == Order::ASSIGNED and
+                    orders[id]->workers.count(freelancer->name)) {
+                    orders[id]->state = Order::IN_PROGRESS;
                     ans_message.type = Message::WORK_STARTED_SUCCESSFUL;
                 } else {
                     ans_message.type = Message::WORK_STARTED_NOT_SUCCESSFUL;
@@ -92,11 +91,10 @@ void MarketServer::WorkWithFreelancer(Freelancer *freelancer) {
             case Message::WORK_FINISHED: {
                 orders_mutex_.lock();
                 int id = stoi(message.body);
-                Order *o = orders[id];
                 if (orders.count(id) and
-                    o->state == Order::IN_PROGRESS and
-                    o->workers.count(freelancer->name)) {
-                    o->state = Order::PENDING;
+                    orders[id]->state == Order::IN_PROGRESS and
+                    orders[id]->workers.count(freelancer->name)) {
+                    orders[id]->state = Order::PENDING;
                     ans_message.type = Message::WORK_FINISHED_SUCCESSFUL;
                 } else {
                     ans_message.type = Message::WORK_FINISHED_NOT_SUCCESSFUL;
@@ -146,13 +144,12 @@ void MarketServer::WorkWithCustomer(Customer *customer) {
                 char name[256];
                 if (sscanf(message.body.c_str(), "%i %s", &id, name) == 2) {
                     orders_mutex_.lock();
-                    Order *o = orders[id];
                     if (orders.count(id) and
-                        o->state == Order::OPEN and
-                        o->customer == customer->name and
-                        o->workers.count(name)) {
-                        o->state = Order::ASSIGNED;
-                        o->workers = {std::string(name)};
+                        orders[id]->state == Order::OPEN and
+                        orders[id]->customer == customer->name and
+                        orders[id]->workers.count(name)) {
+                        orders[id]->state = Order::ASSIGNED;
+                        orders[id]->workers = {std::string(name)};
                         ans_message.type = Message::GIVE_ORDER_SUCCESSFUL;
                     } else {
                         ans_message.type = Message::GIVE_ORDER_NOT_SUCCESSFUL;
@@ -168,11 +165,10 @@ void MarketServer::WorkWithCustomer(Customer *customer) {
             case Message::WORK_ACCEPTED: {
                 int id = std::stoi(message.body);
                 orders_mutex_.lock();
-                Order *o = orders[id];
                 if (orders.count(id) and
-                    o->state == Order::PENDING and
-                    o->customer == customer->name) {
-                    o->state = Order::DONE;
+                    orders[id]->state == Order::PENDING and
+                    orders[id]->customer == customer->name) {
+                    orders[id]->state = Order::DONE;
                     ans_message.type = Message::WORK_ACCEPTED_SUCCESSFUL;
                 } else {
                     ans_message.type = Message::WORK_ACCEPTED_NOT_SUCCESSFUL;

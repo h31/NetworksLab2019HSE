@@ -10,9 +10,7 @@ class Client {
     public:
         Client(const std::string& host, uint16_t port): host_(host), port_(port) {}
 
-        void Start();
-
-        void Stop();
+        bool Start();
 
         void SendMessageToAll(const std::string& message);
 
@@ -24,6 +22,10 @@ class Client {
 
         ~Client();
 
+        void SetHostname(const std::string& hostname);
+
+        void SetPort(uint16_t port);
+
     private:
         void process_incoming_messages();
 
@@ -34,6 +36,8 @@ class Client {
         uint16_t port_;
 
         volatile std::sig_atomic_t is_running_ = 0;
+
+        struct hostent *server_;
 
         std::mutex writing_lock_;
 

@@ -19,8 +19,7 @@ Response Response::readResponse(int socketfd) {
         case ResponseType::ERROR:
             return resp.readField(socketfd, RequestField::Type::STRING);
         case ResponseType::RATING_LIST: {
-            RequestField cnt_field(RequestField::Type::INT);
-            cnt_field.read(socketfd);
+            resp.readField(socketfd, RequestField::Type::INT);
             uint32_t cnt = resp.fields.back().getInt();
             for (uint8_t i = 0; i < cnt && !resp.isDisconnect(); ++i) {
                 resp.readField(socketfd, RequestField::Type::STRING)

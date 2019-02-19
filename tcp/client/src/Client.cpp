@@ -170,7 +170,6 @@ bool Client::listRatings() {
     }
     response.print();
     return true;
-
 }
 
 bool Client::showRating() {

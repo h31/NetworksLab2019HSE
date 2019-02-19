@@ -3,12 +3,16 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <vector>
+#include <fstream>
+#include <Server.h>
 
 
 static const int TRUE_VALUE = 1;
 static constexpr const char *EXIT_COMMAND = "exit";
 static const int BACKLOG_SIZE = 5;
 static const char *const NO_SUCH_RATING_MESSAGE = "There is no such rating id";
+static const std::string data_folder = "./data/";
+static const std::string data_file = "server_data";
 
 Server::Server(unsigned short port) {
   server_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -193,3 +197,16 @@ bool Server::vote_rating(uint32_t id, uint8_t choice, Client *client) {
   rating.statistics[choice]++;
   return client->send_success();
 }
+
+void Server::save_all_state() {
+  std::unique_lock<std::mutex> lock(ratings_mtx);
+  for (auto &p : ratings) {
+    Rating &r = p.second;
+    r.serialise(data_folder);
+  }
+  std::ofstream sds(data_folder + data_file);
+  sds << maxId;
+}
+
+
+

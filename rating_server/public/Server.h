@@ -56,6 +56,10 @@ public:
   bool show_rating(uint32_t i, Client *client);
 
   bool vote_rating(uint32_t id, uint8_t choice, Client *client);
+
+  void save_all_state();
+
+  void load_state();
 };
 
 #endif //RATING_SERVER_SERVER_H

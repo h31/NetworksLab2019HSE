@@ -20,7 +20,7 @@ struct Rating {
 
   Rating() = default;
 
-  bool serialise();
+  bool serialise(const std::string &path);
 
   bool add_choice(std::string &choice);
 

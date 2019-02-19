@@ -9,11 +9,11 @@ Rating::Rating(uint32_t id, std::string name, uint8_t capacity) : id(id), name(s
   statistics = new uint32_t[capacity];
 }
 
-bool Rating::serialise() {
+bool Rating::serialise(const std::string &path) {
   std::stringstream i_to_str;
   i_to_str >> id;
 
-  std::ofstream file(i_to_str.str());
+  std::ofstream file(path + i_to_str.str());
   file << name << std::endl;
   file << capacity << ' ' << size << state << std::endl;
   for (int i = 0; i < size; i++) {

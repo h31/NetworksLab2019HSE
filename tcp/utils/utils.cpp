@@ -57,3 +57,11 @@ RequestMessage ReadRequestMessage(int sockfd) {
     else 
         return RequestMessage(receiver_id, body);
 }
+
+bool WriteResponseMessage(int sockfd, const ResponseMessage& message) {
+    return false;  // TODO
+}
+
+ResponseMessage ReadResponseMessage(int sockfd) {
+    return ResponseMessage(ResponseType::MESSAGE);  // TODO
+}

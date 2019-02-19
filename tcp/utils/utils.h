@@ -12,4 +12,8 @@ bool WriteRequestMessage(int sockfd, const RequestMessage& message);
 
 RequestMessage ReadRequestMessage(int sockfd);
 
+bool WriteResponseMessage(int sockfd, const ResponseMessage& message);
+
+ResponseMessage ReadResponseMessage(int sockfd);
+
 #endif  // TCP_UTILS_H

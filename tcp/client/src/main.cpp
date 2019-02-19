@@ -72,6 +72,10 @@ int main(int argc, char* argv[]) {
                 std::cout << "Enter news text:" << std::endl;
                 std::string text;
                 std::getline(std::cin, text);
+                if (text.empty()) {
+                    std::cout << "News text can't be empty";
+                    continue;
+                }
                 client.add_news(topic, title, text);
                 std::cout << std::endl;
             } else if (command == EXIT_COMMAND) {

@@ -47,6 +47,9 @@ std::string client::get_news_text(int news_id) {
     io->write_int(3);
     io->write_int(news_id);
     size_t news_text_length = io->read_size_t();
+    if (news_text_length == 0) {
+        return "There is no news with this id.";
+    }
     std::string text = io->read_string(news_text_length);
     return text;
 }

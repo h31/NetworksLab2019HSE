@@ -22,8 +22,13 @@ bool WriteString(int sockfd, std::string* str) {
 std::string ReadString(int sockfd) {
     int len;
     int n = read(sockfd, &len, sizeof(size_t));
-    if (n <= 0) 
+    if (n <= 0)
         throw std::ios_base::failure("Error reading string");
+    std::string result(len, ' ');
+    n = read(sockfd, &result[0], len);
+    if (n <= 0)
+        throw std::ios_base::failure("Error reading string");
+    return result;
 }
 
 bool WriteRequestMessage(int sockfd, const RequestMessage& message) {
@@ -60,9 +65,34 @@ RequestMessage ReadRequestMessage(int sockfd) {
 }
 
 bool WriteResponseMessage(int sockfd, const ResponseMessage& message) {
-    return false;  // TODO
+    ResponseType type = message.GetType();
+    int n = write(sockfd, (char*) &type, sizeof(ResponseType));
+    if (n <= 0)
+        return false;
+    int32_t sender_id = message.GetSenderId();
+    n = write(sockfd, (char*) &sender_id, sizeof(sender_id));
+    if (n <= 0)
+        return false;
+    std::string body = message.GetBody();
+    if (!WriteString(sockfd, &body))
+        return false;
+    return true;
 }
 
 ResponseMessage ReadResponseMessage(int sockfd) {
-    return ResponseMessage(ResponseType::MESSAGE);  // TODO
+    int32_t sender_id;
+    ResponseType type;
+    int n = read(sockfd, (char*) &type, sizeof(type));
+    if (n <= 0)
+        throw std::ios_base::failure("Error reading response message");
+    n = read(sockfd, (char*) &sender_id, sizeof(sender_id));
+    if (n <= 0)
+        throw std::ios_base::failure("Error reading response message");
+    std::string body = ReadString(sockfd);
+    if (type == ResponseType::CONNECT_OK)
+        return ResponseMessage::CONNECT_OK();
+    else if (type == ResponseType::CONNECT_FAIL)
+        return ResponseMessage::CONNECT_FAIL();
+    else
+        return ResponseMessage(sender_id, body);
 }

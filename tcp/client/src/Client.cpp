@@ -23,9 +23,10 @@ void Client::run() {
         return;
     }
     while (true) {
-        std::cout << "> " << std::endl;
+        std::cout << "> ";
+        std::cout.flush();
         std::string command;
-        if (!(std::cin >> command)) {
+        if (!getline(std::cin, command)) {
             break;
         }
         if (!commands.count(command)) {
@@ -43,7 +44,7 @@ bool Client::connect() {
     while (true) {
         std::cout << "Enter your username:" << std::endl;
         std::string username;
-        if (!(std::cin >> username)) {
+        if (!getline(std::cin, username)) {
             return false;
         }
         Response response = performRequest(
@@ -68,7 +69,7 @@ void Client::help() {
 bool Client::newRating() {
     std::cout << "Enter rating name:" << std::endl;
     std::string name;
-    if (!(std::cin >> name)) {
+    if (!getline(std::cin, name)) {
         return false;
     }
     int options = 0;
@@ -144,7 +145,7 @@ bool Client::addOption() {
     }
     std::cout << "Enter option title:" << std::endl;
     std::string option;
-    if (!(std::cin >> option)) {
+    if (!getline(std::cin, option)) {
         return false;
     }
     Response response = performRequest(

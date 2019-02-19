@@ -16,12 +16,11 @@
 class server {
     private:
         static const int CONNECTION_QUEUE_SIZE = 5;
-        const uint16_t port;
+        const uint16_t port_number;
         int server_socket_fd;
         boost::thread *main_thread = nullptr;
-        std::vector<boost::thread *> clients;
-        std::vector<int> clients_sockets;
-        boost::mutex clients_vector_access;
+        std::vector<boost::thread*> clients;
+        std::vector<int> client_sockets;
         std::vector<news> news_list;
         boost::shared_mutex news_access;
 

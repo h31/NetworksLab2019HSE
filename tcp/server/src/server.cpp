@@ -3,8 +3,7 @@
 #include "socket_opening_exception.h"
 #include "binding_exception.h"
 
-
-server::server(uint16_t port) : port(port) {}
+server::server(uint16_t port) : port_number(port) {}
 
 server::~server() {
     stop();
@@ -17,15 +16,14 @@ void server::start() {
     }
 
     sockaddr_in server_address{};
-    bzero((char*) &server_address, sizeof(server_address));
+    bzero((char*)&server_address, sizeof(server_address));
     server_address.sin_family = AF_INET;
     server_address.sin_addr.s_addr = INADDR_ANY;
-    server_address.sin_port = htons(port);
+    server_address.sin_port = htons(port_number);
 
-    if (bind(server_socket_fd, (sockaddr*) &server_address, sizeof(server_address)) < 0) {
+    if (bind(server_socket_fd, (sockaddr*)&server_address, sizeof(server_address)) < 0) {
         throw binding_exception();
     }
-
     listen(server_socket_fd, CONNECTION_QUEUE_SIZE);
 
     main_thread = new boost::thread(&server::client_accept_cycle, this, server_socket_fd);
@@ -38,7 +36,6 @@ void server::stop() {
 
     shutdown(server_socket_fd, SHUT_RDWR);
     server_socket_fd = -1;
-
     main_thread->join();
     for (auto& client : clients) {
         client->join();
@@ -51,18 +48,17 @@ void server::stop() {
     delete main_thread;
 }
 
-
 void server::client_accept_cycle(int server_socket_fd) {
     while (true) {
         sockaddr_in client_address{};
         unsigned int client_length = sizeof(client_address);
-        int client_socket_fd = accept(server_socket_fd, (sockaddr*) &client_address, &client_length);
+        int client_socket_fd = accept(server_socket_fd, (sockaddr*)&client_address, &client_length);
         if (client_socket_fd >= 0) {
-            clients_sockets.push_back(client_socket_fd);
-            auto *client_thread = new boost::thread(&server::request_response_cycle, this, client_socket_fd);
+            auto client_thread = new boost::thread(&server::request_response_cycle, this, client_socket_fd);
             clients.push_back(client_thread);
+            client_sockets.push_back(client_socket_fd);
         } else {
-            for (int client_socket : clients_sockets) {
+            for (int client_socket : client_sockets) {
                 shutdown(client_socket, SHUT_RDWR);
             }
             break;
@@ -75,8 +71,6 @@ void server::request_response_cycle(int client_socket_fd) {
 
     try {
         while (true) {
-            boost::this_thread::interruption_point();
-
             int command = io.read_int();
             switch (command) {
                 case 1:
@@ -91,10 +85,6 @@ void server::request_response_cycle(int client_socket_fd) {
                 case 4:
                     add_news(io);
                     break;
-                case 5: {
-                    close(client_socket_fd);
-                    return;
-                }
                 default:
                     break;
             }

@@ -21,30 +21,31 @@ socket_io::socket_io(int socket_fd) : socket_fd(socket_fd) {}
 int socket_io::read_int() {
     char buffer[sizeof(int)];
     read_bytes(buffer, sizeof(int));
-    return boost::lexical_cast<int>(buffer);
+    int result;
+    std::memcpy(&result, buffer, sizeof(int));
+    return result;
 }
 
 size_t socket_io::read_size_t() {
     char buffer[sizeof(size_t)];
     read_bytes(buffer, sizeof(size_t));
-    return boost::lexical_cast<size_t>(buffer);
+    size_t result;
+    std::memcpy(&result, buffer, sizeof(size_t));
+    return result;
 }
 
 std::string socket_io::read_string(size_t size) {
     char buffer[size];
     read_bytes(buffer, size);
-    std::string name(buffer, buffer + size);
-    return name;
+    return std::string(buffer, buffer + size);
 }
 
 void socket_io::write_int(int n) {
-    auto string = boost::lexical_cast<std::string>(n);
-    write_bytes(string.c_str(), sizeof(int));
+    write_bytes(static_cast<char*>(static_cast<void*>(&n)), sizeof(int));
 }
 
 void socket_io::write_size_t(size_t n) {
-    auto string = boost::lexical_cast<std::string>(n);
-    write_bytes(string.c_str(), sizeof(size_t));
+    write_bytes(static_cast<char*>(static_cast<void*>(&n)), sizeof(size_t));
 }
 
 void socket_io::write_string(const std::string &string) {

@@ -68,6 +68,39 @@ void MarketServer::WorkWithFreelancer(Freelancer *freelancer) {
                 int id = stoi(message.body);
                 if (orders.count(id) and orders[id]->state == Order::OPEN) {
                     orders[id]->workers.insert(freelancer->name);
+                    ans_message.type = Message::TAKE_ORDER_SUCCESSFUL;
+                } else {
+                    ans_message = Message(Message::TAKE_ORDER_NOT_SUCCESSFUL, "no such open order");
+                }
+                orders_mutex_.unlock();
+                break;
+            }
+            case Message::WORK_STARTED: {
+                orders_mutex_.lock();
+                int id = stoi(message.body);
+                Order *o = orders[id];
+                if (orders.count(id) and
+                    o->state == Order::ASSIGNED and
+                    o->workers.count(freelancer->name)) {
+                    o->state = Order::IN_PROGRESS;
+                    ans_message.type = Message::WORK_STARTED_SUCCESSFUL;
+                } else {
+                    ans_message.type = Message::WORK_STARTED_NOT_SUCCESSFUL;
+                }
+                orders_mutex_.unlock();
+                break;
+            }
+            case Message::WORK_FINISHED: {
+                orders_mutex_.lock();
+                int id = stoi(message.body);
+                Order *o = orders[id];
+                if (orders.count(id) and
+                    o->state == Order::IN_PROGRESS and
+                    o->workers.count(freelancer->name)) {
+                    o->state = Order::PENDING;
+                    ans_message.type = Message::WORK_FINISHED_SUCCESSFUL;
+                } else {
+                    ans_message.type = Message::WORK_FINISHED_NOT_SUCCESSFUL;
                 }
                 orders_mutex_.unlock();
                 break;
@@ -104,6 +137,41 @@ void MarketServer::WorkWithCustomer(Customer *customer) {
                 ans_message = LookupOrdersOf(customer);
                 break;
             }
+            case Message::GET_OPEN_ORDERS: {
+                ans_message = LookupOpenOrders();
+                break;
+            }
+            case Message::GIVE_ORDER_TO_FREELANCER: {
+                int id;
+                char name[256];
+                if (sscanf(message.body.c_str(), "%i %s", &id, name) == 2) {
+                    orders_mutex_.lock();
+                    if (orders.count(id) and orders[id]->state == Order::OPEN) {
+                        orders[id]->state = Order::ASSIGNED;
+                        orders[id]->workers = {std::string(name)};
+                        ans_message.type = Message::GIVE_ORDER_SUCCESSFUL;
+                    } else {
+                        ans_message.type = Message::GIVE_ORDER_NOT_SUCCESSFUL;
+                        ans_message.body = "no such open order";
+                    }
+                    orders_mutex_.unlock();
+                } else {
+                    ans_message.type = Message::GIVE_ORDER_NOT_SUCCESSFUL;
+                }
+                break;
+            }
+            case Message::WORK_ACCEPTED: {
+                int id = std::stoi(message.body);
+                orders_mutex_.lock();
+                if (orders.count(id) and orders[id]->state == Order::IN_PROGRESS) {
+                    orders[id]->state = Order::DONE;
+                    ans_message.type = Message::WORK_ACCEPTED_SUCCESSFUL;
+                } else {
+                    ans_message.type = Message::WORK_ACCEPTED_NOT_SUCCESSFUL;
+                }
+                orders_mutex_.unlock();
+                break;
+            }
             case Message::UNDEFINED: {
                 DeleteCustomer(customer);
                 std::cout << "Customer left\n";
@@ -127,7 +195,7 @@ Message MarketServer::LookupOpenOrders() {
         }
     }
     orders_mutex_.unlock_shared();
-    return Message(Message::LIST_OF_MY_ORDERS, result);
+    return Message(Message::LIST_OF_OPEN_ORDERS, result);
 }
 
 void MarketServer::OrderToString(std::string &result, MarketServer::Order *o) {
@@ -156,19 +224,13 @@ Message MarketServer::LookupOrdersOf(Customer *customer) {
 MarketServer::~MarketServer() {
     for (const auto &p : customers) {
         close(p.second->socket_fd);
-        delete p.second;
     }
     for (const auto &p : freelancers) {
         close(p.second->socket_fd);
-        delete p.second;
     }
     for (const auto &p : orders) {
         delete p.second;
     }
-}
-
-MarketServer::MarketServer() {
-    srand(static_cast<unsigned int>(time(nullptr)));
 }
 
 void MarketServer::DeleteCustomer(MarketServer::Customer *customer) {
@@ -225,6 +287,20 @@ void MarketServer::DeleteFreelancer(MarketServer::Freelancer *freelancer) {
 
 MarketServer::Freelancer::Freelancer(const std::string &name, int socket_fd) : name(name),
                                                                                socket_fd(socket_fd) {
+    writer = std::thread([this]() {
+        while (!messages_.closed()) {
+            try {
+                Message m = messages_.pull();
+                m.Write(this->socket_fd);
+            } catch (boost::sync_queue_is_closed &) {
+                break;
+            }
+        }
+    });
+}
+
+MarketServer::Customer::Customer(const std::string &name, int socket_fd) : name(name),
+                                                                           socket_fd(socket_fd) {
     writer = std::thread([this]() {
         while (!messages_.closed()) {
             try {

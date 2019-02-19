@@ -1,3 +1,5 @@
+#include <utility>
+
 #ifndef SERVER_SERVER_H
 #define SERVER_SERVER_H
 
@@ -12,8 +14,6 @@
 
 class MarketServer : public TcpServer {
 public:
-    MarketServer();
-
     ~MarketServer();
 
     bool BanUser(const std::string &name);
@@ -47,18 +47,22 @@ private:
     public:
         enum State {
             OPEN,
+            ASSIGNED,
             IN_PROGRESS,
+            PENDING,
             DONE
         };
 
-        explicit Order(const std::string &customer, const std::string &description)
-                : customer(customer), description(description), task_id(task_counter++), state(OPEN) {}
+        explicit Order(std::string customer, std::string description)
+                : customer(std::move(customer)),
+                  description(std::move(description)),
+                  task_id(task_counter++),
+                  state(OPEN) {}
 
         const int task_id;
         const std::string description;
         const std::string customer;
         State state;
-        std::mutex workers_mutex;
         std::set<std::string> workers;
 
     private:
@@ -74,10 +78,6 @@ private:
 
     std::shared_timed_mutex orders_mutex_;
 
-    Message ProcessStartDraw();
-
-    Message ProcessEndDraw();
-
     void StartWorkingWithClient(int sock_fd) override;
 
     void WorkWithFreelancer(Freelancer *freelancer);
@@ -87,8 +87,6 @@ private:
     Message LookupOrdersOf(Customer *customer);
 
     Message LookupOpenOrders();
-
-    Message ProcessBet(Freelancer &player, std::string bet);
 
     void DeleteCustomer(Customer *customer);
 

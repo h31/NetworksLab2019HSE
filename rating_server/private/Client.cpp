@@ -52,7 +52,7 @@ ClientMessage::BaseMessage *Client::receive() {
     case ClientMessage::VOTE_RATING:
       return new ClientMessage::VoteRating();
     default:
-      std::cerr << "Incorrect message type: " << (unsigned char) type << std::endl;
+      std::cerr << "Incorrect message type: " << (int) type << ":" << (unsigned char) type << std::endl;
       return nullptr;
   }
 }

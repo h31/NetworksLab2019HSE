@@ -18,7 +18,7 @@ public:
   }
 
   inline bool read(char *result, size_t len) {
-    return ::read(socket, result, len) != len;
+    return ::read(socket, result, len) == len;
   }
 
   bool read_uint32(uint32_t &result);
@@ -31,7 +31,7 @@ public:
   }
 
   inline bool write(const char *data, size_t len) {
-    return ::write(socket, data, len) != len;
+    return ::write(socket, data, len) == len;
   }
 
   bool write_string(const std::string &data);

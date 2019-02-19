@@ -45,6 +45,9 @@ Server::~Server() {
   shutdown_all_clients();
   shutdown_socket();
   save_all_state();
+  for (auto &r : ratings) {
+    delete r.second;
+  }
 }
 
 void Server::run() {
@@ -125,14 +128,13 @@ int Server::accept() {
 
 bool Server::create_new_rating(std::string &name, uint8_t cnt, Client *client) {
   std::unique_lock<std::mutex> lock(ratings_mtx);
-  ratings[max_id] = Rating(max_id, name, cnt);
+  ratings[max_id] = new Rating(max_id, name, cnt);
   max_id++;
   return client->send_success();
 }
 
 bool Server::delete_rating(uint32_t id, Client *client) {
   std::unique_lock<std::mutex> lock(ratings_mtx);
-  Rating &lol = ratings[id];
   if (0 < ratings.erase(id)) {
     return client->send_success();
   }
@@ -144,7 +146,7 @@ bool Server::open_rating(uint32_t id, Client *client) {
   if (!ratings.count(id)) {
     return client->send_error(NO_SUCH_RATING_MESSAGE);
   }
-  ratings[id].state = Rating::OPEN;
+  ratings[id]->state = Rating::OPEN;
   return client->send_success();
 }
 
@@ -153,7 +155,7 @@ bool Server::close_rating(uint32_t id, Client *client) {
   if (!ratings.count(id)) {
     return client->send_error(NO_SUCH_RATING_MESSAGE);
   }
-  ratings[id].state = Rating::CLOSE;
+  ratings[id]->state = Rating::CLOSE;
   return client->send_success();
 }
 
@@ -162,10 +164,11 @@ bool Server::add_choice(uint32_t id, std::string &choice, Client *client) {
   if (!ratings.count(id)) {
     return client->send_error(NO_SUCH_RATING_MESSAGE);
   }
-  auto &rating = ratings[id];
-  if (!rating.add_choice(choice)) {
+  auto *rating = ratings[id];
+  if (!rating->add_choice(choice)) {
     return client->send_error("The rating is full");
   }
+  rating->serialise(data_folder);
   return client->send_success();
 }
 
@@ -175,8 +178,8 @@ bool Server::rating_list(Client *client) {
   socket.write_default(ServerMessage::RATING_LIST);
   if (!socket.write_uint32((uint32_t) ratings.size())) return false;
   for (auto &rating : ratings) {
-    Rating &r = rating.second;
-    if (!(socket.write_string(r.name) && socket.write_uint32(r.id) && socket.write_default(r.state))) return false;
+    Rating *r = rating.second;
+    if (!(socket.write_string(r->name) && socket.write_uint32(r->id) && socket.write_default(r->state))) return false;
   }
   return true;
 }
@@ -188,10 +191,10 @@ bool Server::show_rating(uint32_t id, Client *client) {
   }
   Socket &socket = client->getSocket();
   socket.write_default(ServerMessage::RATING_STATS);
-  auto &r = ratings[id];
-  if (!(socket.write_string(r.name) && socket.write_default(r.state) && socket.write_default(r.size))) return false;
-  for (int i = 0; i < r.size; i++) {
-    if (!(socket.write_string(*r.choices[i]) && socket.write_uint32(r.statistics[i]))) return false;
+  auto *r = ratings[id];
+  if (!(socket.write_string(r->name) && socket.write_default(r->state) && socket.write_default(r->size))) return false;
+  for (int i = 0; i < r->size; i++) {
+    if (!(socket.write_string(*r->choices[i]) && socket.write_uint32(r->statistics[i]))) return false;
   }
   return true;
 }
@@ -201,11 +204,14 @@ bool Server::vote_rating(uint32_t id, uint8_t choice, Client *client) {
   if (!ratings.count(id)) {
     return client->send_error(NO_SUCH_RATING_MESSAGE);
   }
-  auto &rating = ratings[id];
-  if (choice >= rating.size) {
+  auto *rating = ratings[id];
+  if (choice >= rating->size) {
     return client->send_error("There is no such choice option");
   }
-  rating.statistics[choice]++;
+  if (rating->state == Rating::CLOSE) {
+    return client->send_error("The rating is closed");
+  }
+  rating->statistics[choice]++;
   return client->send_success();
 }
 
@@ -213,8 +219,8 @@ void Server::save_all_state() {
   std::unique_lock<std::mutex> lock(ratings_mtx);
   std::cout << "saving state" << std::endl;
   for (auto &p : ratings) {
-    Rating &r = p.second;
-    r.serialise(data_folder);
+    Rating *r = p.second;
+    r->serialise(data_folder);
   }
   std::ofstream sds(data_folder + data_file);
   sds << max_id;
@@ -228,9 +234,9 @@ void Server::load_state() {
     if (fname == data_file) {
       read_data_file();
     } else {
-      Rating* r =  Rating::createRating(data_folder, fname);
-      ratings[r->id] = *r;
-      delete r;
+
+      Rating* r = Rating::createRating(data_folder, fname);
+      ratings[r->id] = r;
     }
   }
 }

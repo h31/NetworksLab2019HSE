@@ -47,6 +47,7 @@ Rating *Rating::createRating(const std::string &folder, const std::string &filen
   rating->size = static_cast<uint8_t>(size);
   rating->state = (State) state;
   for (int i = 0; i < size; i++) {
+    file.get();
     rating->choices[i] = new std::string;
     std::getline(file, *rating->choices[i]);
     file >> rating->statistics[i];
@@ -58,4 +59,6 @@ Rating::~Rating() {
   for (int i = 0; i < size; i++) {
     delete choices[i];
   }
+  delete choices;
+  delete statistics;
 }

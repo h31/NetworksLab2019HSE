@@ -18,8 +18,6 @@ struct Rating {
 
   Rating(uint32_t id, std::string name, uint8_t capacity);
 
-  Rating() = default;
-
   ~Rating();
 
   bool serialise(const std::string &path);

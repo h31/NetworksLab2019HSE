@@ -19,7 +19,7 @@ class Server {
 private:
   int server_socket_fd;
   std::unordered_map<std::string, Client *> active_clients;
-  std::unordered_map<uint32_t, Rating> ratings;
+  std::unordered_map<uint32_t, Rating *> ratings;
   std::mutex active_clients_mtx;
   std::mutex ratings_mtx;
   uint32_t max_id;

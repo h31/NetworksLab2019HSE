@@ -8,7 +8,7 @@ bool Socket::read_string(std::string &result) {
     if (!read(&c, 1)) {
       return false;
     }
-    result += c;
+    if (c != 0) result += c;
   } while (c != 0);
   return true;
 }

@@ -27,6 +27,7 @@ bool Message::Write(int sockfd) {
         return false;
     }
 
+    delete[] data;
     return true;
 }
 
@@ -64,6 +65,7 @@ bool Message::GetBody(std::string *body, size_t length, int sockfd) {
         *body = std::string(buf);
         return true;
     }
+    delete[] buf;
     return length != 0;
 }
 

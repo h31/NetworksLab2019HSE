@@ -9,7 +9,6 @@
 int MarketServer::Order::task_counter = 0;
 
 void MarketServer::StartWorkingWithClient(int sock_fd) {
-    std::cout << "client accepted\n";
     std::function<void()> workWithClient = nullptr;
     while (true) {
         Message message = Message::Read(sock_fd);
@@ -40,7 +39,6 @@ void MarketServer::StartWorkingWithClient(int sock_fd) {
             }
             freelancers_mutex_.unlock();
         } else {
-            std::cout << "unauthorized\n";
             ans_type = Message::UNAUTHORIZED;
         }
 
@@ -86,6 +84,7 @@ void MarketServer::WorkWithFreelancer(Freelancer *freelancer) {
                     ans_message.type = Message::WORK_STARTED_SUCCESSFUL;
                 } else {
                     ans_message.type = Message::WORK_STARTED_NOT_SUCCESSFUL;
+                    ans_message.body = "no such work assigned to you";
                 }
                 orders_mutex_.unlock();
                 break;
@@ -101,6 +100,7 @@ void MarketServer::WorkWithFreelancer(Freelancer *freelancer) {
                     ans_message.type = Message::WORK_FINISHED_SUCCESSFUL;
                 } else {
                     ans_message.type = Message::WORK_FINISHED_NOT_SUCCESSFUL;
+                    ans_message.body = "no such work in progress assigned to you";
                 }
                 orders_mutex_.unlock();
                 break;
@@ -170,7 +170,7 @@ void MarketServer::WorkWithCustomer(Customer *customer) {
                 orders_mutex_.lock();
                 Order *o = orders[id];
                 if (orders.count(id) and
-                    o->state == Order::IN_PROGRESS and
+                    o->state == Order::PENDING and
                     o->customer == customer->name) {
                     o->state = Order::DONE;
                     ans_message.type = Message::WORK_ACCEPTED_SUCCESSFUL;
@@ -275,6 +275,10 @@ std::string MarketServer::StateToString(MarketServer::Order::State state) {
             return "IN_PROGRESS";
         case Order::DONE:
             return "DONE";
+        case Order::ASSIGNED:
+            return "ASSIGNED";
+        case Order::PENDING:
+            return "PENDING";
     }
 }
 

@@ -1,283 +1,333 @@
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <unistd.h>
-
-#include <stdexcept>
-#include <memory>
-#include <string>
-#include <iostream>
-#include <vector>
+#include <arpa/inet.h>
 #include <set>
-#include <algorithm>
+#include <vector>
+#include <map>
 #include <iostream>
 
+#define MAKE_ORDER_REQUEST 1
+#define GET_ORDER_HISTORY_REQUEST 2
+#define ADD_NEW_SHOP_REQUEST 3
+#define SHUT_DOWN_CLIENT_REQUEST 4
+#define ADD_CUSTOMER_REQUEST 5
 
-std::set<std::string> client_names;
-
-struct client_header {
-    uint32_t type;
-    uint32_t username_length;
-    char * username;
-};
-
-class client {
-private:
-    int fd_;
-    std::string inbuf;
-    std::string outbuf;
-
-    // can be moved out to a separate object
-    void parse();
-    bool verify_header();
-    void handle_read_data();
-    void handle_registration();
-
-    void answer_registration(bool answer);
-
-    client_header * current_client_header_ = nullptr;
-
-    uint32_t username_length;
-    char * username;
-
+class Request {
 public:
-    explicit client(int fd) : fd_(fd) {}
-
-    int fd() const { return fd_; }
-
-    void close() {
-        ::close(fd_);
-        fd_ = -1;
+    bool try_reading(int sd) {
+        if (!read_header) {
+            printf("Reading header for %d\n", sd);
+            already_read += read(sd, buffer + already_read, 8 - already_read);
+            if (already_read == 8) {
+                read_header = true;
+                request_type = *(uint32_t *)(buffer);
+                request_type = *(uint32_t *)(buffer + sizeof(uint32_t));
+                already_read = 0;
+                printf("Done reading header for %d, request type is %d, client id %d\n", sd, request_type, id);
+            }
+        }
+        if (read_header) {
+            switch (request_type) {
+                case SHUT_DOWN_CLIENT_REQUEST:
+                case GET_ORDER_HISTORY_REQUEST:
+                    return true;
+                case MAKE_ORDER_REQUEST:
+                case ADD_NEW_SHOP_REQUEST:
+                    if (!reading_array) {
+                        already_read += read(sd, buffer + already_read, 8 - already_read);
+                        if (already_read == 8) {
+                            reading_array = true;
+                            (request_type == MAKE_ORDER_REQUEST ? shop_id : zone_id) = *(
+                                    uint32_t *)(buffer);
+                            number_of_goods = *(
+                                    uint32_t *)(buffer + sizeof(uint32_t));
+                            already_read = 0;
+                        }
+                    }
+                    if (reading_array) {
+                        while (goods.size() < number_of_goods){
+                            already_read += read(sd, buffer + already_read, 4 - already_read);
+                            if (already_read != 4) {
+                                break;
+                            }
+                            goods.push_back(*(
+                                    uint32_t *)buffer);
+                            already_read = 0;
+                        }
+                        if (goods.size() == number_of_goods) {
+                            return true;
+                        }
+                    }
+                    return false;
+                case ADD_CUSTOMER_REQUEST:
+                    if (!read_customer_zone) {
+                        already_read += read(sd, buffer + already_read, 4 - already_read);
+                        if (already_read == 4) {
+                            read_customer_zone = true;
+                            zone_id = *(
+                                    uint32_t *)buffer;
+                        }
+                    }
+                    return read_customer_zone;
+                default:
+                    return true;
+            }
+        }
     }
+    int already_read = 0;
 
-    bool is_alive() const { return fd_ != -1; }
+    bool read_header = false;
 
-    bool has_outbuf() const { return !outbuf.empty(); }
+    uint32_t id = 0;
 
-    void read();
+    uint32_t request_type = 0;
 
-    void write();
+    bool read_customer_zone = false;
 
-    bool get_line(std::string &str);
+    uint32_t zone_id = 0;
 
-    void push_line(const std::string &str);
+
+    uint32_t shop_id = 0;
+
+    uint32_t number_of_goods = 0;
+
+    bool reading_array = false;
+    std::vector<uint32_t> goods;
+
+    char buffer[8]{};
 };
 
-int g_listen_fd = -1;
-std::vector<std::unique_ptr<client>> g_clients;
+class Order {
+public:
+    Order(uint32_t shop_id, uint32_t customer_id, std::vector<uint32_t> goods)
+            : _shop_id(shop_id), _customer_id(customer_id), _goods(std::move(goods)) { }
+    uint32_t _shop_id;
+    uint32_t _customer_id;
+    std::vector<uint32_t> _goods;
+};
 
-int _check(int ret, const char *msg) {
-    if (ret != -1)
-        return ret;
+class Customer {
+public:
+    Customer(uint32_t id, uint32_t zone) : _id(id), _zone(zone) { }
+    Customer() = default;
 
-    std::string strmsg(msg);
-    strmsg.erase(strmsg.find('('));
-    throw std::runtime_error(strmsg + "() failed: " + strerror(errno));
-}
+    uint32_t _id{};
+    uint32_t _zone{};
+    std::vector<Order>_orders;
+};
 
-#define check(x) (_check(x, #x))
+class Shop {
+public:
+    Shop(uint32_t shop_id, uint32_t zone, std::set<uint32_t> goods)
+            : _id(shop_id), _zone(zone), _goods(std::move(goods)) { }
+    Shop() = default;
 
-int make_socket(int port) {
-    int sock = check(socket(AF_INET, SOCK_STREAM, IPPROTO_TCP));
+    uint32_t _id{};
+    uint32_t _zone{};
+    std::set<uint32_t> _goods;
+    std::vector<Order>_orders;
+};
 
-    struct sockaddr_in addr;
-    memset(&addr, 0, sizeof(addr));
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(port);
-    check(bind(sock, (const struct sockaddr *) &addr, sizeof(addr)));
-
-    check(listen(sock, 16));
-    return sock;
-}
-
-void client::read() {
-    char buf[4096];
-    ssize_t len = ::recv(fd(), buf, sizeof(buf), 0);
-    if (len == -1) {
-        close();
-        return;
-    }
-    inbuf += std::string(buf, buf + len);
-
-    handle_read_data();
-}
-
-void client::handle_read_data() {
-    parse();
-    if (current_client_header_->type == 0) {
-        handle_registration();
-    }
-}
-
-void client::handle_registration() {
-    if (!verify_header()) {
-        return;
+int main(int argc , char *argv[])
+{
+    if (argc < 2) {
+        std::cout << "Usage: app_port" << std::endl;
+        exit(1);
     }
 
-    std::string username = std::string(current_client_header_->username,
-        current_client_header_->username_length);
-    bool answer = false;
-    if (!client_names.count(username)) {
-        client_names.insert(username);
-//        this->username = username.data();
-        answer = true;
-    }
-    answer_registration(answer);
-}
+    const auto PORT = static_cast<const uint16_t>(atoi(argv[1]));
 
-std::string uint32t_to_string(uint32_t uint) {
-    char * chars = new char[4];
-    for (int i = 0; i < 4; i++) {
-        chars[i] = *((char *)(&uint) + i);
-    }
-    return std::string(chars, 4);
-}
+    int opt = 1;
+    int master_socket, addrlen, new_socket, activity, sd;
+    int max_sd;
+    struct sockaddr_in address;
 
-void client::answer_registration(bool answer) {
-    if (answer) {
-        outbuf += uint32t_to_string(0);
-    } else {
-        outbuf += uint32t_to_string(619);
-    }
-}
+    std::map<uint32_t, Shop> shop_clients;
+    std::map<uint32_t, Customer> customer_clients;
+    std::map<int, Request> active_sockets;
+    std::set<int> shut_sockets;
 
-client_header * parse_header(const std::string & str) {
-    auto header = new client_header();
-    if (str.size() < sizeof(uint32_t) * 2) {
-        return nullptr;
-    }
-    header->type = *((uint32_t *)str.substr(sizeof(uint32_t)).data());
-    header->username_length = *((uint32_t *)str.substr(sizeof(uint32_t), sizeof(uint32_t)).data());
-    if (str.size() < sizeof(uint32_t) * 2 + header->username_length) {
-        return nullptr;
-    }
-    header->username = new char[header->username_length];
-    memcpy(header->username,
-            str.substr(sizeof(uint32_t) * 2, header->username_length).data(),
-            header->username_length);
-    return header;
-}
+    //set of socket descriptors  
+    fd_set readfds{};
 
-//void parse_body(uint32_t type, const std::string & str) {
-//    if (str.size() < sizeof(uint32_t)) {
-//        return nullptr;
-//    }
-//}
+    //create a master socket  
+    if ((master_socket = socket(AF_INET , SOCK_STREAM , 0)) == 0) {
+        perror("socket failed");
+        exit(EXIT_FAILURE);
+    }
 
-bool client::verify_header() {
-    if (current_client_header_ == nullptr) {
-        return false;
+    //set master socket to allow multiple connections ,  
+    //this is just a good habit, it will work without this  
+    if (setsockopt(master_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0) {
+        perror("setsockopt");
+        exit(EXIT_FAILURE);
     }
-    if (current_client_header_->type < 0 ||
-            current_client_header_->type > 3) {
-        std::cerr << "Operation type is not correct: " <<
-            current_client_header_->type << std::endl;
-        return false;
+
+    //type of socket created  
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = SOCK_STREAM;
+    address.sin_port = htons(PORT);
+
+    if (bind(master_socket, (struct sockaddr *)&address, sizeof(address)) < 0) {
+        perror("bind failed");
+        exit(EXIT_FAILURE);
     }
-    if (current_client_header_->username_length != username_length) {
-        std::cerr << "Verification (username length) do not match" << std::endl;
-        return false;
+    printf("Listener on port %d \n", PORT);
+
+    //try to specify maximum of 3 pending connections for the master socket  
+    if (listen(master_socket, 3) < 0) {
+        perror("listen");
+        exit(EXIT_FAILURE);
     }
-    for (int i = 0; i < username_length; i++) {
-        if (current_client_header_->username[i] != username[i]) {
-            std::cerr << "Verification (username) do not match" << std::endl;
-            return false;
+
+    //accept the incoming connection  
+    addrlen = sizeof(address);
+    puts("Waiting for connections ...");
+
+    while(true) {
+        //clear the socket set  
+        FD_ZERO(&readfds);
+
+        //add master socket to set  
+        FD_SET(master_socket, &readfds);
+        max_sd = master_socket;
+
+        for (auto const&active_socket : active_sockets) {
+            FD_SET(active_socket.first, &readfds);
+            if (active_socket.first > max_sd) {
+                max_sd = sd;
+            }
         }
-    }
-    return true;
-}
 
-void client::parse() {
-    if (current_client_header_ == nullptr) {
-        current_client_header_ = parse_header(inbuf);
-        if (current_client_header_ != nullptr) {
-            inbuf.erase(0,
-                    sizeof(uint32_t) * 2 + current_client_header_->username_length);
+        //wait for an activity on one of the sockets , timeout is NULL ,  
+        //so wait indefinitely  
+        activity = select(max_sd + 1, &readfds, nullptr, NULL, NULL);
+
+        if ((activity < 0) && (errno!=EINTR)) {
+            printf("select error");
         }
-    }
-//    if (current_client_header_ != nullptr && verify_header()) {
-//        parse_body(current_client_header_->type, inbuf);
-//    }
-}
 
-void client::write() {
-    ssize_t len = ::send(fd(), outbuf.data(), outbuf.size(), 0);
-    if (len == -1)
-        close();
-    outbuf.erase(0, (unsigned long) len);
-}
+        //If something happened on the master socket ,  
+        //then its an incoming connection  
+        if (FD_ISSET(master_socket, &readfds)) {
+            if ((new_socket = accept(master_socket, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
+                perror("accept");
+                exit(EXIT_FAILURE);
+            }
 
-bool client::get_line(std::string &str) {
-    size_t newline = inbuf.find('\n');
-    if (newline == std::string::npos)
-        return false;
+            //inform user of socket number - used in send and receive commands
+            printf("New connection , socket fd is %d , ip is : %s , port : %d\n" , new_socket , inet_ntoa(address.sin_addr) , ntohs
+                    (address.sin_port));
 
-    str = inbuf.substr(0, newline);
-    inbuf.erase(0, newline + 1);
-    return true;
-}
+            //send new connection greeting message  
+            //if( send(new_socket, message, strlen(message), 0) != strlen(message) ) {
+            //    perror("send");
+            //}
 
-void client::push_line(const std::string &str) {
-    outbuf += (str + "\n");
-}
-
-void loop() {
-    fd_set rfds, wfds;
-    int max_fd = g_listen_fd;
-
-    FD_ZERO(&rfds);
-    FD_ZERO(&wfds);
-    FD_SET(g_listen_fd, &rfds);
-    for (const auto &cl: g_clients) {
-        max_fd = std::max(max_fd, cl->fd());
-        FD_SET(cl->fd(), &rfds);
-        if (cl->has_outbuf())
-            FD_SET(cl->fd(), &wfds);
-    }
-
-    check(select(max_fd + 1, &rfds, &wfds, nullptr, nullptr));
-
-    if (FD_ISSET(g_listen_fd, &rfds)) {
-        int fd = accept(g_listen_fd, nullptr, nullptr);
-        g_clients.push_back(std::make_unique<client>(fd));
-    }
-
-    for (auto &cl: g_clients)
-        if (FD_ISSET(cl->fd(), &rfds))
-            cl->read();
-
-
-//    std::string line;
-//    for (auto &from: g_clients)
-//        if (from->get_line(line))
-//            for (auto &to: g_clients)
-//                if (from.get() != to.get())
-//                    to->push_line(line);
-
-    for (auto &cl: g_clients)
-        if (cl->has_outbuf() && FD_ISSET(cl->fd(), &wfds))
-            cl->write();
-
-//    g_clients.erase(
-//            std::remove_if(
-//                    g_clients.begin(), g_clients.end(),
-//                    [](std::unique_ptr<client> &cl) { return !cl->is_alive(); }),
-//            g_clients.end());
-}
-
-int main(int argc, char **argv) {
-    int port = 80;
-    if (argc >= 2)
-        port = atoi(argv[1]);
-
-    g_listen_fd = make_socket(port);
-    while (true) {
-        try {
-            loop();
-        } catch (std::exception &e) {
-            std::cerr << e.what() << std::endl;
+            active_sockets[new_socket] = Request();
         }
+
+        //else its some IO operation on some other socket 
+        for (auto &active_socket : active_sockets) {
+            int sd = active_socket.first;
+            if (FD_ISSET(sd, &readfds)) {
+                if (active_socket.second.try_reading(active_socket.first)) {
+                    Request request = active_socket.second;
+                    int32_t status = 0;
+                            printf("Received new order request on %d goods from client %d for shop %d\n",
+                                   request.number_of_goods, request.id, request.shop_id);
+                    switch (request.request_type) {
+                        case MAKE_ORDER_REQUEST:
+                            if (customer_clients.count(request.id) > 0 && shop_clients.count(request.shop_id) > 0) {
+                                puts("Added order to customer and shop history");
+                                Order new_order = Order(request.shop_id, request.id, request.goods);
+                                customer_clients[request.id]._orders.push_back(new_order);
+                                shop_clients[request.id]._orders.push_back(new_order);
+                            } else {
+                                puts("No matching active customer or shop was found");
+                                status = 1;
+                            }
+
+                            send(sd, &request.request_type, sizeof(request.request_type), 0);
+                            send(sd, &status, sizeof(status), 0);
+                            break;
+                        case GET_ORDER_HISTORY_REQUEST:
+                            printf("Received new order history request from client %d\n", request.id);
+                            if (customer_clients.count(request.id) + shop_clients.count(request.id) > 0) {
+                                std::vector<Order>& orders = customer_clients.count(request.id) > 0
+                                                             ? customer_clients[request.id]._orders
+                                                             : shop_clients[request.id]._orders;
+                                printf("Found %d orders", static_cast<int>(orders.size()));
+                                auto number_of_orders = static_cast<uint32_t>(orders.size());
+
+                                send(sd, &request.request_type, sizeof(request.request_type), 0);
+                                send(sd, &number_of_orders, sizeof(number_of_orders), 0);
+                                for (auto const& order : orders) {
+                                    auto number_of_goods = static_cast<uint32_t>(order._goods.size());
+                                    send(sd, &(order._customer_id), sizeof(order._customer_id), 0);
+                                    send(sd, &(order._shop_id), sizeof(order._shop_id), 0);
+                                    send(sd, &number_of_goods, sizeof(number_of_goods), 0);
+                                    for (auto const& good : order._goods) {
+                                        send(sd, &good, sizeof(good), 0);
+                                    }
+                                }
+
+                            } else {
+                                puts("Unknown client");
+                            }
+                            break;
+                        case ADD_NEW_SHOP_REQUEST:
+                            printf("Received add new shop request for client %d in zone %d with %d goods",
+                                   request.id, request.zone_id, request.number_of_goods);
+                            if (customer_clients.count(request.id) + shop_clients.count(request.id) == 0) {
+                                printf("New id is not yet owned by anyone. Creating new shop account");
+                                shop_clients[request.id] = Shop(request.id, request.zone_id,
+                                                                std::set<uint32_t>(request.goods.begin(),
+                                                                                   request.goods.end()));
+                            } else {
+                                printf("This is is already in use.");
+                                status = 1;
+                            }
+
+                            send(sd, &request.request_type, sizeof(request.request_type), 0);
+                            send(sd, &status, sizeof(status), 0);
+                            break;
+                        case SHUT_DOWN_CLIENT_REQUEST:
+                            printf("Received shutdown request for client %d\n", request.id);
+                            if (customer_clients.count(request.id) + shop_clients.count(request.id) > 0) {
+                                printf("Shutting down client %d\n", request.id);
+                                customer_clients.erase(request.id);
+                                shop_clients.erase(request.id);
+                                shut_sockets.insert(active_socket.first);
+                                close(active_socket.first);
+                            } else {
+                                puts("Unknown client");
+                            }
+                            break;
+                        case ADD_CUSTOMER_REQUEST:
+                            printf("Received add new customer request for client %d in zone %d\n", request.id, request.zone_id);
+                            if (customer_clients.count(request.id) + shop_clients.count(request.id) == 0) {
+                                printf("New id is not yet owned by anyone. Creating new customer account");
+                                customer_clients[request.id] = Customer(request.id, request.zone_id);
+                            } else {
+                                printf("This id is already in use");
+                                status = 1;
+                            }
+                            send(sd, &request.request_type, sizeof(request.request_type), 0);
+                            send(sd, &status, sizeof(status), 0);
+                            break;
+                        default:
+                            printf("Unknown request: %d", request.request_type);
+                    }
+                    active_socket.second = Request();
+                }
+            }
+        }
+        for (auto& socket_ : shut_sockets) {
+            active_sockets.erase(socket_);
+        }
+        shut_sockets.clear();
     }
-}
+} 

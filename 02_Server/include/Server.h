@@ -12,7 +12,6 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
-#include <iostream>
 #include <cstdint>
 #include <vector>
 
@@ -73,6 +72,7 @@ public:
 struct TaskData
 {
 private:
+    bool is_long_operation;
     bool finished;
 
     void init_state()
@@ -96,6 +96,8 @@ public:
     TaskData(pthread_t *thread, int sockfd)
     : thread(thread), sockfd(sockfd)
     {
+        is_long_operation = false;
+
         init_state();
 
         mutex_sockfd = new pthread_mutex_t;
@@ -105,7 +107,7 @@ public:
     TaskData(TaskData &other, pthread_t *thread, Server::code_t command_type, Server::uint_t id, char* param)
     : thread(thread), command_type(command_type), id(id), param(param)
     {
-        std::cout << "TackData id: " << id << std::endl;
+        is_long_operation = true;
 
         init_state();
 
@@ -121,10 +123,13 @@ public:
             delete[] param;
         }
         free(thread);
-        close(sockfd);
 
-        pthread_mutex_destroy(mutex_sockfd);
         pthread_mutex_destroy(mutex_is_finished);
+
+        if (!is_long_operation) {
+            close(sockfd);
+            pthread_mutex_destroy(mutex_sockfd);
+        }
     }
 
     void mark_finished()

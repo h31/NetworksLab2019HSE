@@ -46,20 +46,16 @@ int Server::accept_client()
 
 void Server::send_message(int sockfd, char* x, size_t size)
 {
-    if (write(sockfd, x, size) < 0) {
+    if (write(sockfd, x, size) <= 0) {
         throw NetworkException("Could not write message");
     }
-
-    std::cout << "send:     float: " << (*((float_t*)x)) << "     int: " << (*((uint_t*)x)) << std::endl;
 }
 
 void Server::read_message(int sockfd, char* x, size_t size)
 {
-    if (read(sockfd, x, size) < 0) {
+    if (read(sockfd, x, size) <= 0) {
         throw NetworkException("Could not read message");
     }
-
-    std::cout << "read:     float: " << (*((float_t*)x)) << "     int: " << (*((uint_t*)x)) << std::endl;
 }
 
 void* long_operation(void *void_params)
@@ -70,26 +66,16 @@ void* long_operation(void *void_params)
     Server::code_t command_type = task_data->command_type;
     
     try {
-        std::cout << "------ id: " << (task_data->id) << std::endl;
-        std::cout << "------ command_type: " << (command_type) << std::endl;
-
         pthread_mutex_lock(task_data->mutex_sockfd);
-        std::cout << "------ a" << std::endl;
         Server::uint_t code = Server::CODE_LONG_ID;
-        std::cout << "------ b" << std::endl;
-        std::cout << "------ code: " << code << std::endl;
         Server::send_message(sockfd, (char*)&code, sizeof(code));
-        std::cout << "------ c" << std::endl;
         Server::send_message(sockfd, (char*)(&(task_data->id)), sizeof(task_data->id));
-        std::cout << "------ d" << std::endl;
         pthread_mutex_unlock(task_data->mutex_sockfd);
-        std::cout << "------ e" << std::endl;
 
         Server::uint_t tmp_uint;
         Server::float_t tmp_float;
         char* res_buff = NULL;
         size_t res_size;
-        std::cout << "------ f" << std::endl;
         switch(command_type) {
             case Server::CODE_GET_FACT:
                 tmp_uint = *((Server::uint_t*)(task_data->param));
@@ -100,28 +86,19 @@ void* long_operation(void *void_params)
 
             case Server::CODE_GET_SQRT:
                 tmp_float = *((Server::float_t*)(task_data->param));
-                std::cout << "------ tmp_float: " << tmp_float << std::endl;
                 tmp_float = Calculator::get_sqrt(tmp_float);
-                std::cout << "------ tmp_float res: " << tmp_float << std::endl;
                 res_buff = (char*)&tmp_float;
                 res_size = sizeof(tmp_float);
                 break;
         }
 
-        std::cout << "------ g" << std::endl;
         pthread_mutex_lock(task_data->mutex_sockfd);
         code = Server::CODE_LONG;
-        std::cout << "------ h" << std::endl;
         Server::send_message(sockfd, (char*)&code, sizeof(code));
-        std::cout << "------ i" << std::endl;
         Server::send_message(sockfd, (char*)(&(task_data->id)), sizeof(task_data->id));
-        std::cout << "------ j" << std::endl;
         Server::send_message(sockfd, res_buff, res_size);
-        std::cout << "------ k" << std::endl;
         pthread_mutex_unlock(task_data->mutex_sockfd);
-        std::cout << "------ l" << std::endl;
     } catch (NetworkException &e) {
-        std::cout << "------ fuuuuuuuuuuuck" << std::endl;
         pthread_mutex_unlock(task_data->mutex_sockfd);
     }
     
@@ -130,21 +107,16 @@ void* long_operation(void *void_params)
 
 void* client_service(void *void_params)
 {
-    std::cout << "started thread" << std::endl;
     TaskData *task_data = (TaskData*)void_params;
     int sockfd = task_data->sockfd;
 
     TaskController task_controller;
     Server::uint_t id = 1;
 
-    std::cout << 0 << std::endl;
-    //while (true) {
-    for (int itr = 0; itr < 2; itr++) {
+    while (true) {
         try {
             Server::code_t command_type;
-            std::cout << 1 << std::endl;
             Server::read_message(sockfd, (char*)&command_type, sizeof(command_type));
-            std::cout << 2 << std::endl;
 
             if (command_type == Server::CODE_GET_FACT || command_type == Server::CODE_GET_SQRT) {
                 char* buff;
@@ -162,11 +134,9 @@ void* client_service(void *void_params)
 
                 task_controller.add(long_task_data);
             } else {
-                std::cout << 3 << std::endl;
                 Server::float_t a, b, c;
                 Server::read_message(sockfd, (char*)&a, sizeof(a));
                 Server::read_message(sockfd, (char*)&b, sizeof(b));
-                std::cout << 4 << std::endl;
 
                 switch(command_type) {
                     case Server::CODE_GET_SUM:
@@ -189,7 +159,6 @@ void* client_service(void *void_params)
                         throw NetworkException("Unknown command");
                         break;
                 }
-                std::cout << 5 << std::endl;
 
                 try {
                     pthread_mutex_lock(task_data->mutex_sockfd);
@@ -197,24 +166,17 @@ void* client_service(void *void_params)
                     Server::send_message(sockfd, (char*)&code, sizeof(code));
                     Server::send_message(sockfd, (char*)&c, sizeof(c));
                     pthread_mutex_unlock(task_data->mutex_sockfd);
-                    std::cout << 6 << std::endl;
                 } catch (NetworkException &e) {
                     pthread_mutex_unlock(task_data->mutex_sockfd);
                     throw e;
                 }
-                std::cout << 8 << std::endl;
             }
         } catch (NetworkException &e) {
-            std::cout << "break" << std::endl;
             break;
         }
-        std::cout << 9 << std::endl;
 
         task_controller.tryFinish();
-
-        std::cout << 10 << std::endl;
     }
-    std::cout << 11 << std::endl;
 
     task_controller.finish();
     task_data->mark_finished();

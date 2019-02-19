@@ -3,7 +3,6 @@
 #include <stddef.h>
 #include <cstdint>
 #include <cmath>
-#include <iostream>
 
 class Calculator
 {

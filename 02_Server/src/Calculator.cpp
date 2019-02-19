@@ -31,6 +31,5 @@ uint64_t Calculator::get_fact(uint64_t a)
 
 double Calculator::get_sqrt(double a)
 {
-    std::cout << a << " " << sqrt(a) << std::endl;
     return sqrt(a);
 }

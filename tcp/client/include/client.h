@@ -4,6 +4,7 @@
 #include <string>
 #include <csignal>
 #include <thread>
+#include <mutex>
 
 class Client {
     public:
@@ -13,9 +14,9 @@ class Client {
 
         void Stop();
 
-        void SendMessageToAll(const std::string& message) const;
+        void SendMessageToAll(const std::string& message);
 
-        void SendMessageToOne(int32_t receiver_id, const std::string& message) const;
+        void SendMessageToOne(int32_t receiver_id, const std::string& message);
 
         void Disconnect();
 
@@ -26,7 +27,7 @@ class Client {
     private:
         void process_incoming_messages();
 
-        void print_messages() const;
+        void print_message(const std::string& message);
 
         std::string host_;
 
@@ -34,12 +35,12 @@ class Client {
 
         volatile std::sig_atomic_t is_running_ = 0;
 
-        volatile std::sig_atomic_t stop_ = 0;
+        std::mutex writing_lock_;
+
+        std::mutex connection_lock_;
 
         std::thread main_thread_;
-
-        std::thread messages_thread_;
-
+        
         int sockfd_;
 };
 

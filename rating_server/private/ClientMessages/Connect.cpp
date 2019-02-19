@@ -12,7 +12,7 @@ bool Connect::process(Server *server, Client *client) {
   client->set_username(name);
   server->add_client(*name, client);
   name = nullptr;
-  return true;
+  return client->send_success();
 }
 
 Connect::~Connect() {

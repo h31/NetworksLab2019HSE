@@ -31,7 +31,7 @@ ClientMessage::BaseMessage *Client::receive() {
     perror("Error while reading type");
     return nullptr;
   }
-
+  std::cout << "Message type: " << type << std::endl;
   switch (type) {
     case ClientMessage::CONNECT:
       return new ClientMessage::Connect();

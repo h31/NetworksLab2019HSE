@@ -92,7 +92,7 @@ void *listen(void* args) {
         fcntl(sockfd, F_SETFL, flags);
         if (n > 0) {
             while (n < 3 * sizeof(rw_t)) {
-                int m = read(sockfd, buf + n, 3 * sizeof(rw_t) - n);
+                int m = read(sockfd, ((char*)buf) + n, 3 * sizeof(rw_t) - n);
                 n += m;
             }
             rw_t id = buf[1];

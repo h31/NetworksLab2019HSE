@@ -5,7 +5,7 @@
 
 enum RequestType {
     CONNECT,
-    MESSAGE,
+    NEW_MESSAGE,
     DISCONNECT
 };
 
@@ -19,7 +19,7 @@ class RequestMessage {
     public:
         explicit RequestMessage(RequestType request_type): type_(request_type) {}
 
-        RequestMessage(int32_t receiver, const std::string& message) : body_(message), type_(RequestType::MESSAGE), receiver_id_(receiver) {}
+        RequestMessage(int32_t receiver, const std::string& message) : body_(message), type_(RequestType::NEW_MESSAGE), receiver_id_(receiver) {}
         
         static RequestMessage DISCONNECT();
 

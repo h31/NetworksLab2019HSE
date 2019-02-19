@@ -138,9 +138,9 @@ void Client::run() {
         } else if (command == "get_quot") {
             type = 4;
         } else if (command == "get_sqrt") {
-            type = 5;
-        } else if (command == "get_fact") {
             type = 6;
+        } else if (command == "get_fact") {
+            type = 5;
         } else if (command == "exit") {
             pthread_kill(*thread, 0);
             free(thread);

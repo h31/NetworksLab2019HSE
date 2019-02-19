@@ -47,7 +47,7 @@ public:
 
     void FinishOrder(int order_id);
 
-    void GiveOrder(int order_id);
+    void GiveOrder(int order_id, const std::string& name);
 
     void ApproveDoneOrder(int order_id);
 

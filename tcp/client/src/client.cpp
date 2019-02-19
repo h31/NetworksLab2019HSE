@@ -152,6 +152,7 @@ void MarketClient::RequestOrder(int order_id) {
             return;
         case Message::TAKE_ORDER_NOT_SUCCESSFUL:
             Cout(response.body);
+            break;
         default:
             HandleResponse(response);
             return;
@@ -191,14 +192,16 @@ void MarketClient::NewOrder(const std::string& description) {
     switch (response.type) {
         case Message::ORDER_ACCEPTED:
             Cout("You can now track this order by id: " + response.body);
+            break;
         default:
             HandleResponse(response);
             return;
     }
 }
 
-void MarketClient::GiveOrder(int order_id) {
-    Message response = SendMessage(Message::GIVE_ORDER_TO_FREELANCER, std::to_string(order_id));
+void MarketClient::GiveOrder(int order_id, const std::string& name) {
+    Message response = SendMessage(Message::GIVE_ORDER_TO_FREELANCER,
+                                   std::to_string(order_id) + name);
     switch (response.type) {
         case Message::GIVE_ORDER_SUCCESSFUL:
             Cout("Order" + response.body + " given successfully.");

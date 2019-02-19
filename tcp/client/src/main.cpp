@@ -73,8 +73,8 @@ void WorkWithCustomer(MarketClient& client) {
             client.ListOpenOrders();
         } else if (line == "my orders") {
             client.ListMyOrders();
-        } else if (sscanf(line.c_str(), "give %d", &order_id)) {
-            client.GiveOrder(order_id);
+        } else if (sscanf(line.c_str(), "give %d %s", &order_id, arg)) {
+            client.GiveOrder(order_id, arg);
         } else if (sscanf(line.c_str(), "done %d", &order_id)) {
             client.ApproveDoneOrder(order_id);
         } else if (sscanf(line.c_str(), "new order %s", arg)) {

@@ -11,7 +11,7 @@ bool MarketClient::StartClient(const char* host, uint16_t port_number) {
         exit(1);
     }
 
-    hostent *server = gethostbyname(host);
+    hostent* server = gethostbyname(host);
 
     if (server == nullptr) {
         std::cerr << "host not found\n";
@@ -20,10 +20,11 @@ bool MarketClient::StartClient(const char* host, uint16_t port_number) {
 
     sockaddr_in serv_addr{0};
     serv_addr.sin_family = AF_INET;
-    bcopy(server->h_addr, static_cast<void *>(&serv_addr.sin_addr.s_addr), static_cast<size_t>(server->h_length));
+    bcopy(server->h_addr, static_cast<void*>(&serv_addr.sin_addr.s_addr),
+          static_cast<size_t>(server->h_length));
     serv_addr.sin_port = htons(port_number);
 
-    if (connect(sockfd_, reinterpret_cast<sockaddr *>(&serv_addr), sizeof(serv_addr)) < 0) {
+    if (connect(sockfd_, reinterpret_cast<sockaddr*>(&serv_addr), sizeof(serv_addr)) < 0) {
         std::cerr << "connection failed\n";
         exit(1);
     }
@@ -37,10 +38,10 @@ bool MarketClient::AuthoriseCustomer(const std::string& name) {
     Message response = SendMessage(Message::NEW_CUSTOMER, name);
     switch (response.type) {
         case Message::CUSTOMER_ADDED:
-            Cout("Authorisation successful, you can create orders now, " + name);
+            std::cout << "Authorisation successful, you can create orders now, " + name;
             return true;
         case Message::CANT_ADD_CUSTOMER:
-            Cout(response.body.empty() ? "Sorry, something went wrong" : response.body);
+            std::cout << response.body.empty() ? "Sorry, something went wrong" : response.body;
             return false;
         default:
             HandleResponse(response);
@@ -53,10 +54,10 @@ bool MarketClient::AuthoriseFreelancer(const std::string& name) {
     Message response = SendMessage(Message::NEW_FREELANCER, name);
     switch (response.type) {
         case Message::FREELANCER_ADDED:
-            Cout("You can look for orders now");
+            std::cout << "You can look for orders now";
             return true;
         case Message::CANT_ADD_FREELANCER:
-            Cout(response.body.empty() ? "Sorry, something went wrong" : response.body);
+            std::cout << response.body.empty() ? "Sorry, something went wrong" : response.body;
             return false;
         default:
             HandleResponse(response);
@@ -68,7 +69,7 @@ void MarketClient::ListMyOrders() {
     Message response = SendMessage(Message::GET_MY_ORDERS);
     switch (response.type) {
         case Message::LIST_OF_MY_ORDERS:
-            Cout(response.body);
+            std::cout << response.body;
             return;
         default:
             HandleResponse(response);
@@ -80,7 +81,7 @@ void MarketClient::ListOpenOrders() {
     Message response = SendMessage(Message::GET_OPEN_ORDERS);
     switch (response.type) {
         case Message::LIST_OF_OPEN_ORDERS:
-            Cout(response.body);
+            std::cout << response.body;
             return;
         default:
             HandleResponse(response);
@@ -89,13 +90,14 @@ void MarketClient::ListOpenOrders() {
 }
 
 void MarketClient::HandleUnexpectedServerResponse(const Message& response) {
-    Cout("server responded with {type: " + std::to_string(response.type) + ", message: " + "}");
+    std::cout << "server responded with {type: " + std::to_string(response.type) + ", message: " +
+                 "}";
 }
 
-void MarketClient::HandleUnauthorised() { Cout("Please enter who u are"); }
+void MarketClient::HandleUnauthorised() { std::cout << "Please enter who u are"; }
 
 void MarketClient::HandleIncorrectMessage(const Message& response) {
-    Cout(response.body.empty() ? "You are not permitted to do it" : response.body);
+    std::cout << response.body.empty() ? "You are not permitted to do it" : response.body;
 }
 
 void MarketClient::HandleResponse(const Message& response) {
@@ -119,10 +121,10 @@ void MarketClient::RequestOrder(int order_id) {
     Message response = SendMessage(Message::TAKE_ORDER, std::to_string(order_id));
     switch (response.type) {
         case Message::TAKE_ORDER_SUCCESSFUL:
-            Cout("Order" + response.body + " requested.");
+            std::cout << "Order" + response.body + " requested.";
             return;
         case Message::TAKE_ORDER_NOT_SUCCESSFUL:
-            Cout(response.body);
+            std::cout << response.body;
             return;
         default:
             HandleResponse(response);
@@ -134,10 +136,10 @@ void MarketClient::StartOrder(int order_id) {
     Message response = SendMessage(Message::WORK_STARTED, std::to_string(order_id));
     switch (response.type) {
         case Message::WORK_STARTED_SUCCESSFUL:
-            Cout("Order" + response.body + " started successfully.");
+            std::cout << "Order" + response.body + " started successfully.";
             return;
         case Message::WORK_ACCEPTED_NOT_SUCCESSFUL:
-            Cout(response.body);
+            std::cout << response.body;
             return;
         default:
             HandleResponse(response);
@@ -149,10 +151,10 @@ void MarketClient::FinishOrder(int order_id) {
     Message response = SendMessage(Message::WORK_FINISHED, std::to_string(order_id));
     switch (response.type) {
         case Message::WORK_FINISHED_SUCCESSFUL:
-            Cout("Order" + response.body + " finished successfully.");
+            std::cout << "Order" + response.body + " finished successfully.";
             return;
         case Message::WORK_FINISHED_NOT_SUCCESSFUL:
-            Cout(response.body);
+            std::cout << response.body;
             return;
         default:
             HandleResponse(response);
@@ -164,7 +166,7 @@ void MarketClient::NewOrder(const std::string& description) {
     Message response = SendMessage(Message::NEW_ORDER, description);
     switch (response.type) {
         case Message::ORDER_ACCEPTED:
-            Cout("You can now track this order by id: " + response.body);
+            std::cout << "You can now track this order by id: " + response.body;
             return;
         default:
             HandleResponse(response);
@@ -177,10 +179,10 @@ void MarketClient::GiveOrder(int order_id, const std::string& name) {
                                    std::to_string(order_id) + name);
     switch (response.type) {
         case Message::GIVE_ORDER_SUCCESSFUL:
-            Cout("Order" + response.body + " given successfully.");
+            std::cout << "Order" + response.body + " given successfully.";
             return;
         case Message::GIVE_ORDER_NOT_SUCCESSFUL:
-            Cout(response.body);
+            std::cout << response.body;
             return;
         default:
             HandleResponse(response);
@@ -192,10 +194,10 @@ void MarketClient::ApproveDoneOrder(int order_id) {
     Message response = SendMessage(Message::WORK_ACCEPTED, std::to_string(order_id));
     switch (response.type) {
         case Message::WORK_ACCEPTED_SUCCESSFUL:
-            Cout("Work for order" + response.body + " accepted successfully.");
+            std::cout << "Work for order" + response.body + " accepted successfully.";
             return;
         case Message::WORK_ACCEPTED_NOT_SUCCESSFUL:
-            Cout(response.body);
+            std::cout << response.body;
             return;
         default:
             HandleResponse(response);
@@ -204,9 +206,9 @@ void MarketClient::ApproveDoneOrder(int order_id) {
 }
 
 void MarketClient::Quit() {
-    Cout("Closing connection...");
+    std::cout << "Closing connection...";
     shutdown(sockfd_, SHUT_RDWR);
-    Cout("Bye! Hope to see u again!");
+    std::cout << "Bye! Hope to see u again!";
 }
 
 void MarketClient::PrintHeader(const std::string& header) {
@@ -222,14 +224,8 @@ void MarketClient::PrintPrompt() {
     io_mutex_.unlock();
 }
 
-void MarketClient::Cout(const std::string& message) {
-    io_mutex_.lock();
-    std::cout << message << std::endl;
-    io_mutex_.unlock();
-}
-
 bool MarketClient::GetLine(std::string& message) {
-    auto &result = getline(std::cin, message);
+    auto& result = getline(std::cin, message);
     return bool(result);
 }
 

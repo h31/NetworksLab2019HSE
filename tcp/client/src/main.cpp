@@ -28,7 +28,7 @@ void CustomerHelp() {
                  "\t new order <description>\n"
                  "\t all orders\n"
                  "\t my orders\n"
-                 "\t give <order_id>\n"
+                 "\t give <order_id> <name>\n"
                  "\t done <order_id>\n"
                  "\t bye\n";
 }

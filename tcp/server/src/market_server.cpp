@@ -129,7 +129,7 @@ void MarketServer::WorkWithCustomer(Customer *customer) {
                 orders_mutex_.lock();
                 auto *order = new Order(customer->name, message.body);
                 orders[order->task_id] = order;
-                ans_message = Message(Message::ORDER_ACCEPTED);
+                ans_message = Message(Message::ORDER_ACCEPTED, std::to_string(order->task_id));
                 orders_mutex_.unlock_shared();
                 break;
             }
@@ -146,28 +146,37 @@ void MarketServer::WorkWithCustomer(Customer *customer) {
                 char name[256];
                 if (sscanf(message.body.c_str(), "%i %s", &id, name) == 2) {
                     orders_mutex_.lock();
-                    if (orders.count(id) and orders[id]->state == Order::OPEN) {
-                        orders[id]->state = Order::ASSIGNED;
-                        orders[id]->workers = {std::string(name)};
+                    Order *o = orders[id];
+                    if (orders.count(id) and
+                        o->state == Order::OPEN and
+                        o->customer == customer->name and
+                        o->workers.count(name)) {
+                        o->state = Order::ASSIGNED;
+                        o->workers = {std::string(name)};
                         ans_message.type = Message::GIVE_ORDER_SUCCESSFUL;
                     } else {
                         ans_message.type = Message::GIVE_ORDER_NOT_SUCCESSFUL;
-                        ans_message.body = "no such open order";
+                        ans_message.body = "no such open order owned by you";
                     }
                     orders_mutex_.unlock();
                 } else {
                     ans_message.type = Message::GIVE_ORDER_NOT_SUCCESSFUL;
+                    ans_message.body = "parsing error: expected <int> <name> got " + message.body;
                 }
                 break;
             }
             case Message::WORK_ACCEPTED: {
                 int id = std::stoi(message.body);
                 orders_mutex_.lock();
-                if (orders.count(id) and orders[id]->state == Order::IN_PROGRESS) {
-                    orders[id]->state = Order::DONE;
+                Order *o = orders[id];
+                if (orders.count(id) and
+                    o->state == Order::IN_PROGRESS and
+                    o->customer == customer->name) {
+                    o->state = Order::DONE;
                     ans_message.type = Message::WORK_ACCEPTED_SUCCESSFUL;
                 } else {
                     ans_message.type = Message::WORK_ACCEPTED_NOT_SUCCESSFUL;
+                    ans_message.body = "no such work in progress owned by you";
                 }
                 orders_mutex_.unlock();
                 break;

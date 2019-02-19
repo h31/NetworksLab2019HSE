@@ -159,7 +159,7 @@ void Client::run() {
             calc_t res = *((calc_t*) &store);
             pthread_mutex_unlock(&mutex);
             cout << "Result of query " << command << " is " << res << endl;
-        } else if (type == 5) {
+        } else if (type == 6) {
             calc_t a;
             cin >> a;
             pthread_mutex_lock(&mutex);
@@ -168,7 +168,7 @@ void Client::run() {
             long_queries[id] = SQRT;
             pthread_mutex_unlock(&mutex);
             cout << "Query " << command << " is queued with id " << id << endl;
-        } else if (type == 6) {
+        } else if (type == 5) {
             fact_t n;
             cin >> n;
             pthread_mutex_lock(&mutex);

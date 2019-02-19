@@ -1,6 +1,5 @@
 #include <netdb.h>
 #include <thread>
-#include <boost/lockfree/queue.hpp>
 #include "../include/client.h"
 
 bool MarketClient::StartClient(const char* host, uint16_t port_number) {
@@ -212,16 +211,12 @@ void MarketClient::Quit() {
 }
 
 void MarketClient::PrintHeader(const std::string& header) {
-    io_mutex_.lock();
     system("clear");
     std::cout << header + "\n> " << std::flush;
-    io_mutex_.unlock();
 }
 
 void MarketClient::PrintPrompt() {
-    io_mutex_.lock();
     std::cout << "> " << std::flush;
-    io_mutex_.unlock();
 }
 
 bool MarketClient::GetLine(std::string& message) {

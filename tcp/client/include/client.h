@@ -1,12 +1,11 @@
-#ifndef ROULETTE_CLIENT_H
-#define ROULETTE_CLIENT_H
+#ifndef MARKET_CLIENT_H
+#define MARKET_CLIENT_H
 
 
 #include <cstdint>
 #include <shared_mutex>
 #include <map>
 #include <thread>
-#include <boost/thread/sync_queue.hpp>
 #include <../include/message.h>
 
 class MarketClient {
@@ -17,8 +16,6 @@ public:
 private:
 
     int sockfd_;
-
-    std::mutex io_mutex_;
 
     Message SendMessage(Message::Type type);
 
@@ -59,11 +56,8 @@ public:
 
     void PrintPrompt();
 
-    void Cout(const std::string &message);
-
     bool GetLine(std::string &message);
-
 };
 
 
-#endif //ROULETTE_CLIENT_H
+#endif //MARKET_CLIENT_H

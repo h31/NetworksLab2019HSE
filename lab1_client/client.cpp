@@ -88,11 +88,11 @@ void *listen(void* args) {
         bzero(buf, sizeof(rw_t) * 4);
         int flags = fcntl(sockfd, F_GETFL, 0);
         fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
-        int n = read(sockfd, buf, 3);
+        int n = read(sockfd, buf, 3 * sizeof(rw_t));
         fcntl(sockfd, F_SETFL, flags);
         if (n > 0) {
-            while (n < 3) {
-                int m = read(sockfd, buf + n, 3 - n / 4);
+            while (n < 3 * sizeof(rw_t)) {
+                int m = read(sockfd, buf + n, 3 * sizeof(rw_t) - n);
                 n += m;
             }
             rw_t id = buf[1];

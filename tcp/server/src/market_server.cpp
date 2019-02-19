@@ -319,8 +319,6 @@ MarketServer::Freelancer::~Freelancer() {
     writer.join();
 }
 
-MarketServer::Customer::Customer(const std::string &name, int socket_fd) : name(name), socket_fd(socket_fd) {}
-
 MarketServer::Customer::~Customer() {
     messages_.close();
     close(socket_fd);

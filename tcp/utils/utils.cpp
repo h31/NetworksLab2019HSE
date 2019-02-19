@@ -22,8 +22,13 @@ bool WriteString(int sockfd, std::string* str) {
 std::string ReadString(int sockfd) {
     int len;
     int n = read(sockfd, &len, sizeof(size_t));
-    if (n <= 0) 
+    if (n <= 0)
         throw std::ios_base::failure("Error reading string");
+    std::string result(len, ' ');
+    n = read(sockfd, &result[0], len);
+    if (n <= 0)
+        throw std::ios_base::failure("Error reading string");
+    return result;
 }
 
 bool WriteRequestMessage(int sockfd, const RequestMessage& message) {
@@ -60,7 +65,6 @@ RequestMessage ReadRequestMessage(int sockfd) {
 }
 
 bool WriteResponseMessage(int sockfd, const ResponseMessage& message) {
-    return false;  // TODO
     ResponseType type = message.GetType();
     int n = write(sockfd, (char*) &type, sizeof(ResponseType));
     if (n <= 0)
@@ -76,7 +80,6 @@ bool WriteResponseMessage(int sockfd, const ResponseMessage& message) {
 }
 
 ResponseMessage ReadResponseMessage(int sockfd) {
-    return ResponseMessage(ResponseType::MESSAGE);  // TODO
     int32_t sender_id;
     ResponseType type;
     int n = read(sockfd, (char*) &type, sizeof(type));

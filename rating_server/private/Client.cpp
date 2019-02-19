@@ -9,6 +9,7 @@
 #include <ClientMessages/RatingList.h>
 #include <ClientMessages/ShowRating.h>
 #include <ClientMessages/VoteRating.h>
+#include <Client.h>
 
 
 Client::Client(int socket_fd) : socket(socket_fd) {
@@ -16,31 +17,13 @@ Client::Client(int socket_fd) : socket(socket_fd) {
 
 Client::~Client() {
   delete user_name;
+  std::cerr << "delete client" << std::endl;
   shutdown_socket();
 }
 
 void Client::shutdown_socket() {
   socket.shutdown();
 }
-
-void Client::operator()(Server *server) {
-  while (true) {
-    ClientMessage::BaseMessage *message = nullptr;
-    if (!(message = receive())) {
-      std::cerr << "Message receive error" << std::endl;
-      break;
-    }
-    bool result = message->process(server, this);
-    delete message;
-    if (!result) {
-      std::cerr << "Message process error" << std::endl;
-      break;
-    }
-  }
-  if (!user_name) server->remove_client(*user_name);
-  delete this;
-}
-
 
 ClientMessage::BaseMessage *Client::receive() {
   ClientMessage::MessageType type;
@@ -88,4 +71,8 @@ bool Client::send_error(std::string &&message) {
 
 bool Client::send_success() {
   return socket.write_default(ServerMessage::SUCCESS);
+}
+
+std::string *Client::get_username() {
+  return user_name;
 }

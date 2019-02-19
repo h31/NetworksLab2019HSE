@@ -6,6 +6,7 @@
 #include <fstream>
 #include <Server.h>
 #include <experimental/filesystem>
+#include <Worker.h>
 
 
 static const int TRUE_VALUE = 1;
@@ -14,6 +15,8 @@ static const int BACKLOG_SIZE = 5;
 static const char *const NO_SUCH_RATING_MESSAGE = "There is no such rating id";
 static const std::string data_folder = "./data/";
 static const std::string data_file = "server_data";
+
+namespace fs = std::experimental::filesystem;
 
 Server::Server(unsigned short port) {
   server_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -35,6 +38,7 @@ Server::Server(unsigned short port) {
     shutdown_socket();
     return;
   }
+  load_state();
 }
 
 Server::~Server() {
@@ -50,13 +54,15 @@ void Server::run() {
   std::thread accept_thread([](Server *server) {
     std::vector<std::thread> threads;
     while (true) {
+      std::cerr << "before accept" << std::endl;
       int client_socket_fd = server->accept();
       if (client_socket_fd < 0) {
         break;
       }
       auto client = new Client(client_socket_fd);
-      std::thread client_thread(*client, server);
+      std::thread client_thread(Worker(), server, client);
       threads.push_back(std::move(client_thread));
+      std::cerr << "client in thread" << std::endl;
     }
     perror("Error on accept");
     server->shutdown_all_clients();
@@ -210,6 +216,14 @@ void Server::save_all_state() {
   std::ofstream sds(data_folder + data_file);
   sds << maxId;
 }
+
+void Server::load_state() {
+  fs::create_directory(data_folder);
+  for (const auto &entry : fs::directory_iterator(data_folder)) {
+    std::cout << entry.path().filename() << std::endl;
+  }
+}
+
 
 
 

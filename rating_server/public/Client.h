@@ -29,7 +29,7 @@ public:
 
   void set_username(std::string *name);
 
-  void operator()(Server *server);
+  std::string *get_username();
 
   void shutdown_socket();
 

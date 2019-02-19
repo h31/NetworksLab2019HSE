@@ -3,7 +3,9 @@ project(rating_server)
 
 set(CMAKE_CXX_STANDARD 17)
 
-SET(GCC_COVERAGE_COMPILE_FLAGS "-pthread -lstdc++fs")
+SET(GCC_COVERAGE_COMPILE_FLAGS "-pthread")
+
+#SET(GCC_COVERAGE_LINK_FLAGS "-lstdc++fs")
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
 SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}")
@@ -43,4 +45,6 @@ add_executable(rating_server
         private/ClientMessages/VoteRating.cpp
         public/ClientMessages/VoteRating.h
         private/Rating.cpp public/Rating.h
-        )
+        private/Worker.cpp public/Worker.h)
+
+target_link_libraries(rating_server -lstdc++fs)

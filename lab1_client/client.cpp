@@ -132,9 +132,9 @@ void Client::run() {
         if (command == "get_sum") {
             type = 1;
         } else if (command == "get_mult") {
-            type = 2;
-        } else if (command == "get_diff") {
             type = 3;
+        } else if (command == "get_diff") {
+            type = 2;
         } else if (command == "get_quot") {
             type = 4;
         } else if (command == "get_sqrt") {

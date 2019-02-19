@@ -17,7 +17,7 @@
 typedef struct Server {
     int sockfd;
     GHashTable *clients;
-//    GArray *clients;
+    GHashTable *logins;
     pthread_mutex_t clients_array_mutex;
 } Server_t;
 
@@ -33,29 +33,89 @@ typedef struct Client {
 
 void clients_iterator(gpointer key, gpointer value, gpointer user_data) {
     //мб нужно kill
-    int a = pthread_join(*(pthread_t *) key, NULL);
-    perror("pep");
-    printf("on delete:%d\n", a);
+    int a = pthread_kill(*(pthread_t *) key, NULL);
 }
 
 void stop_server(Server_t *server) {
     pthread_mutex_lock(&server->clients_array_mutex);
     g_hash_table_foreach(server->clients, (GHFunc) clients_iterator, NULL);
-//    for (int i = 0; i < server->clients->len; ++i) {
-//        //мб стоит хранить только треды и иметь мап из имен в треды
-//        GList g_hash_table_get_keys(server->clients);
-//        Client_t *c = g_array_index(server->clients, Client_t *, i);
-//        pthread_join(c->t, NULL);
-//    }
     g_hash_table_destroy(server->clients);
     pthread_mutex_unlock(&server->clients_array_mutex);
 }
 
-void delete_client(Server_t *server, pthread_t *pthread) {
+void delete_client(Server_t *server) {
+    //todo
     pthread_mutex_lock(&server->clients_array_mutex);
 //    g_set_
 //    server->clients;
     pthread_mutex_unlock(&server->clients_array_mutex);
+}
+
+gboolean get_val(gpointer key, gpointer value, gpointer user_data) {
+    gchar *pkey = (gchar *) key;
+    gchar *pdata = (gchar *) user_data;
+    printf("get_val: %s and %s \n", pkey, pdata);
+    return !strcmp(pkey, pdata);
+}
+
+int reg_or_login(Client_arg_t *cl_arg){
+    ssize_t n;
+    char buffer[256];
+    bzero(buffer, 256);
+    n = read(cl_arg->newsockfd, buffer, 255); // recv on Windows
+
+    if (n < 0) {
+        srverror("ERROR reading from socket");
+        return -1;
+    } else if (n == 0) {
+        //todo
+    }
+
+    printf("tid %llu: %s: %s\n", (unsigned long long) pthread_self(), "Frst msg", buffer);
+    if (!strncmp(buffer, "REGT ", 5)) {
+        int i = 5;
+        char login[256];
+        for (; i < strlen(buffer) && buffer[i] != '\n'; ++i) {
+            login[i - 5] = buffer[i];
+        }
+        pthread_mutex_lock(&cl_arg->server->clients_array_mutex);
+        gpointer p = g_hash_table_find(cl_arg->server->logins, (GHRFunc) get_val, login);
+        pthread_mutex_unlock(&cl_arg->server->clients_array_mutex);
+        if (p == NULL) {
+            printf("REGT: free login\n");
+            pthread_mutex_lock(&cl_arg->server->clients_array_mutex);
+            printf("Inserting data: %s", login);
+            g_hash_table_insert(cl_arg->server->logins, g_strdup(login), "T");
+            pthread_mutex_unlock(&cl_arg->server->clients_array_mutex);
+            bzero(buffer, 256);
+            strcpy(buffer, "REGT OK \n");
+            printf("Send: %s\n", buffer);
+            n = write(cl_arg->newsockfd, buffer, strlen(buffer));
+            if (n < 0) {
+                srverror("ERROR writing to socket");
+                return 0;
+            }
+        } else {
+            printf("REGT: login already in use\n");
+            bzero(buffer, 256);
+            strcpy(buffer, "REGT UE \n");
+            printf("Send: %s\n", buffer);
+            n = write(cl_arg->newsockfd, buffer, strlen(buffer));
+            if (n < 0) {
+                srverror("ERROR writing to socket");
+                return 0;
+            }
+        }
+    } else if (!strncmp(buffer, "REGD ", 5)) {
+
+    } else {
+        srverror("Bad registration\n");
+        close(cl_arg->newsockfd);
+        delete_client(cl_arg);
+//        bzero(buffer, 256);
+//        strcpy(buffer, "BR \n");
+//        n = write(cl_arg->newsockfd, "", );
+    }
 }
 
 void *client_worker(void *argp) {
@@ -75,10 +135,57 @@ void *client_worker(void *argp) {
     if (n < 0) {
         srverror("ERROR reading from socket");
         return 0;
+    } else if (n == 0) {
+        //todo
     }
 
-    printf("tid %llu: %s: %s\n", (unsigned long long) pthread_self(), "Here is the message", buffer);
-//    TM_PRINTF_TH("Here is the message: %s\n", buffer);
+    printf("tid %llu: %s: %s\n", (unsigned long long) pthread_self(), "Frst msg", buffer);
+    if (!strncmp(buffer, "REGT ", 5)) {
+        int i = 5;
+        char login[256];
+        for (; i < strlen(buffer) && buffer[i] != '\n'; ++i) {
+            login[i - 5] = buffer[i];
+        }
+        pthread_mutex_lock(&cl_arg->server->clients_array_mutex);
+        gpointer p = g_hash_table_find(cl_arg->server->logins, (GHRFunc) get_val, login);
+        pthread_mutex_unlock(&cl_arg->server->clients_array_mutex);
+        int tester = 0;
+        if (p == NULL) {
+            printf("REGT: free login\n");
+            pthread_mutex_lock(&cl_arg->server->clients_array_mutex);
+            printf("Inserting data: %s", login);
+            g_hash_table_insert(cl_arg->server->logins, g_strdup(login), "T");
+            pthread_mutex_unlock(&cl_arg->server->clients_array_mutex);
+            bzero(buffer, 256);
+            strcpy(buffer, "REGT OK \n");
+            printf("Send: %s\n", buffer);
+            n = write(cl_arg->newsockfd, buffer, strlen(buffer));
+            if (n < 0) {
+                srverror("ERROR writing to socket");
+                return 0;
+            }
+            tester = 1;
+        } else {
+            printf("REGT: login already in use\n");
+            bzero(buffer, 256);
+            strcpy(buffer, "REGT UE \n");
+            printf("Send: %s\n", buffer);
+            n = write(cl_arg->newsockfd, buffer, strlen(buffer));
+            if (n < 0) {
+                srverror("ERROR writing to socket");
+                return 0;
+            }
+        }
+    } else if (!strncmp(buffer, "REGD ", 5)) {
+
+    } else {
+        srverror("Bad registration\n");
+        close(cl_arg->newsockfd);
+        delete_client(cl_arg);
+//        bzero(buffer, 256);
+//        strcpy(buffer, "BR \n");
+//        n = write(cl_arg->newsockfd, "", );
+    }
 
     /* Write a response to the client */
     n = write(cl_arg->newsockfd, "I got your message", 18); // send on Windows
@@ -105,8 +212,11 @@ void *server_listener(void *argp) {
     struct sockaddr_in cli_addr;
     clilen = sizeof(cli_addr);
 
-    while (g_hash_table_size(server->clients) < 10) {
+    while (1) {
         newsockfd = accept(server->sockfd, (struct sockaddr *) &cli_addr, &clilen);
+        if (newsockfd < 0) {
+            continue;
+        }
         pthread_t pthread;
         const pthread_attr_t *attr;
         Client_arg_t cl_arg;
@@ -134,6 +244,7 @@ int main(int argc, char *argv[]) {
     /* First call to socket() function */
     server.sockfd = socket(AF_INET, SOCK_STREAM, 0);
     server.clients = g_hash_table_new(g_int64_hash, g_int64_equal);
+    server.logins = g_hash_table_new(g_str_hash, g_str_equal);
     pthread_mutex_init(&server.clients_array_mutex, NULL);
 
     if (server.sockfd < 0) {

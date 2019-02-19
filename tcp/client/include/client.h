@@ -10,6 +10,8 @@ class Client {
     public:
         Client(const std::string& host, uint16_t port): host_(host), port_(port) {}
 
+        Client(const Client& other);
+
         bool Start();
 
         void SendMessageToAll(const std::string& message);

@@ -12,6 +12,11 @@
 #include <iostream>
 
 
+Client::Client(const Client& other) {
+    host_  = other.host_;
+    port_ = other.port_;
+}
+
 bool Client::Start() {
     sockfd_ = socket(AF_INET, SOCK_STREAM, 0);
     struct sockaddr_in serv_addr;

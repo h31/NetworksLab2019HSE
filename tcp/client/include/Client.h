@@ -12,15 +12,15 @@ class Client {
 
 private:
     enum class RequestType : uint8_t {
-        CONNECT       = 0x01,
-        NEW_RATING    = 0x02,
-        DELETE_RATING = 0x03,
-        OPEN_RATING   = 0x04,
-        CLOSE_RATING  = 0x05,
-        ADD_OPTION    = 0x06,
-        LIST_RATINGS  = 0x07,
-        GET_RATING    = 0x08,
-        VOTE          = 0x09
+        CONNECT       = 0x00,
+        NEW_RATING    = 0x01,
+        DELETE_RATING = 0x02,
+        OPEN_RATING   = 0x03,
+        CLOSE_RATING  = 0x04,
+        ADD_OPTION    = 0x05,
+        LIST_RATINGS  = 0x06,
+        GET_RATING    = 0x07,
+        VOTE          = 0x08
     };
 
     std::unordered_map<std::string, std::function<bool()>> commands;

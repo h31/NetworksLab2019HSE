@@ -110,3 +110,7 @@ bool Response::checkDisconnect() {
     }
     return isDisconnect();
 }
+
+Response Response::ResponseDisconnect() {
+    return Response(ResponseType::DISCONNECT);
+}

@@ -209,7 +209,9 @@ bool Client::vote() {
 }
 
 Response Client::performRequest(Client::RequestType type, std::vector<RequestField> fields) {
-    write(socketfd, &type, sizeof(type));
+    if (write(socketfd, &type, sizeof(type)) != sizeof(type)) {
+        return Response::ResponseDisconnect();
+    }
     for (auto &field : fields) {
         field.write(socketfd);
     }

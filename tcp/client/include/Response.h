@@ -25,6 +25,7 @@ private:
 
 public:
     static Response readResponse(int socketfd);
+    static Response ResponseDisconnect();
     bool isError();
     bool isDisconnect();
     bool checkDisconnect();

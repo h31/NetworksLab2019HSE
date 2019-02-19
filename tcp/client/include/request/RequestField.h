@@ -75,7 +75,7 @@ public:
         int_value = val;
     }
 
-    explicit RequestField(const std::string &val): type(Type::INT) {
+    explicit RequestField(const std::string &val): type(Type::STRING) {
         string_value = val;
     }
 

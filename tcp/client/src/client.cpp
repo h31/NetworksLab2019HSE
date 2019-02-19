@@ -152,7 +152,7 @@ void MarketClient::RequestOrder(int order_id) {
             return;
         case Message::TAKE_ORDER_NOT_SUCCESSFUL:
             Cout(response.body);
-            break;
+            return;
         default:
             HandleResponse(response);
             return;
@@ -162,11 +162,12 @@ void MarketClient::RequestOrder(int order_id) {
 void MarketClient::StartOrder(int order_id) {
     Message response = SendMessage(Message::WORK_STARTED, std::to_string(order_id));
     switch (response.type) {
-        case Message::WORK_STARTED:
+        case Message::WORK_STARTED_SUCCESSFUL:
             Cout("Order" + response.body + " started successfully.");
             return;
-        case Message::WORK_STARTED_SUCCESSFUL:
+        case Message::WORK_ACCEPTED_NOT_SUCCESSFUL:
             Cout(response.body);
+            return;
         default:
             HandleResponse(response);
             return;
@@ -181,6 +182,7 @@ void MarketClient::FinishOrder(int order_id) {
             return;
         case Message::WORK_FINISHED_NOT_SUCCESSFUL:
             Cout(response.body);
+            return;
         default:
             HandleResponse(response);
             return;
@@ -192,7 +194,7 @@ void MarketClient::NewOrder(const std::string& description) {
     switch (response.type) {
         case Message::ORDER_ACCEPTED:
             Cout("You can now track this order by id: " + response.body);
-            break;
+            return;
         default:
             HandleResponse(response);
             return;
@@ -208,6 +210,7 @@ void MarketClient::GiveOrder(int order_id, const std::string& name) {
             return;
         case Message::GIVE_ORDER_NOT_SUCCESSFUL:
             Cout(response.body);
+            return;
         default:
             HandleResponse(response);
             return;
@@ -222,6 +225,7 @@ void MarketClient::ApproveDoneOrder(int order_id) {
             return;
         case Message::WORK_ACCEPTED_NOT_SUCCESSFUL:
             Cout(response.body);
+            return;
         default:
             HandleResponse(response);
             return;

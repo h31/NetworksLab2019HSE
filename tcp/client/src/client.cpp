@@ -118,7 +118,7 @@ void MarketClient::ListOpenOrders() {
 }
 
 void MarketClient::HandleUnexpectedServerResponse(const Message& response) {
-    Cout("server responded with {type: " + std::to_string(response.type) + ", message: " + response.body + "}");
+    Cout("server responded with {type: " + std::to_string(response.type) + ", message: " + "}");
 }
 
 void MarketClient::HandleUnauthorised() { Cout("Please enter who u are"); }
@@ -260,7 +260,7 @@ bool MarketClient::GetLine(std::string& message) {
 }
 
 Message MarketClient::SendMessage(Message::Type type) {
-    SendMessage(type, "");
+    return SendMessage(type, "");
 }
 
 Message MarketClient::SendMessage(Message::Type type, const std::string& text) {

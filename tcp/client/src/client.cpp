@@ -75,7 +75,7 @@ std::vector<std::string> client::list_topics() {
     io->write_int(1);
     size_t topics_number = io->read_size_t();
 
-    std::vector<std::string> topics(topics_number);
+    std::vector<std::string> topics;
     for (int i = 0; i < topics_number; i++) {
         size_t topic_length = io->read_size_t();
         topics.push_back(io->read_string(topic_length));

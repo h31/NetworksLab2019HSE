@@ -19,6 +19,14 @@ void print_usage() {
               << EXIT_COMMAND << " - stop application\n" << std::endl;
 }
 
+std::string read_not_empty_line() {
+    std::string line;
+    while (line.empty()) {
+        std::getline(std::cin, line);
+    }
+    return line;
+}
+
 int main(int argc, char* argv[]) {
     if (argc < 3) {
         std::cout << "Host and port should be specified.";
@@ -38,8 +46,7 @@ int main(int argc, char* argv[]) {
         print_usage();
 
         while (true) {
-            std::string command;
-            std::getline(std::cin, command);
+            std::string command = read_not_empty_line();
             if (command == LIST_TOPICS_COMMAND) {
                 std::vector<std::string> topics = client.list_topics();
                 for (const auto &topic : topics) {
@@ -48,15 +55,13 @@ int main(int argc, char* argv[]) {
                 std::cout << std::endl;
             } else if (command == LIST_NEWS_COMMAND) {
                 std::cout << "Enter topic:" << std::endl;
-                std::string topic;
-                std::getline(std::cin, topic);
+                std::string topic = read_not_empty_line();
                 for (const auto &news_title : client.list_news(topic)) {
                     std::cout << "id: " << news_title.id << "\ntitle: " << news_title.title << "\n" << std::endl;
                 }
             } else if (command == NEWS_CONTENT_COMMAND) {
                 std::cout << "Enter id:" << std::endl;
-                std::string id;
-                std::getline(std::cin, id);
+                std::string id = read_not_empty_line();
                 try {
                     std::cout << client.get_news_text(std::stoi(id)) << "\n" << std::endl;
                 } catch (std::invalid_argument &e) {
@@ -64,18 +69,11 @@ int main(int argc, char* argv[]) {
                 }
             } else if (command == ADD_NEWS_COMMAND) {
                 std::cout << "Enter news topic:" << std::endl;
-                std::string topic;
-                std::getline(std::cin, topic);
+                std::string topic = read_not_empty_line();
                 std::cout << "Enter news title:" << std::endl;
-                std::string title;
-                std::getline(std::cin, title);
+                std::string title = read_not_empty_line();
                 std::cout << "Enter news text:" << std::endl;
-                std::string text;
-                std::getline(std::cin, text);
-                if (text.empty()) {
-                    std::cout << "News text can't be empty";
-                    continue;
-                }
+                std::string text = read_not_empty_line();
                 client.add_news(topic, title, text);
                 std::cout << std::endl;
             } else if (command == EXIT_COMMAND) {

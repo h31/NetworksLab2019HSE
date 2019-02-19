@@ -70,9 +70,9 @@ rw_t get_res(int sockfd, Client* client) {
         cout << "Result of query " << id << " ";
         type tp = client->get_long_query(id);
         if (tp == SQRT)
-            cout << "(get_sqrt) is " << (calc_t) res;
+            cout << "(get_sqrt) is " << *((calc_t*)&res);
         else if (tp == FACT)
-            cout << "(get_fact) is " << (fact_t) res;
+            cout << "(get_fact) is " << *((fact_t*)&res);
         cout << endl;
         t = read_num(sockfd);
     }
@@ -100,9 +100,9 @@ void *listen(void* args) {
             cout << "Result of query " << id << " ";
             type tp = client->get_long_query(id);
             if (tp == SQRT)
-                cout << "(get_sqrt) is " << (calc_t) res;
+                cout << "(get_sqrt) is " << *((calc_t*)&res);
             else if (tp == FACT)
-                cout << "(get_fact) is " << (fact_t) res;
+                cout << "(get_fact) is " << *((fact_t*)&res);
             cout << endl;
         }
         pthread_mutex_unlock(client->get_mutex());

@@ -8,9 +8,9 @@
 
 class Client {
     public:
+        Client() {}
+        
         Client(const std::string& host, uint16_t port): host_(host), port_(port) {}
-
-        Client(const Client& other);
 
         bool Start();
 
@@ -27,7 +27,7 @@ class Client {
         void SetHostname(const std::string& hostname);
 
         void SetPort(uint16_t port);
-
+    
     private:
         void process_incoming_messages();
 

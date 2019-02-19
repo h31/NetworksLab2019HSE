@@ -3,7 +3,7 @@ cd build
 cmake --quiet ..
 make hw01-chat-client -s
 if (( $# < 2 )); then
-    ./hw01-calc-server
+    ./hw01-chat-client
 else
-    ./hw01-calc-server $1 $2
+    ./hw01-chat-client $1 $2
 fi

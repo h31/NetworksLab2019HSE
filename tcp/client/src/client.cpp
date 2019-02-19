@@ -12,11 +12,6 @@
 #include <iostream>
 
 
-Client::Client(const Client& other) {
-    host_  = other.host_;
-    port_ = other.port_;
-}
-
 bool Client::Start() {
     sockfd_ = socket(AF_INET, SOCK_STREAM, 0);
     struct sockaddr_in serv_addr;
@@ -53,7 +48,7 @@ void Client::Connect() {
     connection_lock_.lock();
     is_running_ = 1;
     WriteRequestMessage(sockfd_, RequestMessage::CONNECT());
-    main_thread_ = std::thread(&Client::process_incoming_messages, *this);
+    main_thread_ = std::move(std::thread(&Client::process_incoming_messages, this));
     connection_lock_.unlock();
 }
 
@@ -98,7 +93,6 @@ void Client::process_incoming_messages() {
 
 Client::~Client() {
     close(sockfd_);
-    delete server_;
 }
 
 void Client::print_message(const std::string& message) {

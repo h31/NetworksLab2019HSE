@@ -1,11 +1,11 @@
 #include <iostream>
 #include <thread>
-#include "../include/roulette_server.h"
+#include "../include/market_server.h"
 
-const std::string USAGE = "Usage: ./roulette_server <port number>";
+const std::string USAGE = "Usage: ./server <port number>";
 
 const std::string CMDS = "exit -- close server\n"
-                         "ban <name> -- to disconnect a player from game";
+                         "ban <name> -- force user disconnect";
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {
@@ -16,8 +16,8 @@ int main(int argc, char* argv[]) {
 
     uint16_t port_number = static_cast<uint16_t>(std::stoi(argv[1]));
 
-    RouletteServer server;
-    std::thread server_thread(&RouletteServer::StartServer, &server, port_number);
+    MarketServer server;
+    std::thread server_thread(&MarketServer::StartServer, &server, port_number);
     server_thread.detach();
 
     std::string in;
@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) {
         if (in == "ban") {
             std::string name;
             std::cin >> name;
-            if (server.BanPlayer(name)) {
+            if (server.BanUser(name)) {
                 std::cout << "A player was successfully banned. Good job!\n";
             } else {
                 std::cout << name << " doesn't play at this moment.\n";

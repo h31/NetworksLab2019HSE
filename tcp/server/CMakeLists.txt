@@ -8,6 +8,6 @@ find_package(Boost REQUIRED COMPONENTS thread)
 
 add_executable(server
         src/main.cpp
-        src/roulette_server.cpp include/roulette_server.h
+        src/market_server.cpp include/market_server.h
         src/tcp_server.cpp include/tcp_server.h)
 target_link_libraries(server LINK_PUBLIC message ${Boost_LIBRARIES})

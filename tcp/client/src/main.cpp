@@ -48,7 +48,7 @@ void WorkWithFreelancer(MarketClient& client) {
             client.RequestOrder(order_id);
         } else if (sscanf(line.c_str(), "start %d", &order_id)) {
             client.StartOrder(order_id);
-        } else if (sscanf(line.c_str(), "start %d", &order_id)) {
+        } else if (sscanf(line.c_str(), "finish %d", &order_id)) {
             client.FinishOrder(order_id);
         } else if (line == "bye") {
             client.Quit();

@@ -50,11 +50,12 @@ void Client::start() {
         close(sockfd);
         exit(1);
     }
-
+    workingCycle();
 
 }
 
 Client::~Client() {
+    println("Bye!!!");
     shutdown(sockfd, SHUT_RDWR);
     close(sockfd);
 }
@@ -66,6 +67,7 @@ void Client::workingCycle() {
         if (request.empty() || (request == "HELP")) {
             continue;
         }
+        request = request + '\n';
         if (!sendRequest(request)) {
             break;
         }
@@ -93,7 +95,7 @@ std::string Client::getRequest() {
         std::string login = readLine();
         return "AUTH " + login;
     } else if (request == "exit") {
-        println("Bye!!!");
+        stop = true;
         return "";
     } else if (request == "help") {
         print(help);
@@ -226,5 +228,5 @@ void Client::handleResponse(std::string response) {
 }
 
 void Client::printBugList(std::string list) {
-
+    println("BUG LIST");
 }

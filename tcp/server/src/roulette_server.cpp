@@ -26,10 +26,10 @@ void RouletteServer::StartWorkingWithClient(int sock_fd) {
             players_mutex_.unlock();
         } else if (Message::NEW_CROUPIER == message.type) {
             croupier_mutex_.lock();
-            if (have_croupier_) {
+            if (croupier_socket_) {
                 ans_type = Message::CROUPIER_ALREADY_EXISTS;
             } else if (message.body == CROUPIER_PASSWORD) {
-                have_croupier_ = true;
+                croupier_socket_ = sock_fd;
                 workWithClient = std::bind(&RouletteServer::WorkWithCroupier, this, sock_fd);
                 ans_type = Message::CROUPIER_ADDED;
                 std::cout << "New croupier\n";
@@ -70,7 +70,7 @@ void RouletteServer::WorkWithCroupier(int sock_fd) {
             }
             case Message::UNDEFINED: {
                 croupier_mutex_.lock();
-                have_croupier_ = false;
+                croupier_socket_ = 0;
                 croupier_mutex_.unlock();
                 close(sock_fd);
                 std::cout << "Croupier left\n";
@@ -213,7 +213,13 @@ Message RouletteServer::ProcessBet(RouletteServer::Player& player, std::string b
 
 RouletteServer::~RouletteServer() {
     for (const auto& p: players) {
-        close(p.second->socket_fd);
+        shutdown(p.second->socket_fd, SHUT_RDWR);
+    }
+    if (croupier_socket_) {
+        shutdown(croupier_socket_, SHUT_RDWR);
+    }
+    for (auto& t: threads_) {
+        t.join();
     }
 }
 

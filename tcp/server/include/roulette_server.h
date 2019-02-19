@@ -46,7 +46,7 @@ class RouletteServer : public TcpServer {
 
     const char* CROUPIER_PASSWORD = "ANDREY_THE_BEST";
     const int AMOUNT_OF_NUMBERS = 37;
-    bool have_croupier_ = false;
+    int croupier_socket_ = 0;
     bool is_rolling_ = false;
 
     std::map<std::string, Player*> players;

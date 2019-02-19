@@ -24,9 +24,11 @@ bool Message::Write(int sockfd) {
     ssize_t written = ::write(sockfd, data, message_len);
     if (written < 0) {
         std::cerr << strerror(errno) << std::endl;
+        delete[] data;
         return false;
     }
 
+    delete[] data;
     return true;
 }
 
@@ -62,8 +64,10 @@ bool Message::GetBody(std::string *body, size_t length, int sockfd) {
     auto buf = new char[length];
     if (Get(buf, length, sockfd)) {
         *body = std::string(buf);
+        delete[] buf;
         return true;
     }
+    delete[] buf;
     return length != 0;
 }
 

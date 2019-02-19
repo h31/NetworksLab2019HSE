@@ -32,7 +32,6 @@ void TcpServer::StartServer(uint16_t port_number) {
             exit(1);
         }
 
-        std::thread thread(&TcpServer::StartWorkingWithClient, this, new_socket_fd);
-        thread.detach();
+        threads_.emplace_back(std::thread(&TcpServer::StartWorkingWithClient, this, new_socket_fd));
     }
 }

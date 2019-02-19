@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
             }
         }
     }
-    close(port_number);
+    shutdown(port_number, SHUT_RDWR);
 
     return 0;
 }

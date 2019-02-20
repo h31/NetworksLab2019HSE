@@ -139,7 +139,7 @@ void MarketClient::StartOrder(int order_id) {
         case Message::WORK_STARTED_SUCCESSFUL:
             std::cout << "Order" + response.body + " started successfully.\n";
             return;
-        case Message::WORK_ACCEPTED_NOT_SUCCESSFUL:
+        case Message::WORK_STARTED_NOT_SUCCESSFUL:
             std::cout << response.body << "\n";
             return;
         default:

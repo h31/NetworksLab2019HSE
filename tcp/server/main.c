@@ -58,63 +58,161 @@ gboolean get_val(gpointer key, gpointer value, gpointer user_data) {
     return !strcmp(pkey, pdata);
 }
 
-int reg_or_login(Client_arg_t *cl_arg){
+//0,1 - зарегались успешно
+//-1 - ошибка
+int reg_or_login(Client_arg_t *cl_arg) {
     ssize_t n;
     char buffer[256];
     bzero(buffer, 256);
-    n = read(cl_arg->newsockfd, buffer, 255); // recv on Windows
-
-    if (n < 0) {
-        srverror("ERROR reading from socket");
-        return -1;
-    } else if (n == 0) {
-        //todo
-    }
-
-    printf("tid %llu: %s: %s\n", (unsigned long long) pthread_self(), "Frst msg", buffer);
-    if (!strncmp(buffer, "REGT ", 5)) {
-        int i = 5;
-        char login[256];
-        for (; i < strlen(buffer) && buffer[i] != '\n'; ++i) {
-            login[i - 5] = buffer[i];
+    while (1) {
+        n = read(cl_arg->newsockfd, buffer, 255); // recv on Windows
+        if (n < 0) {
+            srverror("ERROR reading from socket");
+            return -1;
+        } else if (n == 0) {
+            printf("Client's socket closed\n");
+            return -1;
         }
-        pthread_mutex_lock(&cl_arg->server->clients_array_mutex);
-        gpointer p = g_hash_table_find(cl_arg->server->logins, (GHRFunc) get_val, login);
-        pthread_mutex_unlock(&cl_arg->server->clients_array_mutex);
-        if (p == NULL) {
-            printf("REGT: free login\n");
+        printf("tid %llu: %s: %s\n", (unsigned long long) pthread_self(), "Client's registration msg:", buffer);
+        if (!strncmp(buffer, "REGT ", 5)) {
+            int i = 5;
+            char login[256];
+            for (; i < strlen(buffer) && buffer[i] != '\n'; ++i) {
+                login[i - 5] = buffer[i];
+            }
             pthread_mutex_lock(&cl_arg->server->clients_array_mutex);
-            printf("Inserting data: %s", login);
-            g_hash_table_insert(cl_arg->server->logins, g_strdup(login), "T");
+            gpointer p = g_hash_table_find(cl_arg->server->logins, (GHRFunc) get_val, login);
             pthread_mutex_unlock(&cl_arg->server->clients_array_mutex);
-            bzero(buffer, 256);
-            strcpy(buffer, "REGT OK \n");
-            printf("Send: %s\n", buffer);
-            n = write(cl_arg->newsockfd, buffer, strlen(buffer));
-            if (n < 0) {
-                srverror("ERROR writing to socket");
+            if (p == NULL) {
+                printf("REGT: free login\n");
+                pthread_mutex_lock(&cl_arg->server->clients_array_mutex);
+                printf("Inserting data: %s", login);
+                g_hash_table_insert(cl_arg->server->logins, g_strdup(login), "T");
+                pthread_mutex_unlock(&cl_arg->server->clients_array_mutex);
+                bzero(buffer, 256);
+                strcpy(buffer, "REGT OK \n");
+                printf("Send: %s\n", buffer);
+                n = write(cl_arg->newsockfd, buffer, strlen(buffer));
+                if (n < 0) {
+                    srverror("ERROR writing to socket");
+                    return -1;
+                } else if (n == 0) {
+                    printf("Client's socket closed\n");
+                    return -1;
+                }
+                return 1;
+            } else {
+                printf("REGT: login already in use\n");
+                bzero(buffer, 256);
+                strcpy(buffer, "REGT UE \n");
+                printf("Send: %s\n", buffer);
+                n = write(cl_arg->newsockfd, buffer, strlen(buffer));
+                if (n < 0) {
+                    srverror("ERROR writing to socket");
+                    return -1;
+                } else if (n == 0) {
+                    printf("Client's socket closed\n");
+                    return -1;
+                }
+            }
+        } else if (!strncmp(buffer, "REGD ", 5)) {
+            int i = 5;
+            char login[256];
+            for (; i < strlen(buffer) && buffer[i] != '\n'; ++i) {
+                login[i - 5] = buffer[i];
+            }
+            pthread_mutex_lock(&cl_arg->server->clients_array_mutex);
+            gpointer p = g_hash_table_find(cl_arg->server->logins, (GHRFunc) get_val, login);
+            pthread_mutex_unlock(&cl_arg->server->clients_array_mutex);
+            if (p == NULL) {
+                printf("REGD: free login\n");
+                pthread_mutex_lock(&cl_arg->server->clients_array_mutex);
+                printf("Inserting data: %s", login);
+                g_hash_table_insert(cl_arg->server->logins, g_strdup(login), "D");
+                pthread_mutex_unlock(&cl_arg->server->clients_array_mutex);
+                bzero(buffer, 256);
+                strcpy(buffer, "REGD OK \n");
+                printf("Send: %s\n", buffer);
+                n = write(cl_arg->newsockfd, buffer, strlen(buffer));
+                if (n < 0) {
+                    srverror("ERROR writing to socket");
+                    return -1;
+                } else if (n == 0) {
+                    printf("Client's socket closed\n");
+                    return -1;
+                }
                 return 0;
+            } else {
+                printf("REGD: login already in use\n");
+                bzero(buffer, 256);
+                strcpy(buffer, "REGD UE \n");
+                printf("Send: %s\n", buffer);
+                n = write(cl_arg->newsockfd, buffer, strlen(buffer));
+                if (n < 0) {
+                    srverror("ERROR writing to socket");
+                    return -1;
+                } else if (n == 0) {
+                    printf("Client's socket closed\n");
+                    return -1;
+                }
+            }
+        } else if (!strncmp(buffer, "AUTH ", 5)) {
+            int i = 5;
+            char login[256];
+            for (; i < strlen(buffer) && buffer[i] != '\n'; ++i) {
+                login[i - 5] = buffer[i];
+            }
+            pthread_mutex_lock(&cl_arg->server->clients_array_mutex);
+            gpointer p = g_hash_table_find(cl_arg->server->logins, (GHRFunc) get_val, login);
+            pthread_mutex_unlock(&cl_arg->server->clients_array_mutex);
+            if (p == NULL) {
+                printf("AUTH: no such login\n");
+                bzero(buffer, 256);
+                strcpy(buffer, "AUTH UN \n");
+                printf("Send: %s\n", buffer);
+                n = write(cl_arg->newsockfd, buffer, strlen(buffer));
+                if (n < 0) {
+                    srverror("ERROR writing to socket");
+                    return -1;
+                } else if (n == 0) {
+                    printf("Client's socket closed\n");
+                    return -1;
+                }
+            } else {
+                printf("AUTH: hashtable item:");
+                printf(p);
+                printf("\n");
+                printf("AUTH: found login\n");
+                bzero(buffer, 256);
+                int kind;
+                if (!strcmp((char *) p, "T")) {
+                    strcpy(buffer, "AUTH OK T\n");
+                    kind = 1;
+                } else {
+                    strcpy(buffer, "AUTH OK D\n");
+                    kind = 0;
+                }
+                printf("Send: %s\n", buffer);
+                n = write(cl_arg->newsockfd, buffer, strlen(buffer));
+                if (n < 0) {
+                    srverror("ERROR writing to socket");
+                    return -1;
+                } else if (n == 0) {
+                    printf("Client's socket closed\n");
+                    return -1;
+                }
+                return kind;
             }
         } else {
-            printf("REGT: login already in use\n");
+            srverror("Bad registration\n");
+            close(cl_arg->newsockfd);
+            //todo
+            delete_client(cl_arg);
             bzero(buffer, 256);
-            strcpy(buffer, "REGT UE \n");
-            printf("Send: %s\n", buffer);
+            strcpy(buffer, "BR \n");
             n = write(cl_arg->newsockfd, buffer, strlen(buffer));
-            if (n < 0) {
-                srverror("ERROR writing to socket");
-                return 0;
-            }
+            return -1;
         }
-    } else if (!strncmp(buffer, "REGD ", 5)) {
-
-    } else {
-        srverror("Bad registration\n");
-        close(cl_arg->newsockfd);
-        delete_client(cl_arg);
-//        bzero(buffer, 256);
-//        strcpy(buffer, "BR \n");
-//        n = write(cl_arg->newsockfd, "", );
     }
 }
 
@@ -128,72 +226,10 @@ void *client_worker(void *argp) {
         return 0;
     }
 
-    /* If connection is established then start communicating */
-    bzero(buffer, 256);
-    n = read(cl_arg->newsockfd, buffer, 255); // recv on Windows
+    int kind = reg_or_login(cl_arg);
 
-    if (n < 0) {
-        srverror("ERROR reading from socket");
-        return 0;
-    } else if (n == 0) {
-        //todo
-    }
+    if (kind == -1) return 0;
 
-    printf("tid %llu: %s: %s\n", (unsigned long long) pthread_self(), "Frst msg", buffer);
-    if (!strncmp(buffer, "REGT ", 5)) {
-        int i = 5;
-        char login[256];
-        for (; i < strlen(buffer) && buffer[i] != '\n'; ++i) {
-            login[i - 5] = buffer[i];
-        }
-        pthread_mutex_lock(&cl_arg->server->clients_array_mutex);
-        gpointer p = g_hash_table_find(cl_arg->server->logins, (GHRFunc) get_val, login);
-        pthread_mutex_unlock(&cl_arg->server->clients_array_mutex);
-        int tester = 0;
-        if (p == NULL) {
-            printf("REGT: free login\n");
-            pthread_mutex_lock(&cl_arg->server->clients_array_mutex);
-            printf("Inserting data: %s", login);
-            g_hash_table_insert(cl_arg->server->logins, g_strdup(login), "T");
-            pthread_mutex_unlock(&cl_arg->server->clients_array_mutex);
-            bzero(buffer, 256);
-            strcpy(buffer, "REGT OK \n");
-            printf("Send: %s\n", buffer);
-            n = write(cl_arg->newsockfd, buffer, strlen(buffer));
-            if (n < 0) {
-                srverror("ERROR writing to socket");
-                return 0;
-            }
-            tester = 1;
-        } else {
-            printf("REGT: login already in use\n");
-            bzero(buffer, 256);
-            strcpy(buffer, "REGT UE \n");
-            printf("Send: %s\n", buffer);
-            n = write(cl_arg->newsockfd, buffer, strlen(buffer));
-            if (n < 0) {
-                srverror("ERROR writing to socket");
-                return 0;
-            }
-        }
-    } else if (!strncmp(buffer, "REGD ", 5)) {
-
-    } else {
-        srverror("Bad registration\n");
-        close(cl_arg->newsockfd);
-        delete_client(cl_arg);
-//        bzero(buffer, 256);
-//        strcpy(buffer, "BR \n");
-//        n = write(cl_arg->newsockfd, "", );
-    }
-
-    /* Write a response to the client */
-    n = write(cl_arg->newsockfd, "I got your message", 18); // send on Windows
-
-    if (n < 0) {
-        srverror("ERROR writing to socket");
-        return 0;
-    }
     return 0;
 }
 

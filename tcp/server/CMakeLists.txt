@@ -4,7 +4,7 @@ project(server)
 set(CMAKE_CXX_STANDARD 14)
 
 set(SOURCE_FILES
-        src/main.cpp include/response.hpp include/request.hpp src/server.cpp include/server.h include/util.hpp)
+        src/main.cpp include/response.hpp include/request.hpp src/server.cpp include/server.h include/util.hpp src/pools.cpp include/pools.h)
 
 include_directories(include)
 

@@ -3,11 +3,11 @@
 
 #include "server.h"
 
-server* s_pointer;
+server* server_pointer;
 void signal_handler( int signum ) {
     std::cout << "Interrupt signal (" << signum << ") received.\n";
 
-    delete s_pointer;
+    delete server_pointer;
     exit(signum);
 }
 
@@ -20,8 +20,8 @@ int main(int argc, char **argv) {
         port_number = static_cast<uint16_t>(atoi(argv[1])); // NOLINT(cert-err34-c)
     }
 
-    s_pointer = new server(port_number);
-    s_pointer->start();
+    server_pointer = new server(port_number);
+    server_pointer->wait_for_clients();
 
     return 0;
 }

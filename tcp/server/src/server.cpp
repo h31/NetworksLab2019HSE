@@ -48,18 +48,13 @@ server::~server() {
     this->isTerminated = true;
     close(socket_descriptor);
 
-    for (auto slow_operation : this->slow_ops_pool) {
-        slow_operation->join();
-    }
-
-    for (auto socket_thread : this->socket_pool) {
-        socket_thread->join();
-    }
+    this->slow_ops_pool.clear();
+    this->client_socket_pool.clear();
 
     log("Server: destruction success.");
 }
 
-void server::start() {
+void server::wait_for_clients() {
     if (!this->isInitialized) {
         return;
     }
@@ -74,26 +69,16 @@ void server::start() {
         }
         log("Server: new socket connected. " + std::to_string(new_socket_descriptor));
         std::thread *thread = new std::thread(&server::client_handler, this, new_socket_descriptor);
-        socket_pool_lock.lock();
-        socket_pool.push_back(thread);
-        socket_pool_lock.unlock();
+        client_socket_pool.insert(new_socket_descriptor, thread);
     }
 }
 
 void server::client_handler(int socket_descriptor) {
     while (!this->isTerminated) {
         struct dctp_request_header request{};
-        ssize_t c = read(socket_descriptor, &request, sizeof(request));
-        if (c < 0) {
-            log_error("failed to read request.");
-            continue;
-        }
-        if (c != sizeof(request)) {
-            log_error("socket has been closed unexpectedly.");
+        if (socket_read_request(socket_descriptor, request) < 0) {
             break;
         }
-
-        log("Server: socket " + std::to_string(socket_descriptor) + " sent request: " + request_to_string(request));
 
         struct dctp_response_header response{};
         int64_t result;
@@ -122,38 +107,23 @@ void server::client_handler(int socket_descriptor) {
             case FACT:
                 response = {WAIT_FOR_RESULT, SLOW, request.id, 0};
                 thread = new std::thread(&server::process_fact, this, socket_descriptor, request);
-                slow_pool_lock.lock();
-                slow_ops_pool.push_back(thread);
-                slow_pool_lock.unlock();
+                slow_ops_pool.insert(socket_descriptor, request.id, thread);
                 break;
             case SQRT:
                 response = {WAIT_FOR_RESULT, SLOW, request.id, 0};
                 thread = new std::thread(&server::process_sqrt, this, socket_descriptor, request);
-                slow_pool_lock.lock();
-                slow_ops_pool.push_back(thread);
-                slow_pool_lock.unlock();
+                slow_ops_pool.insert(socket_descriptor, request.id, thread);
                 break;
             default:
                 response = {UNKNOWN_OPERATION, FAST, request.id, 0};
                 break;
         }
-
-        c = write(socket_descriptor, &response, sizeof(response));
-
-        log("Server: sent to socket "
-        + std::to_string(socket_descriptor)
-        + " response (size = " + std::to_string(c) + "): "
-        + response_to_string(response));
-
-        if (c < 0) {
-            log_error("can't write to socket");
-        }
-        if (c != sizeof(response)) {
-            log_error("socket has been closed unexpectedly.");
+        if (socket_write_response(socket_descriptor, response) < 0) {
             break;
         }
     }
 
+    client_socket_pool.remove(socket_descriptor);
     close(socket_descriptor);
     log("Server: closed socket " + std::to_string(socket_descriptor));
 }
@@ -168,19 +138,8 @@ void server::process_sqrt(int socket_descriptor, struct dctp_request_header requ
         response = {OK, SLOW, request.id, result};
     }
 
-    ssize_t c = write(socket_descriptor, &response, sizeof(response));
-
-    log("Server: sent to socket "
-        + std::to_string(socket_descriptor)
-        + " response (size = " + std::to_string(c) + "): "
-        + response_to_string(response));
-
-    if (c < 0) {
-        log_error("can't write to socket");
-    }
-    if (c != sizeof(response)) {
-        log_error("socket has been closed unexpectedly.");
-    }
+    socket_write_response(socket_descriptor, response);
+    slow_ops_pool.remove(socket_descriptor, request.id);
 }
 
 void server::process_fact(int socket_descriptor, struct dctp_request_header request) {
@@ -188,26 +147,17 @@ void server::process_fact(int socket_descriptor, struct dctp_request_header requ
     struct dctp_response_header response{};
     if (request.first_operand < 0) {
         response = {FACT_OF_NEGATIVE, SLOW, request.id, 0};
+    } else if (request.first_operand > 20) {
+        response = {OVERFLOW, SLOW, request.id, 0};
     } else {
         int64_t result = 1;
-        for (int i = 1; i <= fmin(request.first_operand, 20); i++) {
+        for (int i = 1; i <= request.first_operand; i++) {
             result *= i;
         }
         response = {OK, SLOW, request.id, result};
     }
 
-    ssize_t c = write(socket_descriptor, &response, sizeof(response));
-
-    log("Server: sent to socket "
-        + std::to_string(socket_descriptor)
-        + " response (size = " + std::to_string(c) + "): "
-        + response_to_string(response));
-
-    if (c < 0) {
-        log_error("can't write to socket");
-    }
-    if (c != sizeof(response)) {
-        log_error("socket has been closed unexpectedly.");
-    }
+    socket_write_response(socket_descriptor, response);
+    slow_ops_pool.remove(socket_descriptor, request.id);
 }
 

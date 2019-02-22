@@ -4,7 +4,7 @@
 #include <netinet/in.h>
 #include <thread>
 #include <vector>
-#include <mutex>
+#include "pools.h"
 
 class server {
 public:
@@ -12,7 +12,7 @@ public:
 
     ~server();
 
-    void start();
+    void wait_for_clients();
 
     void client_handler(int socket_descriptor);
 
@@ -27,9 +27,7 @@ private:
     bool isInitialized = false;
     bool isTerminated = false;
 
-    std::mutex socket_pool_lock;
-    std::vector<std::thread*> socket_pool{};
-    std::mutex slow_pool_lock;
-    std::vector<std::thread*> slow_ops_pool{};
+    socket_pool client_socket_pool;
+    socket_int_pool slow_ops_pool;
 };
 

@@ -18,7 +18,12 @@ typedef struct Server {
     int sockfd;
     GHashTable *clients;
     GHashTable *logins;
-    pthread_mutex_t clients_array_mutex;
+    GHashTable *devs;
+    GHashTable *bugs;
+    GHashTable *closed_bugs;
+    pthread_mutex_t client_mutex;
+    pthread_mutex_t logins_mutex;
+    pthread_mutex_t devs_mutex;
 } Server_t;
 
 typedef struct Client_arg {
@@ -31,24 +36,59 @@ typedef struct Client {
     pthread_t t;
 } Client_t;
 
+//typedef struct Project {
+//    char *id;
+//    GHashTable
+//} Project_t;
+
+typedef struct Dev {
+    char *id;
+    GHashTable *projects;
+} Dev_t;
+
+typedef struct Bug {
+    char *id;
+    int closed;
+    int fixed;
+    char *proj_id;
+    Dev_t *dev;
+    char *text;
+} Bug_t;
+
+void dev_session(Client_arg_t *pArg);
+
+void qa_session(Client_arg_t *cl_arg);
+
+void process_list_closed_bugs(Client_arg_t *pArg);
+
+void process_list_active_bugs(Client_arg_t *pArg);
+
+void process_report_new_bug(Client_arg_t *cl_arg, const char *buffer);
+
+void process_review_bug_fix(Client_arg_t *pArg);
+
+void printf_tid(char *msg, char *buffer) {
+    printf("tid %llu: %s: %s\n", (unsigned long long) pthread_self(), msg, buffer);
+}
+
 void clients_iterator(gpointer key, gpointer value, gpointer user_data) {
     //мб нужно kill
     int a = pthread_kill(*(pthread_t *) key, NULL);
 }
 
 void stop_server(Server_t *server) {
-    pthread_mutex_lock(&server->clients_array_mutex);
+    pthread_mutex_lock(&server->client_mutex);
     g_hash_table_foreach(server->clients, (GHFunc) clients_iterator, NULL);
     g_hash_table_destroy(server->clients);
-    pthread_mutex_unlock(&server->clients_array_mutex);
+    pthread_mutex_unlock(&server->client_mutex);
 }
 
 void delete_client(Server_t *server) {
     //todo
-    pthread_mutex_lock(&server->clients_array_mutex);
+    pthread_mutex_lock(&server->client_mutex);
 //    g_set_
 //    server->clients;
-    pthread_mutex_unlock(&server->clients_array_mutex);
+    pthread_mutex_unlock(&server->client_mutex);
 }
 
 gboolean get_val(gpointer key, gpointer value, gpointer user_data) {
@@ -67,28 +107,28 @@ int reg_or_login(Client_arg_t *cl_arg) {
     while (1) {
         n = read(cl_arg->newsockfd, buffer, 255); // recv on Windows
         if (n < 0) {
-            srverror("ERROR reading from socket");
+            srverror("reg_or_login: ERROR reading from socket");
             return -1;
         } else if (n == 0) {
             printf("Client's socket closed\n");
             return -1;
         }
-        printf("tid %llu: %s: %s\n", (unsigned long long) pthread_self(), "Client's registration msg:", buffer);
+        printf_tid("Client's registration msg:", buffer);
         if (!strncmp(buffer, "REGT ", 5)) {
             int i = 5;
             char login[256];
             for (; i < strlen(buffer) && buffer[i] != '\n'; ++i) {
                 login[i - 5] = buffer[i];
             }
-            pthread_mutex_lock(&cl_arg->server->clients_array_mutex);
+            pthread_mutex_lock(&cl_arg->server->logins_mutex);
             gpointer p = g_hash_table_find(cl_arg->server->logins, (GHRFunc) get_val, login);
-            pthread_mutex_unlock(&cl_arg->server->clients_array_mutex);
+            pthread_mutex_unlock(&cl_arg->server->logins_mutex);
             if (p == NULL) {
                 printf("REGT: free login\n");
-                pthread_mutex_lock(&cl_arg->server->clients_array_mutex);
+                pthread_mutex_lock(&cl_arg->server->logins_mutex);
                 printf("Inserting data: %s", login);
                 g_hash_table_insert(cl_arg->server->logins, g_strdup(login), "T");
-                pthread_mutex_unlock(&cl_arg->server->clients_array_mutex);
+                pthread_mutex_unlock(&cl_arg->server->logins_mutex);
                 bzero(buffer, 256);
                 strcpy(buffer, "REGT OK \n");
                 printf("Send: %s\n", buffer);
@@ -121,15 +161,24 @@ int reg_or_login(Client_arg_t *cl_arg) {
             for (; i < strlen(buffer) && buffer[i] != '\n'; ++i) {
                 login[i - 5] = buffer[i];
             }
-            pthread_mutex_lock(&cl_arg->server->clients_array_mutex);
+            pthread_mutex_lock(&cl_arg->server->logins_mutex);
             gpointer p = g_hash_table_find(cl_arg->server->logins, (GHRFunc) get_val, login);
-            pthread_mutex_unlock(&cl_arg->server->clients_array_mutex);
+            pthread_mutex_unlock(&cl_arg->server->logins_mutex);
             if (p == NULL) {
                 printf("REGD: free login\n");
-                pthread_mutex_lock(&cl_arg->server->clients_array_mutex);
+                pthread_mutex_lock(&cl_arg->server->logins_mutex);
                 printf("Inserting data: %s", login);
                 g_hash_table_insert(cl_arg->server->logins, g_strdup(login), "D");
-                pthread_mutex_unlock(&cl_arg->server->clients_array_mutex);
+                pthread_mutex_unlock(&cl_arg->server->logins_mutex);
+                //create new dev
+                pthread_mutex_lock(&cl_arg->server->devs_mutex);
+                //todo delete для Dev
+                Dev_t *dev = malloc(sizeof(*dev));
+                dev->id = login;
+                dev->projects = g_hash_table_new(g_str_hash, g_str_equal);
+                //test proj
+                g_hash_table_insert(dev->projects, "1", "");
+                pthread_mutex_unlock(&cl_arg->server->devs_mutex);
                 bzero(buffer, 256);
                 strcpy(buffer, "REGD OK \n");
                 printf("Send: %s\n", buffer);
@@ -162,9 +211,9 @@ int reg_or_login(Client_arg_t *cl_arg) {
             for (; i < strlen(buffer) && buffer[i] != '\n'; ++i) {
                 login[i - 5] = buffer[i];
             }
-            pthread_mutex_lock(&cl_arg->server->clients_array_mutex);
+            pthread_mutex_lock(&cl_arg->server->logins_mutex);
             gpointer p = g_hash_table_find(cl_arg->server->logins, (GHRFunc) get_val, login);
-            pthread_mutex_unlock(&cl_arg->server->clients_array_mutex);
+            pthread_mutex_unlock(&cl_arg->server->logins_mutex);
             if (p == NULL) {
                 printf("AUTH: no such login\n");
                 bzero(buffer, 256);
@@ -230,15 +279,163 @@ void *client_worker(void *argp) {
 
     if (kind == -1) return 0;
 
+    if (kind == 0) {
+        dev_session(cl_arg);
+    } else if (kind == 1) {
+        qa_session(cl_arg);
+    } else {
+        srverror("reg_or_login returned something different from 0/-1/1");
+    }
+
     return 0;
+}
+
+void qa_session(Client_arg_t *cl_arg) {
+    ssize_t n;
+    char buffer[256];
+    bzero(buffer, 256);
+    while (1) {
+        n = read(cl_arg->newsockfd, buffer, 255);
+        if (n < 0) {
+            srverror("qa_session: ERROR reading from socket");
+            return;
+        } else if (n == 0) {
+            printf("qa_session: Client's socket closed\n");
+            return;
+        }
+        printf_tid("qa's msg:", buffer);
+        if (!strncmp(buffer, "BCLS ", 5)) {
+            int i = 5;
+            char login[256];
+            for (; i < strlen(buffer) && buffer[i] != '\n'; ++i) {
+                login[i - 5] = buffer[i];
+            }
+            process_list_closed_bugs(cl_arg);
+        } else if (!strncmp(buffer, "BACT ", 5)) {
+            process_list_active_bugs(cl_arg);
+        } else if (!strncmp(buffer, "BREP ", 5)) {
+            process_report_new_bug(cl_arg, buffer);
+        } else if (!strncmp(buffer, "BREV ", 5)) {
+            process_review_bug_fix(cl_arg);
+        } else {
+            srverror("dev_session: Bad request\n");
+            close(cl_arg->newsockfd);
+            //todo нормально освободить ресурсы
+            delete_client(cl_arg);
+            bzero(buffer, 256);
+            strcpy(buffer, "BR \n");
+            n = write(cl_arg->newsockfd, buffer, strlen(buffer));
+            return;
+        }
+    }
+}
+
+void process_review_bug_fix(Client_arg_t *pArg) {
+
+}
+
+void write_br(Client_arg_t *cl_arg) {
+    ssize_t n;
+    char answer[10];
+    strcat(answer, "BR \n");
+    n = write(cl_arg->newsockfd, answer, strlen(answer));
+    if (n < 0) {
+        srverror("ERROR writing to socket");
+        return;
+    } else if (n == 0) {
+        printf("Client's socket closed\n");
+        return;
+    }
+}
+
+void process_report_new_bug(Client_arg_t *cl_arg, const char *buffer) {
+    ssize_t n;
+//    bzero(buffer, 256);
+    /*n = read(cl_arg->newsockfd, buffer, 255);
+    if (n < 0) {
+        srverror("process_report_new_bug: ERROR reading from socket");
+        return;
+    } else if (n == 0) {
+        printf("process_report_new_bug: Client's socket closed\n");
+        return;
+    }*/
+    int i = 5;
+    char dev_id[256] = "\0";
+    char proj_id[256] = "\0";
+    char bug_id[256] = "\0";
+    char bug_text[256] = "\0";
+    while (buffer[i] != '|' && i < strlen(buffer)) {
+        char curChar[2] = "\0";
+        curChar[0] = buffer[i];
+        strcat(dev_id, curChar);
+        i++;
+    }
+    if (buffer[i] != '|' || i >= strlen(buffer) - 2) {
+        write_br(cl_arg);
+        return;
+    }
+    i++;
+    while (buffer[i] != '|' && i < strlen(buffer)) {
+        char curChar[2] = "\0";
+        curChar[0] = buffer[i];
+        strcat(proj_id, curChar);
+        i++;
+    }
+    if (buffer[i] != '|' || i >= strlen(buffer) - 2) {
+        write_br(cl_arg);
+        return;
+    }
+    i++;
+    while (buffer[i] != '|' && i < strlen(buffer)) {
+        char curChar[2] = "\0";
+        curChar[0] = buffer[i];
+        strcat(bug_id, curChar);
+        i++;
+    }
+    if (buffer[i] != '|' || i >= strlen(buffer) - 2) {
+        write_br(cl_arg);
+        return;
+    }
+    i++;
+    while (buffer[i] != '|' && i < strlen(buffer)) {
+        char curChar[2] = "\0";
+        curChar[0] = buffer[i];
+        strcat(bug_text, curChar);
+        i++;
+    }
+    if (i < strlen(buffer) && buffer[i] != '|') {
+        write_br(cl_arg);
+        return;
+    }
+    printf("Dev_id: %s\n", dev_id);
+    printf("Proj_id: %s\n", proj_id);
+    printf("Bug_id: %s\n", bug_id);
+    printf("Bug_text: %s\n", bug_text);
+}
+
+void process_list_active_bugs(Client_arg_t *pArg) {
+
+}
+
+void process_list_closed_bugs(Client_arg_t *pArg) {
+
+}
+
+void dev_session(Client_arg_t *pArg) {
+    ssize_t n;
+    char buffer[256];
+    bzero(buffer, 256);
+    while (1) {
+
+    }
 }
 
 void create_client(Server_t *server, Client_arg_t *client_arg) {
     pthread_t pthread;
     pthread_create(&pthread, NULL, client_worker, client_arg);
-    pthread_mutex_lock(&server->clients_array_mutex);
+    pthread_mutex_lock(&server->client_mutex);
     g_hash_table_add(server->clients, &pthread);
-    pthread_mutex_unlock(&server->clients_array_mutex);
+    pthread_mutex_unlock(&server->client_mutex);
 }
 
 void *server_listener(void *argp) {
@@ -281,7 +478,10 @@ int main(int argc, char *argv[]) {
     server.sockfd = socket(AF_INET, SOCK_STREAM, 0);
     server.clients = g_hash_table_new(g_int64_hash, g_int64_equal);
     server.logins = g_hash_table_new(g_str_hash, g_str_equal);
-    pthread_mutex_init(&server.clients_array_mutex, NULL);
+    server.devs = g_hash_table_new(g_str_hash, g_str_equal);
+    pthread_mutex_init(&server.client_mutex, NULL);
+    pthread_mutex_init(&server.logins_mutex, NULL);
+    pthread_mutex_init(&server.devs_mutex, NULL);
 
     if (server.sockfd < 0) {
         srverror("ERROR opening socket");

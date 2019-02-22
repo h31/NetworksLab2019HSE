@@ -24,6 +24,7 @@ typedef struct Server {
     pthread_mutex_t client_mutex;
     pthread_mutex_t logins_mutex;
     pthread_mutex_t devs_mutex;
+    pthread_mutex_t bugs_mutex;
 } Server_t;
 
 typedef struct Client_arg {
@@ -51,7 +52,7 @@ typedef struct Bug {
     int closed;
     int fixed;
     char *proj_id;
-    Dev_t *dev;
+    char *dev;
     char *text;
 } Bug_t;
 
@@ -65,10 +66,24 @@ void process_list_active_bugs(Client_arg_t *pArg);
 
 void process_report_new_bug(Client_arg_t *cl_arg, const char *buffer);
 
-void process_review_bug_fix(Client_arg_t *pArg);
+void process_review_bug_fix(Client_arg_t *cl_arg, char *buffer);
 
 void printf_tid(char *msg, char *buffer) {
     printf("tid %llu: %s: %s\n", (unsigned long long) pthread_self(), msg, buffer);
+}
+
+void write_br(Client_arg_t *cl_arg) {
+    ssize_t n;
+    char answer[10];
+    strcat(answer, "BR \n");
+    n = write(cl_arg->newsockfd, answer, strlen(answer));
+    if (n < 0) {
+        srverror("ERROR writing to socket");
+        return;
+    } else if (n == 0) {
+        printf("Client's socket closed\n");
+        return;
+    }
 }
 
 void clients_iterator(gpointer key, gpointer value, gpointer user_data) {
@@ -316,7 +331,7 @@ void qa_session(Client_arg_t *cl_arg) {
         } else if (!strncmp(buffer, "BREP ", 5)) {
             process_report_new_bug(cl_arg, buffer);
         } else if (!strncmp(buffer, "BREV ", 5)) {
-            process_review_bug_fix(cl_arg);
+            process_review_bug_fix(cl_arg, buffer);
         } else {
             srverror("dev_session: Bad request\n");
             close(cl_arg->newsockfd);
@@ -330,35 +345,109 @@ void qa_session(Client_arg_t *cl_arg) {
     }
 }
 
-void process_review_bug_fix(Client_arg_t *pArg) {
-
-}
-
-void write_br(Client_arg_t *cl_arg) {
+void process_review_bug_fix(Client_arg_t *cl_arg, char *buffer) {
     ssize_t n;
-    char answer[10];
-    strcat(answer, "BR \n");
-    n = write(cl_arg->newsockfd, answer, strlen(answer));
-    if (n < 0) {
-        srverror("ERROR writing to socket");
+    int i = 5;
+    char bug_id[256] = "\0";
+    char decision[256] = "\0";
+    while (buffer[i] != '|' && i < strlen(buffer)) {
+        char curChar[2] = "\0";
+        curChar[0] = buffer[i];
+        strcat(bug_id, curChar);
+        i++;
+    }
+    if (buffer[i] != '|' || i >= strlen(buffer) - 2) {
+        write_br(cl_arg);
         return;
-    } else if (n == 0) {
-        printf("Client's socket closed\n");
+    }
+    i++;
+    while (buffer[i] != '|' && i < strlen(buffer)) {
+        char curChar[2] = "\0";
+        curChar[0] = buffer[i];
+        strcat(decision, curChar);
+        i++;
+    }
+    if (i < strlen(buffer) && buffer[i] != '|') {
+        write_br(cl_arg);
         return;
+    }
+    pthread_mutex_lock(&cl_arg->server->bugs_mutex);
+    gpointer p = g_hash_table_find(cl_arg->server->bugs, (GHRFunc) get_val, bug_id);
+    pthread_mutex_unlock(&cl_arg->server->bugs_mutex);
+    if (p == NULL) {
+        char *answer = "BREV BN\n";
+        n = write(cl_arg->newsockfd, answer, strlen(answer));
+        if (n < 0) {
+            srverror("ERROR writing to socket");
+            return;
+        } else if (n == 0) {
+            printf("Client's socket closed\n");
+            return;
+        }
+        return;
+    } else {
+        pthread_mutex_lock(&cl_arg->server->bugs_mutex);
+        Bug_t *b = (Bug_t *) p;
+        if (b->closed) {
+            char *answer = "BREV BC\n";
+            n = write(cl_arg->newsockfd, answer, strlen(answer));
+            if (n < 0) {
+                srverror("ERROR writing to socket");
+                pthread_mutex_unlock(&cl_arg->server->bugs_mutex);
+                return;
+            } else if (n == 0) {
+                printf("Client's socket closed\n");
+                pthread_mutex_unlock(&cl_arg->server->bugs_mutex);
+                return;
+            }
+        }
+        if (!b->fixed) {
+            char *answer = "BREV BI\n";
+            n = write(cl_arg->newsockfd, answer, strlen(answer));
+            if (n < 0) {
+                srverror("ERROR writing to socket");
+                pthread_mutex_unlock(&cl_arg->server->bugs_mutex);
+                return;
+            } else if (n == 0) {
+                printf("Client's socket closed\n");
+                pthread_mutex_unlock(&cl_arg->server->bugs_mutex);
+                return;
+            }
+        }
+        if (!strcmp(decision, "accept")) {
+            b->closed = 1;
+        } else if (!strcmp(decision, "reject")) {
+            b->closed = 0;
+        } else {
+            char *answer = "BREV PE\n";
+            n = write(cl_arg->newsockfd, answer, strlen(answer));
+            if (n < 0) {
+                srverror("ERROR writing to socket");
+                pthread_mutex_unlock(&cl_arg->server->bugs_mutex);
+                return;
+            } else if (n == 0) {
+                printf("Client's socket closed\n");
+                pthread_mutex_unlock(&cl_arg->server->bugs_mutex);
+                return;
+            }
+        }
+        char *answer = "BREV OK\n";
+        n = write(cl_arg->newsockfd, answer, strlen(answer));
+        if (n < 0) {
+            srverror("ERROR writing to socket");
+            pthread_mutex_unlock(&cl_arg->server->bugs_mutex);
+            return;
+        } else if (n == 0) {
+            printf("Client's socket closed\n");
+            pthread_mutex_unlock(&cl_arg->server->bugs_mutex);
+            return;
+        }
+        pthread_mutex_unlock(&cl_arg->server->bugs_mutex);
     }
 }
 
 void process_report_new_bug(Client_arg_t *cl_arg, const char *buffer) {
     ssize_t n;
-//    bzero(buffer, 256);
-    /*n = read(cl_arg->newsockfd, buffer, 255);
-    if (n < 0) {
-        srverror("process_report_new_bug: ERROR reading from socket");
-        return;
-    } else if (n == 0) {
-        printf("process_report_new_bug: Client's socket closed\n");
-        return;
-    }*/
     int i = 5;
     char dev_id[256] = "\0";
     char proj_id[256] = "\0";
@@ -406,6 +495,45 @@ void process_report_new_bug(Client_arg_t *cl_arg, const char *buffer) {
     if (i < strlen(buffer) && buffer[i] != '|') {
         write_br(cl_arg);
         return;
+    }
+    //todo no such ids
+    pthread_mutex_lock(&cl_arg->server->bugs_mutex);
+    gpointer p = g_hash_table_find(cl_arg->server->bugs, (GHRFunc) get_val, bug_id);
+    pthread_mutex_unlock(&cl_arg->server->bugs_mutex);
+    if (p == NULL) {
+        Bug_t *b = malloc(sizeof(b));
+        b->id = bug_id;
+        b->closed = 0;
+        b->dev = dev_id;
+        b->fixed = 0;
+        b->proj_id = proj_id;
+        b->text = bug_text;
+        pthread_mutex_lock(&cl_arg->server->bugs_mutex);
+        g_hash_table_insert(cl_arg->server->bugs, g_strdup(bug_id), b);
+        pthread_mutex_unlock(&cl_arg->server->bugs_mutex);
+        char answer[10];
+        strcat(answer, "BREP OK\n");
+        n = write(cl_arg->newsockfd, answer, strlen(answer));
+        if (n < 0) {
+            srverror("ERROR writing to socket");
+            return;
+        } else if (n == 0) {
+            printf("Client's socket closed\n");
+            return;
+        }
+    } else {
+        Bug_t *b = (Bug_t *) p;
+        printf("BugReport: Bug exists: %s", b->id);
+        char answer[10];
+        strcat(answer, "BREP BE\n");
+        n = write(cl_arg->newsockfd, answer, strlen(answer));
+        if (n < 0) {
+            srverror("ERROR writing to socket");
+            return;
+        } else if (n == 0) {
+            printf("Client's socket closed\n");
+            return;
+        }
     }
     printf("Dev_id: %s\n", dev_id);
     printf("Proj_id: %s\n", proj_id);
@@ -479,9 +607,11 @@ int main(int argc, char *argv[]) {
     server.clients = g_hash_table_new(g_int64_hash, g_int64_equal);
     server.logins = g_hash_table_new(g_str_hash, g_str_equal);
     server.devs = g_hash_table_new(g_str_hash, g_str_equal);
+    server.bugs = g_hash_table_new(g_str_hash, g_str_equal);
     pthread_mutex_init(&server.client_mutex, NULL);
     pthread_mutex_init(&server.logins_mutex, NULL);
     pthread_mutex_init(&server.devs_mutex, NULL);
+    pthread_mutex_init(&server.bugs_mutex, NULL);
 
     if (server.sockfd < 0) {
         srverror("ERROR opening socket");

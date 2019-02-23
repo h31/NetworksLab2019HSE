@@ -58,7 +58,7 @@ typedef struct Bug {
     char *text;
 } Bug_t;
 
-void dev_session(Client_arg_t *pArg);
+void dev_session(Client_arg_t *cl_arg);
 
 void qa_session(Client_arg_t *cl_arg);
 
@@ -630,12 +630,83 @@ void process_list_closed_bugs(Client_arg_t *cl_arg) {
     }
 }
 
-void dev_session(Client_arg_t *pArg) {
+void dev_session(Client_arg_t *cl_arg) {
     ssize_t n;
     char buffer[256] = "\0";
     bzero(buffer, 256);
     while (1) {
+        bzero(buffer, 256);
+        n = read(cl_arg->newsockfd, buffer, 255);
+        if (n < 0) {
+            srverror("qa_session: ERROR reading from socket");
+            return;
+        } else if (n == 0) {
+            printf("qa_session: Client's socket closed\n");
+            return;
+        }
+        printf_tid("dev's msg:", buffer);
+        if (!strncmp(buffer, "BFIX ", 5)) {
+            int i = 5;
+            char bug_id[256] = "\0";
+            while (i < strlen(buffer) && buffer[i] != '\n') {
+                char curChar[2] = "\0";
+                curChar[0] = buffer[i];
+                strcat(bug_id, curChar);
+                i++;
+            }
+            printf("BFIX: %s, %d", bug_id, g_hash_table_size(cl_arg->server->bugs));
+            pthread_mutex_lock(&cl_arg->server->bugs_mutex);
+            Bug_t *bug = (Bug_t *) g_hash_table_lookup(cl_arg->server->bugs, bug_id);
+            if (bug == NULL) {
+                char answer[10] = "\0";
+                strcat(answer, "BFIX BN \n");
+                n = write(cl_arg->newsockfd, answer, strlen(answer));
+                if (n < 0) {
+                    srverror("ERROR writing to socket");
+                    pthread_mutex_unlock(&cl_arg->server->bugs_mutex);
+                    return;
+                } else if (n == 0) {
+                    printf("Client's socket closed\n");
+                    pthread_mutex_unlock(&cl_arg->server->bugs_mutex);
+                    return;
+                }
+                pthread_mutex_unlock(&cl_arg->server->bugs_mutex);
+                return;
+            }
+            if (bug->closed){
+                char answer[10] = "\0";
+                strcat(answer, "BFIX BC \n");
+                n = write(cl_arg->newsockfd, answer, strlen(answer));
+                if (n < 0) {
+                    srverror("ERROR writing to socket");
+                    pthread_mutex_unlock(&cl_arg->server->bugs_mutex);
+                    return;
+                } else if (n == 0) {
+                    printf("Client's socket closed\n");
+                    pthread_mutex_unlock(&cl_arg->server->bugs_mutex);
+                    return;
+                }
+                pthread_mutex_unlock(&cl_arg->server->bugs_mutex);
+                return;
+            }
+            bug->fixed = 1;
+            char answer[10] = "\0";
+            strcat(answer, "BFIX OK \n");
+            n = write(cl_arg->newsockfd, answer, strlen(answer));
+            if (n < 0) {
+                srverror("ERROR writing to socket");
+                pthread_mutex_unlock(&cl_arg->server->bugs_mutex);
+                return;
+            } else if (n == 0) {
+                printf("Client's socket closed\n");
+                pthread_mutex_unlock(&cl_arg->server->bugs_mutex);
+                return;
+            }
+            pthread_mutex_unlock(&cl_arg->server->bugs_mutex);
+            return;
+        } else if (!strncmp(buffer, "LIST ", 5)){
 
+        }
     }
 }
 

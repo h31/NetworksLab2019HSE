@@ -1,37 +1,27 @@
-//
-// Created by Мария on 2019-02-18.
-//
-
-#ifndef SERVER_SERVER_H
-#define SERVER_SERVER_H
+#pragma once
 
 #include <string>
 #include <netinet/in.h>
-#include "ReadWriteHelper.h"
 #include <vector>
+#include <unordered_map>
+#include <shared_mutex>
 #include "ClientHandler.h"
-#include <mutex>
 
 class Server {
   public:
     Server(int port_number);
-    void run();
-    uint32_t getRequest();
-    void sendResponse(uint32_t sent_message_type);
+    bool run();
 
   private:
     int sockfd, newsockfd;
     int port_number;
     unsigned int clilen;
-    uint8_t buffer[256];
     std::vector<pthread_t> threads;
-    std::vector<ClientHandler> handlers;
+    std::vector<class ClientHandler> handlers;
     std::vector<int> sockfds;
-    std::mutex mutex;
+    std::shared_mutex mutex;
+    uint32_t freeId;
 
     struct sockaddr_in serv_addr, cli_addr;
-    static ReadWriteHelper readWriteHelper;
+    std::unordered_map<uint32_t, struct rating> ratings;
 };
-
-
-#endif //SERVER_SERVER_H

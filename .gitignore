@@ -36,6 +36,7 @@
 *.app
 
 ### CMake ###
+cmake-build-debug
 CMakeCache.txt
 CMakeFiles
 CMakeScripts
@@ -588,6 +589,9 @@ __pycache__/
 
 # Telerik's JustMock configuration file
 *.jmconfig
+
+.DS_Store
+
 
 # BizTalk build output
 *.btp.cs

@@ -26,6 +26,7 @@ typedef struct Server {
     pthread_mutex_t devs_mutex;
     pthread_mutex_t bugs_mutex;
     pthread_mutex_t closed_bugs_mutex;
+    int tid;
 } Server_t;
 
 typedef struct Client_arg {
@@ -73,7 +74,7 @@ void printf_tid(char *msg, char *buffer) {
     printf("tid %llu: %s: %s\n", (unsigned long long) pthread_self(), msg, buffer);
 }
 
-char* my_strcpy(char *a, char *b) {
+char *my_strcpy(char *a, char *b) {
 
     if (a == NULL || b == NULL) {
         return NULL;
@@ -99,7 +100,7 @@ void write_br(Client_arg_t *cl_arg) {
 
 void clients_iterator(gpointer key, gpointer value, gpointer user_data) {
     //мб нужно kill
-    int a = pthread_kill(*(pthread_t *) key, NULL);
+    int a = pthread_kill(*(pthread_t *) value, NULL);
 }
 
 void stop_server(Server_t *server) {
@@ -115,6 +116,20 @@ void delete_client(Server_t *server) {
 //    g_set_
 //    server->clients;
     pthread_mutex_unlock(&server->client_mutex);
+}
+
+void list_clients(Server_t *server) {
+    pthread_mutex_lock(&server->client_mutex);
+    GList *l = g_hash_table_get_keys(server->clients);
+    printf("Clients: \n");
+    for (guint i = 0; i < g_list_length(l); i++) {
+        printf("%s\n", (char *) g_list_nth_data(l, i));
+    }
+    pthread_mutex_unlock(&server->client_mutex);
+}
+
+void kick_client(pthread_t *p) {
+    int a = pthread_kill(*p, NULL);
 }
 
 gboolean get_val(gpointer key, gpointer value, gpointer user_data) {
@@ -568,9 +583,9 @@ void process_list_active_bugs(Client_arg_t *cl_arg) {
     GList *lb = g_hash_table_get_keys(cl_arg->server->bugs);
     GList *lcb = g_hash_table_get_keys(cl_arg->server->closed_bugs);
     for (guint j = 0; j < g_list_length(lb); j++) {
-        gpointer item = g_list_nth(lb, j);
-        if (lcb == NULL || g_list_find(lcb, g_list_nth(lb, j)) == NULL) {
-            char *s = (char *)item;
+        gpointer item = g_list_nth_data(lb, j);
+        if (lcb == NULL || g_list_find(lcb, item) == NULL) {
+            char *s = (char *) item;
             printf("%s", s);
             strcat(buffer, *((char **) item));
             strcat(buffer, "|");
@@ -625,16 +640,19 @@ void dev_session(Client_arg_t *pArg) {
 }
 
 void create_client(Server_t *server, Client_arg_t *client_arg) {
-    pthread_t pthread;
-    pthread_create(&pthread, NULL, client_worker, client_arg);
+    pthread_t *pthread = malloc(sizeof(pthread));
+    pthread_create(pthread, NULL, client_worker, client_arg);
     pthread_mutex_lock(&server->client_mutex);
-    g_hash_table_add(server->clients, &pthread);
+    char str[12];
+    sprintf(str, "%d", server->tid++);
+    g_hash_table_insert(server->clients, g_strdup(str), pthread);
     pthread_mutex_unlock(&server->client_mutex);
 }
 
 void *server_listener(void *argp) {
     int newsockfd;
     Server_t *server = (Server_t *) argp;
+    server->tid = 0;
     socklen_t clilen;
     struct sockaddr_in cli_addr;
     clilen = sizeof(cli_addr);
@@ -670,7 +688,7 @@ int main(int argc, char *argv[]) {
     bzero(&server, sizeof(server));
     /* First call to socket() function */
     server.sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    server.clients = g_hash_table_new(g_int64_hash, g_int64_equal);
+    server.clients = g_hash_table_new(g_str_hash, g_str_hash);
     server.logins = g_hash_table_new(g_str_hash, g_str_equal);
     server.devs = g_hash_table_new(g_str_hash, g_str_equal);
     server.bugs = g_hash_table_new(g_str_hash, g_str_equal);
@@ -714,7 +732,8 @@ int main(int argc, char *argv[]) {
     pthread_t server_pthread;
     pthread_create(&server_pthread, NULL, server_listener, &server);
     while (1) {
-        printf("len(clients)=%d | Available command: \"exit\", \"list\": ", g_hash_table_size(server.clients));
+        printf("len(clients)=%d | Available command: \"exit\", \"list\", \"kick <tid>\": ",
+               g_hash_table_size(server.clients));
 
         bzero(buffer, 256);
         fgets(buffer, 255, stdin);
@@ -724,12 +743,25 @@ int main(int argc, char *argv[]) {
             shutdown(server.sockfd, SHUT_RDWR);
             close(server.sockfd);
             exit(0);
+        } else if (!strcmp(buffer, "list") || !strcmp(buffer, "list\n")) {
+            list_clients(&server);
+        } else if (!strncmp(buffer, "kick ", 5)) {
+            int i = 5;
+            char cl[100] = "\0";
+            while (buffer[i] != ' ' && buffer[i] != '\n') {
+                char curChar[2] = "\0";
+                curChar[0] = buffer[i];
+                strcat(cl, curChar);
+                i++;
+            }
+            gpointer p = g_hash_table_lookup(server.clients, cl);
+            if (p == NULL) {
+                printf("No such client\n");
+            } else {
+                kick_client((pthread_t *) p);
+            }
         } else {
             printf("Unknown command\n");
         }
     }
-}
-
-int main1(int argc, char **argv) {
-    return 0;
 }

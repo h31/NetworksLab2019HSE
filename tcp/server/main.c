@@ -29,8 +29,14 @@ typedef struct Server {
     int tid;
 } Server_t;
 
+typedef struct Dev {
+    char *id;
+    GHashTable *projects;
+} Dev_t;
+
 typedef struct Client_arg {
     int newsockfd;
+    Dev_t *dev;
     Server_t *server;
 } Client_arg_t;
 
@@ -43,11 +49,6 @@ typedef struct Client {
 //    char *id;
 //    GHashTable
 //} Project_t;
-
-typedef struct Dev {
-    char *id;
-    GHashTable *projects;
-} Dev_t;
 
 typedef struct Bug {
     char *id;
@@ -145,6 +146,7 @@ int reg_or_login(Client_arg_t *cl_arg) {
     ssize_t n;
     char buffer[256];
     bzero(buffer, 256);
+    cl_arg->dev = 0;
     while (1) {
         n = read(cl_arg->newsockfd, buffer, 255); // recv on Windows
         if (n < 0) {
@@ -218,6 +220,7 @@ int reg_or_login(Client_arg_t *cl_arg) {
                 Dev_t *dev = malloc(sizeof(*dev));
                 dev->id = login;
                 dev->projects = g_hash_table_new(g_str_hash, g_str_equal);
+                cl_arg->dev = dev;
                 //test proj
                 g_hash_table_insert(dev->projects, g_strdup("1"), g_strdup(""));
                 pthread_mutex_unlock(&cl_arg->server->devs_mutex);
@@ -673,7 +676,7 @@ void dev_session(Client_arg_t *cl_arg) {
                 pthread_mutex_unlock(&cl_arg->server->bugs_mutex);
                 return;
             }
-            if (bug->closed){
+            if (bug->closed) {
                 char answer[10] = "\0";
                 strcat(answer, "BFIX BC \n");
                 n = write(cl_arg->newsockfd, answer, strlen(answer));
@@ -704,8 +707,47 @@ void dev_session(Client_arg_t *cl_arg) {
             }
             pthread_mutex_unlock(&cl_arg->server->bugs_mutex);
             return;
-        } else if (!strncmp(buffer, "LIST ", 5)){
-
+        } else if (!strncmp(buffer, "LIST ", 5)) {
+            if (!cl_arg->dev) {
+                srverror("Request not from dev\n");
+                char answer[10] = "\0";
+                strcat(answer, "LIST PE \n");
+                n = write(cl_arg->newsockfd, answer, strlen(answer));
+                if (n < 0) {
+                    srverror("ERROR writing to socket");
+                    return;
+                } else if (n == 0) {
+                    printf("Client's socket closed\n");
+                    return;
+                }
+                return;
+            }
+            pthread_mutex_lock(&cl_arg->server->bugs_mutex);
+            GList *lp = g_hash_table_get_keys(cl_arg->dev->projects);
+            GList *lb = g_hash_table_get_keys(cl_arg->server->bugs);
+            char answer[1000] = "\0";
+            for (guint i = 0; i < g_list_length(lb); ++i) {
+                Bug_t *b = g_list_nth_data(lb, i);
+                if (g_hash_table_lookup(cl_arg->dev->projects, b->proj_id) != NULL) {
+                    strcat(answer, b->proj_id);
+                    strcat(answer, "&");
+                    strcat(answer, b->id);
+                    strcat(answer, "&");
+                    strcat(answer, b->text);
+                    strcat(answer, "&");
+                    strcat(answer, "|");
+                }
+            }
+            pthread_mutex_unlock(&cl_arg->server->bugs_mutex);
+            n = write(cl_arg->newsockfd, answer, strlen(answer));
+            if (n < 0) {
+                srverror("ERROR writing to socket");
+                return;
+            } else if (n == 0) {
+                printf("Client's socket closed\n");
+                return;
+            }
+            return;
         }
     }
 }

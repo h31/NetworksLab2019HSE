@@ -1,3 +1,9 @@
 dependencies {
     compile(project(":common"))
 }
+
+mainClassName = 'ru.hse.spb.dns.client.MainKt'
+
+shadowJar {
+    baseName = "client"
+}

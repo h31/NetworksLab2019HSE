@@ -1,0 +1,36 @@
+package ru.hse.spb.dns.protocol;
+
+option java_outer_classname = "Protocol";
+option optimize_for = LITE_RUNTIME;
+
+message Request {
+    required string address = 1;
+
+    enum RequestType {
+        WEB = 0;
+        EMAIL = 1;
+    }
+    required RequestType requestType = 2;
+}
+
+message Response {
+    message FoundResponse {
+        required string ip = 1;
+    }
+
+    message RedirectResponse {
+        required string ip = 1;
+        required int32 port = 2;
+    }
+
+    message NotFoundResponse {
+        required string author = 1;
+        optional string message = 2;
+    }
+
+    oneof response {
+        FoundResponse found = 1;
+        RedirectResponse redirect = 2;
+        NotFoundResponse notFound = 3;
+    }
+}

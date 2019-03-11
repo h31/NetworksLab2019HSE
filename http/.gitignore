@@ -1,6 +1,6 @@
-out/
-.gradle/
-build/
-libraries/
-.idea/
+/out/
+/.gradle/
+/build/
+/libraries/
+/.idea/
 local.properties

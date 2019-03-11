@@ -1,8 +1,0 @@
-//
-// Created by dmitry on 3/4/19.
-//
-
-#ifndef UNTITLED_NO_VALUE_EXCEPTION_H
-#define UNTITLED_NO_VALUE_EXCEPTION_H
-
-#endif //UNTITLED_NO_VALUE_EXCEPTION_H

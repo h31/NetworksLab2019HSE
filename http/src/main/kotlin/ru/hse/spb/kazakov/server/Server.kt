@@ -1,7 +1,12 @@
-package ru.hse.spb.kazakov.http
+package ru.hse.spb.kazakov.server
 
+import ru.hse.spb.kazakov.server.http.*
+import java.io.DataInputStream
+import java.io.OutputStreamWriter
+import java.lang.Exception
 import java.net.ServerSocket
 import java.net.Socket
+import java.nio.charset.Charset
 
 class Server(port: Int) {
     private val serverSocket = ServerSocket(port)
@@ -30,11 +35,29 @@ class Server(port: Int) {
         serverThreads.forEach { it.join() }
     }
 
-    private class RequestResponseCycle(private val clientSocket: Socket) : Runnable {
+    private class RequestResponseCycle(clientSocket: Socket) : Runnable {
+        private val dataInputStream = DataInputStream(clientSocket.getInputStream())
+        private val outputStream = OutputStreamWriter(clientSocket.getOutputStream(), Charset.forName("UTF-8"))
+
         override fun run() {
             while (true) {
+                val request = try {
+                    parseHttpRequest(dataInputStream)
+                } catch (exception: MalformedHttpException) {
+                    outputStream.write(HttpResponse(HttpResponseType.BAD_REQUEST).toString())
+                    continue
+                } catch (exception: Exception) {
+                    outputStream.write(HttpResponse(HttpResponseType.SERVER_ERROR).toString())
+                    continue
+                }
 
+                val response = processRequest(request)
+                outputStream.write(response.toString())
             }
+        }
+
+        private fun processRequest(request: HttpRequest): HttpResponse {
+
         }
     }
 }

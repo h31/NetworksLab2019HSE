@@ -5,7 +5,7 @@ import java.net.MalformedURLException
 import java.util.*
 
 
-fun parseHttp(inputStream: DataInputStream): HttpRequest {
+fun parseHttpRequest(inputStream: DataInputStream): HttpRequest {
     val bufferedReader = BufferedReader(InputStreamReader(getHeaderStream(inputStream)))
 
     val requestLine = try {

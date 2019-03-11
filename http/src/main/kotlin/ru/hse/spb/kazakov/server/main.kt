@@ -1,4 +1,4 @@
-package ru.hse.spb.kazakov.http
+package ru.hse.spb.kazakov.server
 
 fun main(args : Array<String>) {
     if (args.size != 1) {
@@ -24,5 +24,5 @@ fun main(args : Array<String>) {
 }
 
 fun printUsage() {
-    println("Usage: ./http-server-1.0 <port>")
+    println("Usage: ./server-server-1.0 <port>")
 }

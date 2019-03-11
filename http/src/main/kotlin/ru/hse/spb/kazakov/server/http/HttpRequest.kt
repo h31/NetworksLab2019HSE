@@ -1,6 +1,6 @@
 package ru.hse.spb.kazakov.server.http
 
-class HttpMessage(
+data class HttpRequest(
     val requestLine: RequestLine,
     val messageBody: ByteArray,
     val fields: Map<String, String>
@@ -9,7 +9,7 @@ class HttpMessage(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as HttpMessage
+        other as HttpRequest
 
         if (requestLine != other.requestLine) return false
         if (!messageBody.contentEquals(other.messageBody)) return false

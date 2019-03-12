@@ -1,7 +1,4 @@
-
 # Created by https://www.gitignore.io/api/c++,latex,cmake,netbeans,qtcreator,visualstudio
-
-### C++ ###
 # Prerequisites
 *.d
 
@@ -628,4 +625,3 @@ Temporary Items
 .apdisk
 
 # End of https://www.gitignore.io/api/c++,latex,cmake,netbeans,qtcreator,visualstudio
-

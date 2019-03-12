@@ -1,0 +1,2 @@
+com.     IN SOA localhost:1111 admin@admin.com 1 1 10 10 10
+hse.com. IN NS  localhost:1115

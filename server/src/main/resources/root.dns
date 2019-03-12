@@ -1,0 +1,15 @@
+# 1. domain IN SOA ns e-mail Serial Refresh Retry Expire DefaultTTL -- главная запись
+# 2. domain IN NS address -- запись о DNS сервере
+# 3. name IN A address -- аддресная запись
+# 4. сname IN CNAME name -- запись о псевдониме
+# 5. Mail-domain IN MX address -- запись о email сервере
+
+# 1. ftk.spbstu.ru. IN SOA ns.ftk.spbstu.ru. admin.ftk.spbstu.ru 2008121801 3600 900 2592000 900
+# 2. ftk.spbstu.ru. IN NS 195.19.212.13
+# 3. aivt IN A 195.19.212.16
+# 4. www IN CNAME aivt.ftk.spbstu.ru
+# 5. aivt IN MX aivtmail.ftk.spbstu.ru.
+
+.    IN SOA localhost:0 admin@admin.com 1 1 10 10 10
+ru.  IN NS  localhost:1112
+com. IN NS  localhost:1114

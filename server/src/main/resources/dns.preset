@@ -1,0 +1,7 @@
+# port isRecursive isRootServer configFile
+# path to config files is relative to destination of current file
+1111 F T root.dns
+1112 T F ru.dns
+1113 T F hse.ru.dns
+1114 T F com.dns
+1115 T F hse.com.dns

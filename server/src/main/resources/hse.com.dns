@@ -1,0 +1,3 @@
+hse.com. IN SOA localhost:1114 admin@admin.com 1 1 10 10 10
+spb      IN A   192.168.0.3
+mail     IN MX  192.168.1.1

@@ -1,0 +1,3 @@
+ru.     IN SOA localhost:1111 admin@admin.com 1 1 10 10 10
+hse.ru. IN NS  localhost:1113
+info    IN A   192.168.0.1

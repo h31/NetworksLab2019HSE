@@ -1,0 +1,3 @@
+hse.ru. IN SOA   localhost:1112 admin@admin.com 1 1 10 10 10
+spb     IN A     192.168.0.2
+www.spb IN CNAME spb

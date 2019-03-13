@@ -1,13 +1,12 @@
 from message import Message
 from enum import Enum
-from collections import deque
 
 
 class HTTParser:
 
     def __init__(self):
         self.__message = Message()
-        self.__state = self.State.READING_START_LINE
+        self.__state = self.State.START_LINE
         self.__prefix = b""
 
     def append(self, chunk):
@@ -17,8 +16,7 @@ class HTTParser:
         return None
 
     def __tokenize(self, chunk):
-        tokens = deque()
-        tokens.extend((self.__prefix + chunk).splitlines())
+        tokens = (self.__prefix + chunk).splitlines()
         if not chunk.endswith(b"\r\n"):
             self.__prefix = tokens[-1]
             tokens.pop()
@@ -26,9 +24,22 @@ class HTTParser:
             self.__prefix = b""
         return tokens
 
-
+    def __parse(self, tokens):
+        for token in tokens:
+            if self.__state == self.State.START_LINE:
+                self.__message.set_start_line(token)
+                self.__state = self.State.HEADERS
+            elif self.__state == self.State.HEADERS:
+                if not token:
+                    self.__state = self.State.BODY
+                    continue
+                header = token.split(": ", maxsplit=1)
+                self.__message.add_header(header[0], header[1])
+            elif self.__message.append_to_body(token):
+                return True
+        return False
 
     class State(Enum):
-        READING_START_LINE = 1
-        READING_HEADERS = 2
-        READING_BODY = 3
+        START_LINE = 1
+        HEADERS = 2
+        BODY = 3

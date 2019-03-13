@@ -44,7 +44,7 @@ class Message:
             return None
 
     def can_cache(self):
-        return search(r"no-cache|no-store", self.__headers.get("Cache-Control")) is None
+        return search(r"no-cache|no-store", self.__headers.get("Cache-Control", "")) is None
 
     def __get_body_len(self):
         return int(self.__headers.get("Content-Length", "0"))

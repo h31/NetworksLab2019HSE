@@ -15,14 +15,12 @@ class Worker(Thread):
 
     def run(self):
         request = self.__client_connection.receive_message()
-        print(request.to_bytes())
         response = self.__cache.get(request)
         if response is None:
             server_connection = Connection()
             server_connection.establish(request.get_host())
             server_connection.send_message(request)
             response = server_connection.receive_message()
-            print(response.to_bytes())
             server_connection.close()
         self.__client_connection.send_message(response)
         self.__client_connection.close()

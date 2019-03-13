@@ -1,7 +1,11 @@
 class Message:
 
-    def __init__(self, start_line):
+    def __init__(self):
         self.__body = ""
+        self.__start_line = ""
+        self.__headers = []
+
+    def set_start_line(self, start_line):
         self.__start_line = start_line
 
     def add_header(self, header):

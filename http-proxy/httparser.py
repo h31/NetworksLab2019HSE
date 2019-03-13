@@ -32,8 +32,10 @@ class HTTParser:
             elif self.__state == self.State.HEADERS:
                 if not token:
                     self.__state = self.State.BODY
+                    if self.__message.append_to_body(b""):
+                        return True
                     continue
-                header = token.split(": ", maxsplit=1)
+                header = token.split(b": ", maxsplit=1)
                 self.__message.add_header(header[0], header[1])
             elif self.__message.append_to_body(token):
                 return True

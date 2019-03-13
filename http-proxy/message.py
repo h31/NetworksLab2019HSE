@@ -1,4 +1,5 @@
-import re
+from re import split, search
+
 
 class Message:
 
@@ -24,24 +25,24 @@ class Message:
         return self.__body
 
     def get_status(self):
-        return self.__headers.get('Status:')
+        return self.__headers.get("Status:")
 
     def to_str(self):
         message = self.__start_line
         for key, value in self.__headers.items():
-            message += key + ' ' + value
-        message += '\r\n'
+            message += key + " " + value
+        message += "\r\n"
         message += self.__body
         return message
 
     def get_host(self):
-        if self.__headers.get('Host:') is not None:
-            return re.split(r":", self.__headers.get('Host:'))[0]
+        if self.__headers.get("Host:") is not None:
+            return split(r":", self.__headers.get("Host:"))[0]
         else:
             return None
 
     def can_cache(self):
-        return re.search(r"no-cache|no-store", self.__headers.get('Host:')) is None
+        return search(r"no-cache|no-store", self.__headers.get("Host:")) is None
 
     def __get_body_len(self):
-        return int(self.__headers.get('Content-Length:'))
+        return int(self.__headers.get("Content-Length:"))

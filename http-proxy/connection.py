@@ -23,14 +23,14 @@ class Connection:
         parser = HTTParser()
         while True:
             chunk = self.__socket.recv(MAX_CHUNK_LEN)
-            message = parser.append(chunk)
+            message = parser.append(chunk.decode())
             if message is not None:
                 return message
 
     def send_message(self, message):
-        msg = message.to_str()
+        msg = message.to_str().encode()
         total_sent = 0
-        while total_sent < msg.len:
+        while total_sent < len(msg):
             sent = self.__socket.send(msg[total_sent:])
             if sent == 0:
                 break

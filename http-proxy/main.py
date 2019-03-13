@@ -6,6 +6,6 @@ if __name__ == "__main__":
     port = int(argv[1])
     my_server = Acceptor("", port)
     my_server.start()
-    x = input("input anything to exit")
+    x = input("input anything to exit\n")
     my_server.interrupt()
     my_server.join()

@@ -23,12 +23,12 @@ class Connection:
         parser = HTTParser()
         while True:
             chunk = self.__socket.recv(MAX_CHUNK_LEN)
-            message = parser.append(chunk.decode())
-            if message is not None:
+            message = parser.append(chunk)
+            if message:
                 return message
 
     def send_message(self, message):
-        msg = message.to_str().encode()
+        msg = message.to_bytes()
         total_sent = 0
         while total_sent < len(msg):
             sent = self.__socket.send(msg[total_sent:])

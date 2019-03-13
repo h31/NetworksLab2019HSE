@@ -1,12 +1,13 @@
 from re import split, search
 
 NEW_LINE = "\r\n"
+NEW_LINE_B = b"\r\n"
 
 
 class Message:
 
     def __init__(self):
-        self.__body = ""
+        self.__body = b""
         self.__start_line = ""
         self.__headers = {}
 
@@ -26,12 +27,13 @@ class Message:
     def get_status(self):
         return self.__headers.get("Status")
 
-    def to_str(self):
+    def to_bytes(self):
         message = self.__start_line + NEW_LINE
         message += NEW_LINE.join(["%s: %s" % header for header in self.__headers.items()])
         message += NEW_LINE * 2
+        message = message.encode()
         if self.__get_body_len() > 0:
-            message += self.__body + NEW_LINE
+            message += self.__body + NEW_LINE_B
         return message
 
     def get_host(self):

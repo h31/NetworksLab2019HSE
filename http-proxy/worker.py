@@ -8,10 +8,13 @@ class Worker(Thread):
         super().__init__()
         self.__socket = sock
         self.__cache = cache
+        self.__client_connection = Connection(self.__socket)
+
+    def interrupt(self):
+        self.__client_connection.close()
 
     def run(self):
-        client_connection = Connection(self.__socket)
-        request = client_connection.receive_message()
+        request = self.__client_connection.receive_message()
         response = self.__cache.get(request)
         if response is None:
             server_connection = Connection()
@@ -19,5 +22,5 @@ class Worker(Thread):
             server_connection.send_message(request)
             response = server_connection.receive_message()
             server_connection.close()
-        client_connection.send_message(response)
-        client_connection.close()
+        self.__client_connection.send_message(response)
+        self.__client_connection.close()

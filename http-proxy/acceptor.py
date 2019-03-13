@@ -37,4 +37,5 @@ class Acceptor(Thread):
             worker.start()
         self.__server_socket.shutdown(SHUT_WR)
         for worker in workers:
+            worker.interrupt()
             worker.join()

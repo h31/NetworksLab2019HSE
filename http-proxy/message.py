@@ -28,7 +28,7 @@ class Message:
 
     def to_str(self):
         message = self.__start_line + NEW_LINE
-        message += NEW_LINE.join(["%s %s" % header for header in self.__headers.items()])
+        message += NEW_LINE.join(["%s: %s" % header for header in self.__headers.items()])
         message += NEW_LINE * 2
         if self.__get_body_len() > 0:
             message += self.__body + NEW_LINE

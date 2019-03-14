@@ -1,3 +1,4 @@
+import time
 import unittest
 from cache import Cache
 from message import Message
@@ -32,3 +33,49 @@ class Test(unittest.TestCase):
         cant = message.can_cache()
         self.assertEqual(True, can)
         self.assertEqual(False, cant)
+
+    def test_put_in_cash(self):
+        message = Message()
+        message.set_start_line("GET /background.png HTTP/1.0")
+        message.add_header('Host', 'example.org')
+        message.add_header('Content-Length', '110')
+        message.append_to_body('<html><body><a href="http://example.com/about.html#contacts">Click here</a></body></html>')
+        cache = Cache(1000, 100000)
+        cache.put(message, message)
+        _, getting_message = cache.get(message)
+        self.assertEqual(message, getting_message)
+
+    def test_expire_cash(self):
+        message = Message()
+        message.set_start_line("GET /background.png HTTP/1.0")
+        message.add_header('Host', 'example.org')
+        message.add_header('Content-Length', '110')
+        message.append_to_body(
+            '<html><body><a href="http://example.com/about.html#contacts">Click here</a></body></html>')
+        cache = Cache(1, 100000)
+        cache.put(message, message)
+        time.sleep(5)
+        getting_message = cache.get(message)
+        self.assertEqual(None, getting_message)
+
+    def test_size_cash(self):
+        message = Message()
+        message1 = Message()
+        message.set_start_line("GET /background.png HTTP/1.0")
+        message1.set_start_line("GET /background.png HTTP/1.0")
+        message.add_header('Host', 'example.org')
+        message.add_header('Content-Length', '110')
+        message1.add_header('Content-Length', '110')
+        message.append_to_body(
+            '<html><body><a href="http://example.com/about.html#contacts">Click here</a></body></html>')
+        message1.append_to_body(
+            '<html><body><a href="http://example.com/about.html#contacts">Click here</a></body></html>')
+        cache = Cache(1, 1)
+        cache.put(message, message)
+        _, getting_message = cache.get(message)
+        cache.put(message1, message1)
+        _, getting_message1 = cache.get(message1)
+        empty_message = cache.get(message)
+        self.assertEqual(message, getting_message)
+        self.assertEqual(message1, getting_message1)
+        self.assertEqual(None, empty_message)

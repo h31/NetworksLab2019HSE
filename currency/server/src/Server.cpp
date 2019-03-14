@@ -258,8 +258,15 @@ int16_t Server::ClientHandler::readInt16() {
 
 void Server::ClientHandler::readChars(char *dst, size_t size) {
     bzero(buffer, size);
-    int n = read(sockfd, buffer, size); // recv on Windows
-    checkStatus(n);
+    int offset = 0;
+
+    while (size > 0) {
+        int n = read(sockfd, buffer + offset, size); // recv on Windows
+        checkStatus(n);
+        size -= n;
+        offset += n;
+    }
+
     memcpy(dst, buffer, size);
 }
 

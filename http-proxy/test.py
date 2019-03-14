@@ -18,7 +18,7 @@ class Test(unittest.TestCase):
         message.add_header("Host", "example.org")
         message.add_header("Content-Length", "110")
         message.append_to_body(b'<html><body><a href="http://example.com/about.html#contacts">Click here</a></body></html>')
-        host = message.get_host()
+        (host, _) = message.get_host()
         self.assertEqual("example.org", host)
 
     def test_need_cash_message(self):

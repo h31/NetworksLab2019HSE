@@ -1,5 +1,6 @@
 package ru.hse.spb.kazakov.server
 
+@ExperimentalUnsignedTypes
 fun main(args : Array<String>) {
     if (args.size != 1) {
         printUsage()

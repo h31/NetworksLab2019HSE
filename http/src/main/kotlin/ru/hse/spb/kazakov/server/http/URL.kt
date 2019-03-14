@@ -4,7 +4,7 @@ import java.net.URL
 
 class URL(urlString: String) {
     private val url = URL(urlString)
-    val path
+    val path: String
         get() = url.path
     val queryParameters: Map<String, String>
 

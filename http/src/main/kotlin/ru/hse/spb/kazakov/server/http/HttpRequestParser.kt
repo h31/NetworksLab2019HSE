@@ -62,15 +62,15 @@ private fun parseRequestLine(inputStream: BufferedReader): RequestLine {
     val groups = matchResult.groupValues
     val httpVersion = RequestLine.HttpVersion(groups[3].toInt(), groups[4].toInt())
 
-    return RequestLine(matchResult.groupValues[1], httpVersion, URL(groups[2]))
+    return RequestLine(matchResult.groupValues[1], httpVersion, URL("http://" + groups[2]))
 }
 
-private val fieldRegexp = Regex("""\s+([^\s]+)\s+:\s+(.*)\s+""")
+private val fieldRegexp = Regex("""\s*([^\s]+)\s*:\s*(.*)\s*""")
 private fun parseFields(bufferedReader: BufferedReader): Map<String, String> {
     val fields = HashMap<String, String>()
 
     var line = bufferedReader.readLine()
-    while (line != null && line.isEmpty()) {
+    while (line != null && !line.isEmpty()) {
         val matchResult = fieldRegexp.matchEntire(line) ?: throw MalformedHttpException()
         val groups = matchResult.groupValues
         fields[groups[1]] = groups[2]

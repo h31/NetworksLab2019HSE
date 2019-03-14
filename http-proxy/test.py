@@ -70,7 +70,7 @@ class Test(unittest.TestCase):
             '<html><body><a href="http://example.com/about.html#contacts">Click here</a></body></html>')
         message1.append_to_body(
             '<html><body><a href="http://example.com/about.html#contacts">Click here</a></body></html>')
-        cache = Cache(1, 1)
+        cache = Cache(100000, 1)
         cache.put(message, message)
         _, getting_message = cache.get(message)
         cache.put(message1, message1)

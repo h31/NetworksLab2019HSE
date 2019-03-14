@@ -8,10 +8,12 @@ BACKLOG_SIZE = 10
 
 
 class Acceptor(Thread):
-    def __init__(self, address, port):
+    def __init__(self, address, port, cache_expire, cache_max_size):
         super().__init__()
         self.__address = address
         self.__port = port
+        self.__cache_expire = cache_expire
+        self.__cache_max_size = cache_max_size
         self.__server_socket = socket(AF_INET, SOCK_STREAM)
         self.__server_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         self.__server_socket.bind((address, port))
@@ -26,7 +28,7 @@ class Acceptor(Thread):
 
     def run(self):
         workers = []
-        cache = Cache()
+        cache = Cache(self.__cache_expire, self.__cache_max_size)
         while True:
             (client_socket, _) = self.__server_socket.accept()
             with self.__interrupted_mutex:

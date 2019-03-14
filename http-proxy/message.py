@@ -1,12 +1,14 @@
 from re import split, search
 
 NEW_LINE = "\r\n"
+NEW_LINE_B = b"\r\n"
+HTTP_PORT = 80
 
 
 class Message:
 
     def __init__(self):
-        self.__body = ""
+        self.__body = b""
         self.__start_line = ""
         self.__headers = {}
 
@@ -18,7 +20,12 @@ class Message:
 
     def append_to_body(self, chunk):
         self.__body += chunk
-        return len(self.__body) == self.__get_body_len()
+        if self.__is_chunked():
+            complete = self.__body.endswith(b"0" + NEW_LINE_B * 2)
+            if complete:
+                self.__body = self.__body[:-2]
+            return complete
+        return len(self.__body) >= self.__get_body_len()
 
     def get_body(self):
         return self.__body
@@ -26,18 +33,20 @@ class Message:
     def get_status(self):
         return self.__headers.get("Status")
 
-    def to_str(self):
+    def to_bytes(self):
         message = self.__start_line + NEW_LINE
         message += NEW_LINE.join(["%s: %s" % header for header in self.__headers.items()])
         message += NEW_LINE * 2
-        if self.__get_body_len() > 0:
-            message += self.__body + NEW_LINE
+        message = message.encode()
+        if self.__get_body_len() > 0 or self.__is_chunked():
+            message += self.__body + NEW_LINE_B
         return message
 
     def get_host(self):
         host = self.__headers.get("Host")
         if host:
-            return split(r":", host)[0]
+            host = split(r":", host)
+            return host[0], int(host[1]) if len(host) > 1 else HTTP_PORT
         else:
             return None
 
@@ -48,3 +57,6 @@ class Message:
 
     def __get_body_len(self):
         return int(self.__headers.get("Content-Length", "0"))
+
+    def __is_chunked(self):
+        return self.__headers.get("Transfer-Encoding", "") == "chunked"

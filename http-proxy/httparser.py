@@ -1,47 +1,30 @@
-from message import Message
-from enum import Enum
+from message import Message, NEW_LINE_B
 
 
 class HTTParser:
 
     def __init__(self):
         self.__message = Message()
-        self.__state = self.State.START_LINE
-        self.__prefix = ""
+        self.__head = ""
 
     def append(self, chunk):
-        tokens = self.__tokenize(chunk)
-        if self.__parse(tokens):
-            return self.__message
-        return None
+        if self.__head is None:
+            return self.__parse_body_part(chunk)
+        if NEW_LINE_B * 2 not in chunk:
+            self.__head += chunk.decode()
+            return None
+        parts = chunk.split(NEW_LINE_B * 2, 1)
+        self.__head += parts[0].decode()
+        self.__parse_head()
+        return self.__parse_body_part(parts[1] if len(parts) > 1 else b"")
 
-    def __tokenize(self, chunk):
-        tokens = (self.__prefix + chunk).splitlines()
-        if not chunk.endswith("\r\n"):
-            self.__prefix = tokens[-1]
-            tokens.pop()
-        else:
-            self.__prefix = ""
-        return tokens
+    def __parse_head(self):
+        tokens = self.__head.splitlines()
+        self.__message.set_start_line(tokens[0])
+        for token in tokens[1:]:
+            header = token.split(": ", maxsplit=1)
+            self.__message.add_header(header[0], header[1])
+        self.__head = None
 
-    def __parse(self, tokens):
-        for token in tokens:
-            if self.__state == self.State.START_LINE:
-                self.__message.set_start_line(token)
-                self.__state = self.State.HEADERS
-            elif self.__state == self.State.HEADERS:
-                if not token:
-                    self.__state = self.State.BODY
-                    if self.__message.append_to_body(""):
-                        return True
-                    continue
-                header = token.split(": ", maxsplit=1)
-                self.__message.add_header(header[0], header[1])
-            elif self.__message.append_to_body(token):
-                return True
-        return False
-
-    class State(Enum):
-        START_LINE = 1
-        HEADERS = 2
-        BODY = 3
+    def __parse_body_part(self, chunk):
+        return self.__message if self.__message.append_to_body(chunk) else None

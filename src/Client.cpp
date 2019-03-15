@@ -78,31 +78,17 @@ Currency Client::getCurrencyWithHistory(const Currency &currency) const {
     return Currency(currency.get_name(), translate_get_currency_history_message(response));
 }
 
-Client::Client(const std::string &hostname, uint16_t portno) : sockfd(socket(AF_INET, SOCK_STREAM, 0)) {
+Client::Client(const std::string &server_ip, uint16_t portno) : sockfd(socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) {
     if (sockfd < 0) {
         perror("ERROR opening socket");
         exit(1);
     }
 
-    struct hostent *server = gethostbyname(hostname.c_str());
-
-    if (server == nullptr) {
-        unsigned int addr = inet_addr(hostname.c_str());
-        server = gethostbyaddr((char *) &addr, sizeof(addr), AF_INET);
-        if (server == nullptr) {
-            perror("ERROR, no such host");
-            exit(1);
-        }
-    }
-
-    struct sockaddr_in server_addr{};
-    bzero((char *) &server_addr, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    bcopy(server->h_addr, (char *) &server_addr.sin_addr.s_addr, (size_t) server->h_length);
-    server_addr.sin_port = htons(portno);
-
-    if (connect(sockfd, (struct sockaddr *) &server_addr, sizeof(server_addr)) < 0) {
-        perror("ERROR connecting");
+    bzero((char *) &si_other, sizeof(si_other));
+    si_other.sin_family = AF_INET;
+    si_other.sin_port = htons(portno);
+    if (inet_aton(server_ip.c_str(), &si_other.sin_addr)==0) {
+        perror("inet_aton() failed\n");
         exit(1);
     }
 }

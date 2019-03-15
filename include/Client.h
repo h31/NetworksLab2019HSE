@@ -10,7 +10,7 @@
 
 class Client {
 public:
-    Client(const std::string &hostname, uint16_t portno);
+    Client(const std::string &server_ip, uint16_t portno);
 
     const std::vector<Currency> list() const;
 
@@ -25,6 +25,7 @@ public:
     virtual ~Client();
 
 private:
+    struct sockaddr_in si_other;
     const int sockfd;
     static const size_t BUFFER_INITIAL_LENGTH = 256;
     static const size_t CURRENCY_NAME_SIZE_IN_LIST = 16;

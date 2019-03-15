@@ -95,8 +95,6 @@ void Server::stop() const {
 }
 
 void Server::processCurrencyListQuery() {
-    readMessageDelimeter();
-    
     for (auto it = currencies.begin(); it != currencies.end(); ++it) {
         Currency &currency = it->second;
         const string &name = currency.getName();
@@ -118,25 +116,21 @@ void Server::processCurrencyListQuery() {
         sendInt32(relativeChange);  
     }
     
-    sendMessageDelimeter();
 }
 
 void Server::processNewCurrencyQuery() {
     string name = readCurrencyName();
     int32_t rate = readCurrencyRate();
-    readMessageDelimeter();
     
     Currency currency = Currency(name, rate);
     auto result = currencies.emplace(name, currency);        
     int8_t success = result.second ? 1 : 0;
 
     sendInt8(success);
-    sendMessageDelimeter();
 }
 
 void Server::processDeleteCurrencyQuery() {
     string name = readCurrencyName();
-    readMessageDelimeter();   
     
     int8_t success;
     
@@ -148,13 +142,11 @@ void Server::processDeleteCurrencyQuery() {
     }
 
     sendInt8(success);
-    sendMessageDelimeter();
 }
 
 void Server::processAddCurrencyRateQuery() {
     string name = readCurrencyName();
     int32_t rate = readCurrencyRate();
-    readMessageDelimeter();
     
     int8_t success;
     
@@ -167,12 +159,10 @@ void Server::processAddCurrencyRateQuery() {
     }
     
     sendInt8(success);
-    sendMessageDelimeter();
 }
 
 void Server::processCurrencyRateHistoryQuery() {
     string name = readCurrencyName();
-    readMessageDelimeter();
     
     Currency &currency = currencies.find(name)->second;
     auto rates = currency.getRates();
@@ -180,16 +170,10 @@ void Server::processCurrencyRateHistoryQuery() {
     for (auto rate : rates) {
         sendInt32(rate);
     }   
-
-    sendMessageDelimeter();
 }
 
 int32_t Server::readCommand() {
     return readInt32();    
-}
-
-int16_t Server::readMessageDelimeter() {
-    return readInt16();
 }
 
 const string Server::readCurrencyName() {
@@ -210,21 +194,9 @@ int32_t Server::readInt32() {
     return intValue;
 }
 
-int16_t Server::readInt16() {
-    int16_t intValue = 0;
-    memcpy(&intValue, buffer + bufferPosition, sizeof(intValue));
-    bufferPosition += sizeof(intValue);
-    return intValue;
-}
-
 void Server::readChars(char *dst, size_t size) {
     memcpy(dst, buffer + bufferPosition, size);
     bufferPosition += size;
-}
-
-void Server::sendMessageDelimeter() {
-    sendInt8((int8_t) '\\');
-    sendInt8(0);
 }
 
 void Server::sendString(const string &src, size_t len) {
@@ -245,4 +217,3 @@ void Server::sendInt32(int32_t d) {
 void Server::sendInt8(int8_t d) {
     message.push_back(d);
 }
-

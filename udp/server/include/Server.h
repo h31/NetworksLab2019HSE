@@ -22,15 +22,12 @@ private:
     void processCurrencyRateHistoryQuery();
 
     int32_t readCommand();
-    int16_t readMessageDelimeter();
     const std::string readCurrencyName();
     int32_t readCurrencyRate();
     
     int32_t readInt32();
-    int16_t readInt16();
     void readChars(char *dst, size_t size);
 
-    void sendMessageDelimeter();
     void sendString(const std::string &message, size_t len);
     void sendInt32(int32_t n);
     void sendInt8(int8_t n);

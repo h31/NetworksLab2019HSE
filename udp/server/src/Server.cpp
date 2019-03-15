@@ -76,11 +76,11 @@ void Server::start() {
             memcpy(writingBuffer, &dataSize, sizeof(int32_t));
             memcpy(writingBuffer + sizeof(int32_t), &currentDGram, sizeof(int32_t));
             
-            for (int j = 0; j < BUFFER_SIZE && i + j < message.size(); j++) {
+            for (int j = 0; j < dataSize && i + j < message.size(); j++) {
                 writingBuffer[2 * sizeof(int32_t) + j] = message[i + j];
             }
 
-            n = sendto(sockfd, writingBuffer, BUFFER_SIZE, 0, (struct sockaddr*) &cli_addr, clilen);
+            n = sendto(sockfd, writingBuffer, min(BUFFER_SIZE, 2 * sizeof(int32_t) + message.size() - i), 0, (struct sockaddr*) &cli_addr, clilen);
             
             if (n < 0) {
                 perror("ERROR on sending");

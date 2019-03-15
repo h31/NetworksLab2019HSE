@@ -30,13 +30,15 @@ private:
     struct sockaddr_in *si_other;
     const int sockfd;
     int32_t request_id = 0;
-    int si_other_len = sizeof(si_other);
+    int si_other_len;
     static const size_t BUFFER_INITIAL_LENGTH = 1024;
     static const size_t CURRENCY_NAME_SIZE_IN_LIST = 16;
     static const size_t MAX_SIZE_OF_PACKET = 508;
-    static const size_t TIMOUT_SECONDS = 30;
+    static const size_t TIMOUT_SECONDS = 3;
 
-    const std::vector<int8_t> send_and_receive(const std::vector<int8_t> &send_buffer) const;
+    const std::vector<int8_t> get_message_with_request_id(const std::vector<int8_t> &message);
+
+    const std::vector<int8_t> send_and_receive(const std::vector<int8_t> &message);
 
     void write_request_id(std::vector<int8_t> &buffer);
 

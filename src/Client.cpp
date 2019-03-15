@@ -13,15 +13,22 @@
 #include <algorithm>
 #include <map>
 
-const std::vector<int8_t> Client::send_and_receive(const std::vector<int8_t> &send_buffer) const {
+const std::vector<int8_t> Client::get_message_with_request_id(const std::vector<int8_t> &message) {
+    std::vector<int8_t> send_buffer;
+    write_request_id(send_buffer);
+    send_buffer.insert(send_buffer.end(), message.begin(), message.end());
+    return send_buffer;
+}
+
+const std::vector<int8_t> Client::send_and_receive(const std::vector<int8_t> &message) {
     bool got_all_message = false;
     std::vector<int8_t> response;
     while(!got_all_message) {
-        send_request(send_buffer);
+        send_request(get_message_with_request_id(message));
 
         try {
             response = read_response();
-        } catch (char *c) {
+        } catch (const char *timeout_exception) {
             continue;
         }
         got_all_message = true;
@@ -33,7 +40,6 @@ const std::vector<Currency> Client::list() {
     int32_t command_no = 0;
     auto write_buffer = std::vector<int8_t>();
 
-    write_request_id(write_buffer);
     write_command(write_buffer, command_no);
 
     auto response = send_and_receive(write_buffer);
@@ -45,7 +51,6 @@ bool Client::addCurrency(const Currency &currency) {
     int32_t command_no = 1;
     auto write_buffer = std::vector<int8_t>();
 
-    write_request_id(write_buffer);
     write_command(write_buffer, command_no);
     write_string(write_buffer, currency.get_name());
     write_int32(write_buffer, currency.get_current_rate());
@@ -58,7 +63,6 @@ bool Client::remove(const Currency &currency) {
     int32_t command_no = 2;
     auto write_buffer = std::vector<int8_t>();
 
-    write_request_id(write_buffer);
     write_command(write_buffer, command_no);
     write_string(write_buffer, currency.get_name());
 
@@ -70,7 +74,6 @@ bool Client::addRate(const Currency &currency, int32_t new_rate) {
     int32_t command_no = 3;
     auto write_buffer = std::vector<int8_t>();
 
-    write_request_id(write_buffer);
     write_command(write_buffer, command_no);
     write_string(write_buffer, currency.get_name());
     write_int32(write_buffer, new_rate);
@@ -83,7 +86,6 @@ Currency Client::getCurrencyWithHistory(const Currency &currency) {
     auto write_buffer = std::vector<int8_t>();
     int32_t command_no = 4;
 
-    write_request_id(write_buffer);
     write_command(write_buffer, command_no);
     write_string(write_buffer, currency.get_name());
 
@@ -109,10 +111,11 @@ Client::Client(const std::string &server_ip, uint16_t portno) : sockfd(socket(AF
     bzero((char *) si_other, sizeof(si_other));
     si_other->sin_family = AF_INET;
     si_other->sin_port = htons(portno);
-    if (inet_aton(server_ip.c_str(), &si_other->sin_addr)==0) {
+    if (inet_aton(server_ip.c_str(), &(si_other->sin_addr)) == 0) {
         perror("inet_aton() failed\n");
         exit(1);
     }
+    si_other_len = sizeof(*si_other);
 }
 
 Client::~Client() {
@@ -218,7 +221,8 @@ std::vector<int8_t> Client::read_response() const {
                 (struct sockaddr *) si_other, (socklen_t *) &si_other_len);
 
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            perror("Timout reached for recvfrom, probably packages was lost, sending again");
+            perror("Timout reached for recvfrom, probably packages was lost or request wasn't received, sending again."
+                   " Error:");
             throw "TIMEOUT";
         }
         if (bytes_number == 0) {
@@ -267,8 +271,8 @@ void Client::send_request(const std::vector<int8_t> &buffer) const {
         perror("ERROR sending data, packet size is more then maximum size");
         exit(1);
     }
-    auto return_code = sendto(sockfd, buffer.data(), buffer.size(), 0, (struct sockaddr *) &si_other,
-                              static_cast<socklen_t>(si_other_len));
+    auto return_code = sendto(sockfd, buffer.data(), buffer.size(), 0,
+                              (struct sockaddr *) si_other, static_cast<socklen_t>(si_other_len));
     if (return_code < 0) {
         perror("ERROR sending data to socket");
         exit(1);

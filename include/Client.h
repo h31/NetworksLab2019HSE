@@ -50,8 +50,6 @@ private:
 
     const std::vector<Currency> translate_list_message(std::vector<int8_t> &message) const;
 
-    void remove_ending_symbols(std::vector<int8_t> &message) const;
-
     void write_string(std::vector<int8_t> &buffer, const std::string &currency_name) const;
 
     void write_int32(std::vector<int8_t> &buffer, int32_t rate) const;

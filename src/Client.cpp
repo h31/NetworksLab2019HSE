@@ -159,13 +159,11 @@ void Client::write_command(std::vector<int8_t> &buffer, int32_t command_no) cons
 }
 
 bool Client::translate_remove_message(std::vector<int8_t> &message) const {
-    remove_ending_symbols(message);
     auto it = message.begin();
     return read_bool(it);
 }
 
 std::vector<int32_t> Client::translate_get_currency_history_message(std::vector<int8_t> &message) const {
-    remove_ending_symbols(message);
     std::vector<int32_t> history;
     for (auto it = message.begin(); it < message.end();) {
         history.push_back(read_int32(it));
@@ -174,13 +172,11 @@ std::vector<int32_t> Client::translate_get_currency_history_message(std::vector<
 }
 
 bool Client::translate_add_message(std::vector<int8_t> &message) const {
-    remove_ending_symbols(message);
     auto it = message.begin();
     return read_bool(it);
 }
 
 const std::vector<Currency> Client::translate_list_message(std::vector<int8_t> &message) const {
-    remove_ending_symbols(message);
     std::vector<Currency> currencies;
     for (auto it = message.begin(); it < message.end();) {
         std::string currency_name = read_string(it, CURRENCY_NAME_SIZE_IN_LIST);
@@ -195,10 +191,6 @@ const std::vector<Currency> Client::translate_list_message(std::vector<int8_t> &
         }
     }
     return currencies;
-}
-
-void Client::remove_ending_symbols(std::vector<int8_t> &message) const {
-    message.erase(message.end() - 2, message.end());
 }
 
 void Client::write_string(std::vector<int8_t> &buffer, const std::string &currency_name) const {
@@ -259,7 +251,7 @@ std::vector<int8_t> Client::construct_message_from_packets(const std::map<int, s
 bool Client::is_all_packets_received
 (const std::map<int, std::vector<int8_t>> &packets, int number_of_packets) const {
     for (int packet_id = 0; packet_id < number_of_packets; packet_id++) {
-        if (packets.count(packet_id) != 0) {
+        if (packets.count(packet_id) == 0) {
             return false;
         }
     }

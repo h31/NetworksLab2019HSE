@@ -34,7 +34,7 @@ private:
     static const size_t BUFFER_INITIAL_LENGTH = 1024;
     static const size_t CURRENCY_NAME_SIZE_IN_LIST = 16;
     static const size_t MAX_SIZE_OF_PACKET = 508;
-    static const size_t TIMOUT_SECONDS = 3;
+    static const size_t TIMOUT_SECONDS = 30;
 
     const std::vector<int8_t> get_message_with_request_id(const std::vector<int8_t> &message);
 

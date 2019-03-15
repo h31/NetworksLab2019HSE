@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <map>
+#include <cstddef>
 
 #include "include/Currency.h"
 
@@ -21,6 +22,7 @@ private:
     void processAddCurrencyRateQuery();
     void processCurrencyRateHistoryQuery();
 
+    int32_t readRequestId();
     int32_t readCommand();
     const std::string readCurrencyName();
     int32_t readCurrencyRate();
@@ -35,7 +37,7 @@ private:
     void checkStatus(int n) const;
 
     static const int CURRENCY_NAME_SIZE = 16;
-    static const int BUFFER_SIZE = 508;
+    static const size_t BUFFER_SIZE = 508;
     int8_t buffer[BUFFER_SIZE];
     int bufferPosition;
     std::vector<int8_t> message;

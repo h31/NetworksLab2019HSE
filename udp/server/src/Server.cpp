@@ -6,8 +6,12 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <cstring>
+#include <algorithm>
 
 using namespace std;
+
+const int Server::CURRENCY_NAME_SIZE;
+const size_t Server::BUFFER_SIZE;
 
 Server::Server(uint16_t portNumber)
     : portNumber(portNumber) {}
@@ -41,12 +45,17 @@ void Server::start() {
         message.clear();
 
         n = recvfrom(sockfd, buffer, BUFFER_SIZE, 0, (struct sockaddr *) &cli_addr, &clilen);
+
+        if (n == 0) {
+            break;
+        }
         
         if (n < 0) {
             perror("ERROR on receiving");
             continue;    
         }
         
+        int32_t requestId = readRequestId();
         int32_t command = readCommand();
         
         switch (command) {
@@ -67,20 +76,39 @@ void Server::start() {
                 break;
         }
         
-        int32_t dataSize = BUFFER_SIZE - 2 * sizeof(int32_t);
+        int32_t dataSize = BUFFER_SIZE - 3 * sizeof(int32_t);
         int32_t dGramNumber = (message.size() + dataSize - 1) / dataSize;
+
+        if (message.size() == 0) {
+            dGramNumber = 1;
+            int32_t currentDGram = 0;
+            
+            bzero((char *) &writingBuffer, BUFFER_SIZE);
+            memcpy(writingBuffer, &requestId, sizeof(int32_t));
+            memcpy(writingBuffer + sizeof(int32_t), &dGramNumber, sizeof(int32_t));
+            memcpy(writingBuffer + 2 * sizeof(int32_t), &currentDGram, sizeof(int32_t));
+
+            n = sendto(sockfd, writingBuffer, 3 * sizeof(int32_t), 0, (struct sockaddr*) &cli_addr, clilen);
+            
+            if (n < 0) {
+                perror("ERROR on sending");
+            }
+
+            continue;
+        }       
 
         for (int32_t i = 0, currentDGram = 0; i < message.size(); i += dataSize, currentDGram++) {
             bzero((char *) &writingBuffer, BUFFER_SIZE);
             
-            memcpy(writingBuffer, &dataSize, sizeof(int32_t));
-            memcpy(writingBuffer + sizeof(int32_t), &currentDGram, sizeof(int32_t));
+            memcpy(writingBuffer, &requestId, sizeof(int32_t));
+            memcpy(writingBuffer + sizeof(int32_t), &dGramNumber, sizeof(int32_t));
+            memcpy(writingBuffer + 2 * sizeof(int32_t), &currentDGram, sizeof(int32_t));
             
             for (int j = 0; j < dataSize && i + j < message.size(); j++) {
-                writingBuffer[2 * sizeof(int32_t) + j] = message[i + j];
+                writingBuffer[3 * sizeof(int32_t) + j] = message[i + j];
             }
 
-            n = sendto(sockfd, writingBuffer, min(BUFFER_SIZE, 2 * sizeof(int32_t) + message.size() - i), 0, (struct sockaddr*) &cli_addr, clilen);
+            n = sendto(sockfd, writingBuffer, min(BUFFER_SIZE, 3 * sizeof(int32_t) + message.size() - i), 0, (struct sockaddr*) &cli_addr, clilen);
             
             if (n < 0) {
                 perror("ERROR on sending");
@@ -173,6 +201,10 @@ void Server::processCurrencyRateHistoryQuery() {
 }
 
 int32_t Server::readCommand() {
+    return readInt32();    
+}
+
+int32_t Server::readRequestId() {
     return readInt32();    
 }
 

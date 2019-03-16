@@ -60,7 +60,7 @@ namespace serialization {
 
         std::vector<email::EmailInfo> parse_email_infos();
 
-        std::shared_ptr<response::Response> parseResponse(request::RequestType type);
+        std::shared_ptr<response::Response> parse_response(request::RequestType type);
 
     private:
         const uint8_t *buffer_;

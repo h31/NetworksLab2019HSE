@@ -27,6 +27,7 @@ namespace email {
         uint16_t port = email::Client::DEFAULT_SERVER_PORT;
         std::string port_str = util::UserView::get_user_input(
             "Enter server port or leave default " + std::to_string(port) + ": ");
+
         port = port_str.empty() ? port : static_cast<uint16_t>(std::stoi(port_str));
         return {email, server, port};
     }
@@ -116,6 +117,7 @@ namespace email {
         auto infos = check_response->get_infos();
         util::UserView::println(infos.empty() ? "No new messages." : "New messages:");
         for (auto &info : infos) {
+            util::UserView::println();
             util::UserView::println(info);
         }
     }

@@ -5,6 +5,7 @@
 #include "network/response.h"
 #include "network/request.h"
 #include "network/client_socket.h"
+#include "util/commands.h"
 #include "util/user_view.h"
 
 namespace email {

@@ -49,7 +49,7 @@ namespace network {
 
         auto buffer = receive_message();
         serialization::Deserializer deserializer(buffer.get());
-        auto response = deserializer.parseResponse(request->get_type());
+        auto response = deserializer.parse_response(request->get_type());
         close_connection();
         return response;
     }
@@ -59,16 +59,16 @@ namespace network {
     }
 
     std::unique_ptr<uint8_t[]> ClientSocket::receive_message() {
-        uint32_t messageSize = read_message_size();
-        std::unique_ptr<uint8_t[]> buffer(new uint8_t[messageSize]);
-        read_to_buffer(buffer.get(), messageSize);
+        uint32_t size = read_message_size();
+        std::unique_ptr<uint8_t[]> buffer(new uint8_t[size]);
+        read_to_buffer(buffer.get(), size);
         return buffer;
     }
 
     uint32_t ClientSocket::read_message_size() {
-        uint8_t messageSizeBuffer[INT_SIZE];
-        read_to_buffer(messageSizeBuffer, INT_SIZE);
-        serialization::Deserializer deserializer(messageSizeBuffer);
+        uint8_t size_buf[INT_SIZE];
+        read_to_buffer(size_buf, INT_SIZE);
+        serialization::Deserializer deserializer(size_buf);
         return deserializer.parse_uint32();
     }
 

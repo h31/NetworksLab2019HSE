@@ -3,7 +3,6 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <climits>
 #include <memory>
 #include <csignal>
 #include <functional>
@@ -19,3 +18,4 @@
 #define INT_SIZE 4
 #define POWER_OF_TWO 8
 #define MESSAGE_TYPE_SIZE 1
+#define UCHAR_MAX 0xffu

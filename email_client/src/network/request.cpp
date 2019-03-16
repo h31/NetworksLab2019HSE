@@ -2,7 +2,9 @@
 
 namespace request {
 
-    Request::Request(RequestType type, const std::string &author) : type_(type), author_(author) {}
+    Request::Request(RequestType type, const std::string &author)
+        : type_(type),
+          author_(author) {}
 
     RequestType Request::get_type() const {
         return type_;
@@ -16,7 +18,9 @@ namespace request {
         return static_cast<uint32_t>(MESSAGE_TYPE_SIZE + INT_SIZE + author_.length());
     }
 
-    SendRequest::SendRequest(email::Email email) : Request(SEND_EMAIL, email.get_author()), email_(std::move(email)) {}
+    SendRequest::SendRequest(email::Email email)
+        : Request(SEND_EMAIL, email.get_author()),
+          email_(std::move(email)) {}
 
     const email::Email &SendRequest::get_email() const {
         return email_;
@@ -30,13 +34,17 @@ namespace request {
         return Request::size() + email_.size();
     }
 
-    CheckRequest::CheckRequest(const std::string &author) : Request(CHECK_EMAIL, author) {}
+    CheckRequest::CheckRequest(const std::string &author)
+        : Request(CHECK_EMAIL, author) {}
 
     uint32_t CheckRequest::size() const {
         return Request::size();
     }
 
-    GetRequest::GetRequest(const std::string &author, uint32_t id) : Request(GET_EMAIL, author), id_(id), size_(0) {}
+    GetRequest::GetRequest(const std::string &author, uint32_t id)
+        : Request(GET_EMAIL, author),
+          id_(id),
+          size_(0) {}
 
     uint32_t GetRequest::get_id() const {
         return id_;

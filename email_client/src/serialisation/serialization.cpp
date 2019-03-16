@@ -68,7 +68,9 @@ namespace serialization {
         return SerializedMessage(request_->size() + INT_SIZE, buffer_);
     }
 
-    Deserializer::Deserializer(const uint8_t *buffer, uint32_t offset) : buffer_(buffer), index_(offset) {}
+    Deserializer::Deserializer(const uint8_t *buffer, uint32_t offset)
+        : buffer_(buffer),
+          index_(offset) {}
 
     uint32_t Deserializer::parse_uint32() {
         uint32_t result = buffer_[index_ + INT_SIZE - 1];
@@ -117,7 +119,7 @@ namespace serialization {
         return result;
     }
 
-    std::shared_ptr<response::Response> Deserializer::parseResponse(request::RequestType type) {
+    std::shared_ptr<response::Response> Deserializer::parse_response(request::RequestType type) {
         response::ResponseStatus status = parse_response_status();
         std::shared_ptr<response::Response> responseBody;
         if (status == response::OK) {

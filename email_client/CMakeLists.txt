@@ -57,6 +57,7 @@ add_executable(
         src/network/request.cpp
         src/network/client_socket.cpp
 
+        src/util/commands.cpp
         src/util/user_view.cpp
 
         src/serialisation/serialization.cpp

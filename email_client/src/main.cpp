@@ -10,14 +10,14 @@ namespace {
 
 int main() {
     auto client = email::Client::from_input();
-    shutdown_handler = [&](int d) {
-        std::cout << "catch signal: " << d << std::endl;
+
+    shutdown_handler = [&](int) {
         client.shut_down();
         exit(0);
     };
-
     std::signal(SIGINT, signal_handler);
     std::signal(SIGTERM, signal_handler);
+
     client.run();
     return 0;
 }

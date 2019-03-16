@@ -16,7 +16,11 @@ import java.util.concurrent.*;
 
 public class Server {
     public static void main(String[] args) throws IOException {
-        new Server().run();
+        if (args.length != 1) {
+            System.out.println("server pass one argument: server host");
+            return;
+        }
+        new Server().run(args[0]);
     }
 
     public Server() throws IOException {
@@ -33,11 +37,15 @@ public class Server {
     private ScheduledExecutorService closer = Executors.newScheduledThreadPool(1);
     private FileManager fileManager = new ListFileManager();
 
-    public void run() throws IOException {
+    public void run(String adress) throws IOException {
         serverSocketChannel = ServerSocketChannel.open();
-        Socket getIp = new Socket("2ip.ru", 80);
-        InetSocketAddress socketAddress = new InetSocketAddress(getIp.getLocalAddress().getHostAddress(), 8081);
-        serverSocketChannel.bind(socketAddress);
+        InetSocketAddress socketAddress = new InetSocketAddress(adress, 8081);
+        try {
+            serverSocketChannel.bind(socketAddress);
+        } catch (Exception e) {
+            System.out.println("can't bind adress");
+            return;
+        }
         System.out.println("server adress: " + serverSocketChannel.socket().getLocalSocketAddress());
         selector = Selector.open();
         Selector writerSelector = Selector.open();

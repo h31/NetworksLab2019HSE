@@ -20,6 +20,7 @@ public class Leech implements Runnable {
     private ThreadPoolExecutor downloadPool = (ThreadPoolExecutor) Executors.newFixedThreadPool(8);
     private final Object mutex = new Object();
     private short ownSeederPort;
+    private Set<InetSocketAddress> usedSeeders = Collections.synchronizedSet(new HashSet<>());
 
     public Leech(int fileId, Client client, MetaDataManager metaData, short ownSeederPort) {
         this.fileId = fileId;
@@ -63,7 +64,9 @@ public class Leech implements Runnable {
             do {
                 for (InetSocketAddress owner : owners) {
                     if (downloadPool.getActiveCount() < downloadPool.getMaximumPoolSize()) {
-                        downloadPool.submit(new Downloader(owner, fileInfo, neededParts, writer));
+                        if (!usedSeeders.contains(owner)) {
+                            downloadPool.submit(new Downloader(owner, fileInfo, neededParts, writer));
+                        }
                     }
                 }
                 Thread.sleep(20000);
@@ -109,6 +112,7 @@ public class Leech implements Runnable {
             try (Socket socket = new Socket()) {
                 socket.connect(address);
                 Set<Integer> userParts = getStat(socket);
+                usedSeeders.add(address);
 
                 for (Map.Entry<Integer, PartHolder> neededPart : neededParts.entrySet()) {
                     int partNumber = neededPart.getKey();
@@ -137,6 +141,7 @@ public class Leech implements Runnable {
             } catch (IOException e) {
                 //seeder is busy
             } finally {
+                usedSeeders.remove(address);
                 synchronized (mutex) {
                     mutex.notify();
                 }

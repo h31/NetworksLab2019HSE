@@ -60,3 +60,14 @@ class Message:
 
     def __is_chunked(self):
         return self.__headers.get("Transfer-Encoding", "") == "chunked"
+
+    def __hash__(self):
+        return hash(self.__body) + hash(self.__start_line) + hash(self.get_host())
+
+    def __eq__(self, other):
+        if not isinstance(other, Message):
+            return False
+        return self.__body == other.__body and self.__start_line == other.__start_line and self.__headers == other.__headers
+
+    def __str__(self):
+        return self.__start_line + str(self.__headers)

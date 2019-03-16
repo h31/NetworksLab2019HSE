@@ -1,5 +1,6 @@
 import time
 import sys
+import logging
 from operator import itemgetter
 
 
@@ -10,18 +11,22 @@ class Cache:
         self.__max_size = max_size
 
     def get(self, request):
+        print(self.__check_expire(request))
         if request.can_cache() and not self.__check_expire(request):
-            return self.__cache.get(request, (None, None))
+            print("WIN!!!!!!")
+            logging.info("Get from cache: %s" % (str(request)))
+            return self.__cache.get(hash(request), (None, None))
         else:
-            return None
+            return None, None
 
     def put(self, request, response):
+        print(request, hash(request))
         self.__clear_old_cache()
         if request.can_cache() and response.can_cache():
-            self.__cache[request] = (time.time(), response)
+            self.__cache[hash(request)] = (time.time(), response)
 
     def __check_expire(self, request):
-        set_time, value = self.__cache.get(request, (None, None))
+        set_time, value = self.__cache.get(hash(request), (None, None))
         if set_time is not None:
             if set_time + self.__expire < time.time():
                 self.__cache.pop(request)
@@ -35,6 +40,7 @@ class Cache:
         return sys.getsizeof(self.__cache) < self.__max_size
 
     def __clear_old_cache(self):
+        logging.info("Clear old cache values")
         key_for_deleted = []
         if not self.__check_cache_size():
             for key, value in self.__cache.items():

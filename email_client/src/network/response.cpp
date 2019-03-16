@@ -4,10 +4,6 @@ namespace response {
 
     Response::Response(ResponseStatus status) : status_(status) {}
 
-    ResponseStatus Response::get_status() const {
-        return status_;
-    }
-
     bool Response::is_error() {
         return status_ == ERROR;
     }

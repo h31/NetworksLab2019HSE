@@ -49,18 +49,17 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}\
 add_executable(
         ${PROJECT_NAME}
         src/main.cpp
-        src/email_system/client.cpp
-        src/email_system/email.cpp
+
+        src/client.cpp
+        src/email.cpp
+
         src/network/response.cpp
         src/network/request.cpp
         src/network/client_socket.cpp
 
         src/util/user_view.cpp
-        src/util/get_size.cpp
 
         src/serialisation/serialization.cpp
-        src/serialisation/response.cpp
-        src/serialisation/request.cpp
 
 )
 

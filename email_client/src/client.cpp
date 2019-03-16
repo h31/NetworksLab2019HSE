@@ -1,7 +1,4 @@
 #include <client.h>
-#include <memory>
-
-//#define DEBUG_MODE
 
 namespace email {
 
@@ -89,7 +86,7 @@ namespace email {
 
     void Client::send_email(const Email &email) {
         std::unique_ptr<request::Request> request(new request::SendRequest(email));
-        std::shared_ptr<response::Response> response = socket_.sendRequest(request);
+        std::shared_ptr<response::Response> response = socket_.send_request(request);
         if (response->is_error()) {
             process_error_response(response);
             return;
@@ -99,7 +96,7 @@ namespace email {
 
     void Client::check_email() {
         std::unique_ptr<request::Request> request(new request::CheckRequest(host_email_));
-        std::shared_ptr<response::Response> response = socket_.sendRequest(request);
+        std::shared_ptr<response::Response> response = socket_.send_request(request);
 
         if (response->is_error()) {
             process_error_response(response);
@@ -116,7 +113,7 @@ namespace email {
 
     void Client::get_email(uint32_t id) {
         std::unique_ptr<request::Request> request(new request::GetRequest(host_email_, id));
-        std::shared_ptr<response::Response> response = socket_.sendRequest(request);
+        std::shared_ptr<response::Response> response = socket_.send_request(request);
 
         if (response->is_error()) {
             process_error_response(response);

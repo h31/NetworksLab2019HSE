@@ -18,3 +18,4 @@
 
 #define INT_SIZE 4
 #define POWER_OF_TWO 8
+#define MESSAGE_TYPE_SIZE 1

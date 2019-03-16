@@ -10,7 +10,6 @@ namespace {
 
 int main() {
     auto client = email::Client::from_input();
-//    auto client = email::Client("aaa@gmail.com", "127.0.0.1" , 1111);
     shutdown_handler = [&](int d) {
         std::cout << "catch signal: " << d << std::endl;
         client.shut_down();

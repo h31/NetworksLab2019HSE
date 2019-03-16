@@ -1,7 +1,6 @@
 #include <network/request.h>
 
 namespace request {
-    using namespace util;
 
     Request::Request(RequestType type, const std::string &author) : type_(type), author_(author) {}
 
@@ -14,7 +13,7 @@ namespace request {
     }
 
     uint32_t Request::size() const {
-        return TYPE_SIZE + get_size(get_author());
+        return static_cast<uint32_t>(MESSAGE_TYPE_SIZE + INT_SIZE + author_.length());
     }
 
     SendRequest::SendRequest(email::Email email) : Request(SEND_EMAIL, email.get_author()), email_(std::move(email)) {}
@@ -28,7 +27,7 @@ namespace request {
     }
 
     uint32_t SendRequest::size() const {
-        return Request::size() + get_size(email_);
+        return Request::size() + email_.size();
     }
 
     CheckRequest::CheckRequest(const std::string &author) : Request(CHECK_EMAIL, author) {}

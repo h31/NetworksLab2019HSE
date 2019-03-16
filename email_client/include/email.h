@@ -24,7 +24,7 @@ namespace email {
 
         const std::string &get_body() const;
 
-        friend std::ostream& operator<<(std::ostream& s, const Email &e);
+        uint32_t size() const;
 
     private:
         std::string author_;
@@ -45,13 +45,10 @@ namespace email {
 
         const std::string &get_theme() const;
 
-        friend std::ostream& operator<<(std::ostream& s, const EmailInfo &i);
-
     private:
         uint32_t id_;
         std::string author_;
         std::string theme_;
     };
 
-
-}
+} // namespace email

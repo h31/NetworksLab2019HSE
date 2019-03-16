@@ -5,12 +5,14 @@
 
 namespace response {
 
-    enum ResponseStatus { OK, ERROR };
+    enum ResponseStatus {
+        OK, ERROR
+    };
 
     class Response {
     public:
-        ResponseStatus get_status() const;
         bool is_error();
+
     protected:
         explicit Response(ResponseStatus status);
 
@@ -31,12 +33,11 @@ namespace response {
     class SendResponse : public Response {
     public:
         explicit SendResponse();
-    private:
     };
 
     class CheckResponse : public Response {
     public:
-        explicit CheckResponse(const std::vector<email::EmailInfo>& infos);
+        explicit CheckResponse(const std::vector<email::EmailInfo> &infos);
 
         const std::vector<email::EmailInfo> &get_infos() const;
 
@@ -54,4 +55,4 @@ namespace response {
         email::Email email_;
     };
 
-} // namespace network
+} // namespace response

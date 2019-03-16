@@ -25,13 +25,13 @@ namespace email {
         return body_;
     }
 
-    std::ostream &operator<<(std::ostream& s, const Email &e) {
-        s << "author: " << e.get_author() << std::endl;
-        s << "recipient: " << e.get_recipient() << std::endl;
-        s << "theme: " << e.get_theme() << std::endl;
-        s << "---------------------" << std::endl;
-        s << e.get_body();
-        return s;
+    uint32_t Email::size() const {
+        size_t result = 2 * INT_SIZE;
+        result += recipient_.length();
+        result += author_.length();
+        result += theme_.length();
+        result += body_.length();
+        return static_cast<uint32_t>(result);
     }
 
     EmailInfo::EmailInfo(uint32_t id, const std::string &author, const std::string &theme)
@@ -49,11 +49,5 @@ namespace email {
         return theme_;
     }
 
-    std::ostream &operator<<(std::ostream &s, const EmailInfo &i) {
-        s << "id: " << i.get_id() << std::endl;
-        s << "author: " << i.get_author() << std::endl;
-        s << "theme: " << i.get_theme();
-        return s;
-    }
 } // namespace email
 

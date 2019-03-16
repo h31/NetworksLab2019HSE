@@ -3,7 +3,6 @@
 #include "pch.h"
 #include "email.h"
 #include "network/message.h"
-#include "util/get_size.h"
 
 namespace request {
 
@@ -15,12 +14,9 @@ namespace request {
 
     class Request : public network::Message {
     protected:
-        const uint32_t TYPE_SIZE = 1;
-
         Request(RequestType type, const std::string &author);
 
     public:
-
         uint32_t size() const override;
 
         virtual RequestType get_type() const;
@@ -68,4 +64,4 @@ namespace request {
         uint32_t size_;
     };
 
-} // namespace messages
+} // namespace request

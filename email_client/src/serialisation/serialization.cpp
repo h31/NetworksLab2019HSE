@@ -2,42 +2,42 @@
 
 namespace serialization {
 
-    Serializer::Serializer(uint8_t *buffer) : buffer_(buffer), index_(0) {}
+    SerializedMessage::SerializedMessage(size_t size_, const std::shared_ptr<uint8_t[]> &message_)
+        : size_(size_),
+          message_(message_) {}
+
+    size_t SerializedMessage::size() const {
+        return size_;
+    }
+
+    const uint8_t *SerializedMessage::get_message() const {
+        return message_.get();
+    }
+
+    Serializer::Serializer(const request::Request *request)
+        : request_(request),
+          buffer_(new uint8_t[request->size() + INT_SIZE]),
+          buf_(buffer_.get()),
+          index_(0) {}
 
     void Serializer::write(uint32_t number) {
         for (int i = 0; i < INT_SIZE; ++i) {
-            buffer_[index_++] = static_cast<uint8_t>(number & UCHAR_MAX);
+            buf_[index_++] = static_cast<uint8_t>(number & UCHAR_MAX);
             number >>= POWER_OF_TWO;
         }
-    }
-
-    encoded_message Serializer::serialize(const request::SendRequest &) {
-        return {};
-    }
-
-    encoded_message Serializer::serialize(const request::GetRequest &) {
-        return {};
-    }
-
-    encoded_message Serializer::serialize(const request::CheckRequest &) {
-        return {};
     }
 
     void Serializer::write(const std::string &string) {
         auto length = static_cast<uint32_t>(string.length());
         write(length);
-        const auto *data = reinterpret_cast<const uint8_t*>(string.c_str());
+        const auto *data = reinterpret_cast<const uint8_t *>(string.c_str());
         for (size_t i = 0; i < length; ++i) {
-            buffer_[index_++] = data[i];
+            buf_[index_++] = data[i];
         }
     }
 
     void Serializer::write(request::RequestType type) {
-        buffer_[index_++] = type;
-    }
-
-    void Serializer::write(response::ResponseStatus status) {
-        buffer_[index_++] = status;
+        buf_[index_++] = type;
     }
 
     void Serializer::write(const email::Email &email) {
@@ -47,17 +47,25 @@ namespace serialization {
         write(email.get_body());
     }
 
-    void Serializer::write(const email::EmailInfo &info) {
-        write(info.get_id());
-        write(info.get_author());
-        write(info.get_theme());
-    }
-
-    void Serializer::write(const std::vector<email::EmailInfo> &infos) {
-        write(static_cast<uint32_t>(infos.size()));
-        for (auto &info : infos) {
-            write(info);
+    SerializedMessage Serializer::serialize() {
+        auto type = request_->get_type();
+        write(request_->size());
+        write(type);
+        write(request_->get_author());
+        switch (type) {
+            case request::SEND_EMAIL: {
+                auto &email = reinterpret_cast<const request::SendRequest *>(request_)->get_email();
+                write(email);
+                break;
+            }
+            case request::GET_EMAIL: {
+                write(reinterpret_cast<const request::GetRequest *>(request_)->get_id());
+                break;
+            }
+            default:
+                break;
         }
+        return SerializedMessage(request_->size() + INT_SIZE, buffer_);
     }
 
     Deserializer::Deserializer(const uint8_t *buffer, uint32_t offset) : buffer_(buffer), index_(offset) {}
@@ -74,14 +82,10 @@ namespace serialization {
 
     std::string Deserializer::parse_string() {
         size_t size = parse_uint32();
-        const char *p = reinterpret_cast<const char*>(buffer_ + index_);
+        const char *p = reinterpret_cast<const char *>(buffer_ + index_);
         std::string string(p, size);
         index_ += size;
         return string;
-    }
-
-    request::RequestType Deserializer::parse_request_type() {
-        return static_cast<request::RequestType>(buffer_[index_++]);
     }
 
     response::ResponseStatus Deserializer::parse_response_status() {
@@ -111,6 +115,29 @@ namespace serialization {
             result.push_back(parse_email_info());
         }
         return result;
+    }
+
+    std::shared_ptr<response::Response> Deserializer::parseResponse(request::RequestType type) {
+        response::ResponseStatus status = parse_response_status();
+        std::shared_ptr<response::Response> responseBody;
+        if (status == response::OK) {
+            switch (type) {
+                case request::SEND_EMAIL:
+                    return std::make_shared<response::SendResponse>();
+                case request::CHECK_EMAIL: {
+                    std::vector<email::EmailInfo> infos = parse_email_infos();
+                    return std::make_shared<response::CheckResponse>(infos);
+                }
+                case request::GET_EMAIL: {
+                    email::Email email = parse_email();
+                    return std::make_shared<response::GetResponse>(email);
+                }
+                default:
+                    break;
+            }
+        }
+        std::string message = parse_string();
+        return std::make_shared<response::BadResponse>(message);
     }
 
 } // namespace serialization

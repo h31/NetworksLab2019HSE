@@ -14,10 +14,7 @@ namespace util {
 
     std::string UserView::get_user_input(const std::string &str) {
         std::string input;
-        if (!str.empty()) {
-            std::cout << str << std::endl;
-        }
-        std::cout << "> ";
+        std::cout << (str.empty() ? "> " : str);
         if (getline(std::cin, input)) {
             return input;
         }

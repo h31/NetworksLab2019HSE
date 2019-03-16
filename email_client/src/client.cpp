@@ -18,15 +18,15 @@ namespace email {
           socket_(network::ClientSocket(server_address_, port)) {}
 
     Client Client::from_input() {
-        std::string email = util::UserView::get_user_input("Enter your email:");
+        std::string email = util::UserView::get_user_input("Enter your email: ");
 
         std::string server = email::Client::DEFAULT_SERVER_ADDRESS;
-        std::string server_str = util::UserView::get_user_input("Enter server address or leave default 127.0.0.1:");
+        std::string server_str = util::UserView::get_user_input("Enter server address or leave default 127.0.0.1: ");
         server = server_str.empty() ? server : server_str;
 
         uint16_t port = email::Client::DEFAULT_SERVER_PORT;
         std::string port_str = util::UserView::get_user_input(
-            "Enter server port or leave default " + std::to_string(port) + ":");
+            "Enter server port or leave default " + std::to_string(port) + ": ");
         port = port_str.empty() ? port : static_cast<uint16_t>(std::stoi(port_str));
         return {email, server, port};
     }
@@ -36,37 +36,46 @@ namespace email {
 
         while (is_alive_) {
             ClientCommands::CommandID cmd = ClientCommands::str_to_id(UserView::get_user_input());
-            switch (cmd) {
-                case ClientCommands::SEND: {
-                    std::string recipient = UserView::get_user_input("Enter the recipient email: ");
-                    if (recipient == host_email_) {
-                        UserView::println("Invalid recipient");
-                        break;
-                    }
-                    std::string theme = UserView::get_user_input("Enter the email theme: ");
-                    std::string body = UserView::get_user_input("Enter the email body: ");
-                    Email email(recipient, host_email_, theme, body);
-                    send_email(email);
+            try {
+                process_command(cmd);
+            } catch (const network::socket_exception& exception) {
+                UserView::println("Some errors were acquired (while connecting to the server):");
+                UserView::println(std::string(exception.what()));
+            }
+        }
+    }
+
+    void Client::process_command(util::ClientCommands::CommandID cmd) {
+        switch (cmd) {
+            case ClientCommands::SEND: {
+                std::string recipient = UserView::get_user_input("Enter the recipient email: ");
+                if (recipient == host_email_) {
+                    UserView::println("Invalid recipient!");
                     break;
                 }
-                case ClientCommands::CHECK: {
-                    check_email();
-                    break;
-                }
-                case ClientCommands::GET: {
-                    std::string input = UserView::get_user_input("Enter the email id:");
-                    auto email_id = static_cast<uint32_t>(std::atoi(input.data()));
-                    get_email(email_id);
-                    break;
-                }
-                case ClientCommands::EXIT: {
-                    shut_down();
-                    break;
-                }
-                default: {
-                    print_help();
-                    break;
-                }
+                std::string theme = UserView::get_user_input("Enter the email theme: ");
+                std::string body = UserView::get_user_input("Enter the email body: ");
+                Email email(recipient, host_email_, theme, body);
+                send_email(email);
+                break;
+            }
+            case ClientCommands::CHECK: {
+                check_email();
+                break;
+            }
+            case ClientCommands::GET: {
+                std::string input = UserView::get_user_input("Enter the email id: ");
+                auto email_id = static_cast<uint32_t>(std::atoi(input.data()));
+                get_email(email_id);
+                break;
+            }
+            case ClientCommands::EXIT: {
+                shut_down();
+                break;
+            }
+            default: {
+                print_help();
+                break;
             }
         }
     }
@@ -77,7 +86,7 @@ namespace email {
     }
 
     void Client::print_help() {
-        UserView::println("Available commands for email client:");
+        UserView::println("Available commands for email client: ");
         for (size_t cmd = 0; cmd < ClientCommands::COMMANDS_NUM - 1; ++cmd) {
             auto id = static_cast<ClientCommands::CommandID>(cmd);
             UserView::println(ClientCommands::info_string(id));
@@ -91,7 +100,7 @@ namespace email {
             process_error_response(response);
             return;
         }
-        util::UserView::println("Message sent");
+        util::UserView::println("Message sent successfully!");
     }
 
     void Client::check_email() {
@@ -103,9 +112,9 @@ namespace email {
             return;
         }
 
-        auto check_response = reinterpret_cast<response::CheckResponse *>(response.get());
+        auto check_response = reinterpret_cast<response::CheckResponse *>(response.get ());
         auto infos = check_response->get_infos();
-        util::UserView::println(infos.empty() ? "No new messages:" : "New messages:");
+        util::UserView::println(infos.empty() ? "No new messages." : "New messages:");
         for (auto &info : infos) {
             util::UserView::println(info);
         }
@@ -126,7 +135,7 @@ namespace email {
 
     void Client::process_error_response(const std::shared_ptr<response::Response> &response) {
         auto error_response = reinterpret_cast<response::BadResponse *>(response.get());
-        UserView::println("Some errors were acquired:");
+        UserView::println("Some problems were acquired (on server):");
         UserView::println(error_response->get_error_message());
     }
 

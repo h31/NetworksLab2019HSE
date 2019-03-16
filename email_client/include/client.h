@@ -33,6 +33,8 @@ namespace email {
         bool is_alive_;
         network::ClientSocket socket_;
 
+        void process_command(util::ClientCommands::CommandID cmd);
+
         void send_email(const Email &email);
 
         void check_email();

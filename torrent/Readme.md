@@ -107,10 +107,10 @@ clientPort — порт клиента
 
 * склонировать [репозиторий](https://github.com/lergor/NetworksLab2019HSE.git)
 * переключиться на нужную ветку:  `git co torrent`
+* зайти в директорию `torrent`
 * запустить команды `gradle trackerJar` и `gradle clientJar` для сборки приложений трекера и клиента -- TrackerApp и ClientApp соответственно
-* перейти в директорию `build/libs`
-* запустить трекер: ```java -jar trackerApp-jar-1.0-SNAPSHOT.jar```
-* запустить клиент: ```java -jar clientApp-jar-1.0-SNAPSHOT.jar```
+* запустить трекер: ```java -jar build/libs/trackerApp-jar-1.0-SNAPSHOT.jar```
+* запустить клиент: ```java -jar build/libs/clientApp-jar-1.0-SNAPSHOT.jar```
 
 ## Использование
 

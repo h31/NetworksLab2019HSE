@@ -1,18 +1,9 @@
 #ifndef SERVER_SERVER_H
 #define SERVER_SERVER_H
 
-#include <stdio.h>
-#include <stdlib.h>
-
-#include <netdb.h>
-#include <netinet/in.h>
-#include <unistd.h>
-#include <boost/thread.hpp>
-
-#include <string.h>
 #include <vector>
-#include "socket_opening_exception.h"
-#include "binding_exception.h"
+#include <thread>
+#include <shared_mutex>
 #include "product.h"
 
 
@@ -21,11 +12,11 @@ class server {
         static const int CONNECTION_QUEUE_SIZE = 5;
         const uint16_t PORT;
         int server_socket_fd;
-        boost::thread *main_thread = nullptr;
-        std::vector<boost::thread *> clients;
+        std::thread *main_thread = nullptr;
+        std::vector<std::thread *> clients;
         std::vector<int> clients_sockets;
         std::vector<product> products;
-        boost::shared_mutex products_access;
+        std::shared_mutex products_access;
 
         void client_accept_cycle(int server_socket_fd);
 

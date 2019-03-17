@@ -3,7 +3,7 @@
 
 ## Добавление товара
 Формат собщения:  
-* <**1**: int><**size**: size_t><**name**: string><**price**: size_t><**amount**: size_t>
+* <**1**: int32_t><**size**: uint64_t><**name**: string><**price**: uint64_t><**amount**: uint64_t>
 * **size** — длина строки **name**
 * **name** — наименование товара
 * **price** — цена за единицу товара
@@ -12,10 +12,10 @@
 
 ## Получение информации о товарах
 Формат запроса:
-* <**2**: int>
+* <**2**: int32_t>
 
 Формат ответа:  
-* <**products_amount**: size_t>(<**id**: int><**size**: size_t><**name**: string><**price**: size_t><**amount**: size_t>)*
+* <**products_amount**: uint64_t>(<**id**: int32_t><**size**: uint64_t><**name**: string><**price**: uint64_t><**amount**: uint64_t>)*
 * **products_amount** — количество различных товаров
 * **id** — идентификатор товара
 * **size** — длина строки **name**
@@ -26,9 +26,9 @@
 
 ## Покупка товара
 Формат запроса:
-* <**3**: int><**id**: int>
+* <**3**: int32_t><**id**: int32_t>
 * **id** — идентификатор товара
 
 Формат ответа:  
-* <**response**: int>
+* <**response**: int32_t>
 * **response**: `1` при подтвержденной покупке, `0` при недостаточном количестве товара, `-1` при несуществующем **id**

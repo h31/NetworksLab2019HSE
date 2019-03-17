@@ -14,11 +14,9 @@ class Worker(Thread):
         self.__client_connection = Connection(self.__socket)
 
     def interrupt(self):
-        logging.info("Interrupt worker")
         self.__client_connection.close()
 
     def run(self):
-        logging.info("Start new worker")
         request = self.__client_connection.receive_message()
         if request is None:
             logging.info("Could not get request")

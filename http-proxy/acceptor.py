@@ -36,6 +36,7 @@ class Acceptor(Thread):
             with self.__interrupted_mutex:
                 if self.__interrupted:
                     break
+            logging.info("Accept new connection from: %s" % str(client_socket.getpeername()))
             worker = Worker(client_socket, cache)
             workers.append(worker)
             worker.start()

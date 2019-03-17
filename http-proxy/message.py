@@ -4,6 +4,13 @@ from time import ctime
 NEW_LINE = "\r\n"
 NEW_LINE_B = b"\r\n"
 HTTP_PORT = 80
+SUPPORTED_METHODS = ["GET", "POST", "HEAD"]
+
+
+def not_implemented_response():
+    response = Message()
+    response.set_start_line("HTTP/1.1 501 Not Implemented")
+    return response
 
 
 class Message:
@@ -48,8 +55,7 @@ class Message:
         if host:
             host = split(r":", host)
             return host[0], int(host[1]) if len(host) > 1 else HTTP_PORT
-        else:
-            return None
+        return None, None
 
     def can_cache(self):
         if self.__headers.get("Cache-Control") is None:
@@ -61,6 +67,10 @@ class Message:
 
     def add_modify_request(self, timestamp):
         self.add_header('If-Modified-Since', ctime(timestamp))
+
+    def is_method_supported(self):
+        method = self.__start_line.split(" ")[0]
+        return method in SUPPORTED_METHODS
 
     def __get_body_len(self):
         return int(self.__headers.get("Content-Length", "0"))
@@ -78,4 +88,8 @@ class Message:
                 and self.__start_line == other.__start_line and self.__headers == other.__headers)
 
     def __str__(self):
-        return self.__start_line + str(self.get_host()) + str(self.__body)
+        host, port = self.get_host()
+        body = self.__body if self.__body is not None else ""
+        if host is not None:
+            return "%s %s:%s %s" % (self.__start_line, host, port, body)
+        return "%s %s" % (self.__start_line, body)

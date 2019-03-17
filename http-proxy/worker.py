@@ -2,6 +2,8 @@ from threading import Thread
 from connection import Connection
 import logging
 
+from message import not_implemented_response
+
 
 class Worker(Thread):
 
@@ -10,20 +12,26 @@ class Worker(Thread):
         self.__socket = sock
         self.__cache = cache
         self.__client_connection = Connection(self.__socket)
-        logging.info("Start new worker")
 
     def interrupt(self):
         logging.info("Interrupt worker")
         self.__client_connection.close()
 
     def run(self):
+        logging.info("Start new worker")
         request = self.__client_connection.receive_message()
+        if request is None:
+            logging.info("Could not get request")
+            return
         logging.info("Get request: %s" % (str(request)))
-        response = self.__get_from_cache_with_check(self.__cache.get(request), request)
+        if not request.is_method_supported():
+            response = not_implemented_response()
+        else:
+            response = self.__get_from_cache_with_check(self.__cache.get(request), request)
         if response is None:
             response = Worker.__connect_and_send(request)
+        logging.info("Send response: %s" % (str(response)))
         self.__client_connection.send_message(response)
-        logging.info("Send response: %s" % (str(request)))
         self.__cache.put(request, response)
         self.__client_connection.close()
 

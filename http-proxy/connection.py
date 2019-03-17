@@ -18,15 +18,21 @@ class Connection:
         self.__socket.connect(self.__host)
 
     def close(self):
-        self.__socket.shutdown(SHUT_WR)
+        try:
+            self.__socket.shutdown(SHUT_WR)
+            self.__socket.close()
+        except OSError:
+            pass
+        finally:
+            logging.info("Socket closed")
 
     def receive_message(self):
         parser = HTTParser()
         while True:
             chunk = self.__socket.recv(MAX_CHUNK_LEN)
             if not chunk:
-                logging.error("Connect aborted %s" % self.__host)
-                raise ConnectionAbortedError(self.__host)
+                logging.error("Connection aborted by %s" % self.__host)
+                return None
             message = parser.append(chunk)
             if message:
                 return message

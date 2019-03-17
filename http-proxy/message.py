@@ -1,4 +1,5 @@
 from re import split, search
+from time import ctime
 
 NEW_LINE = "\r\n"
 NEW_LINE_B = b"\r\n"
@@ -55,6 +56,12 @@ class Message:
             return True
         return search(r"no-cache|no-store", self.__headers.get("Cache-Control")) is None
 
+    def is_modify(self):
+        return self.get_status() != 304
+
+    def add_modify_request(self, timestamp):
+        self.add_header('If-Modified-Since', ctime(timestamp))
+
     def __get_body_len(self):
         return int(self.__headers.get("Content-Length", "0"))
 
@@ -71,4 +78,4 @@ class Message:
                 and self.__start_line == other.__start_line and self.__headers == other.__headers)
 
     def __str__(self):
-        return self.__start_line + str(self.__headers)
+        return self.__start_line + str(self.get_host()) + str(self.__body)

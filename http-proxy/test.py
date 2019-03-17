@@ -1,9 +1,9 @@
-import time
-import unittest
+from unittest import TestCase
+from time import sleep
 from cache import Cache
 from message import Message
 
-class Test(unittest.TestCase):
+class Test(TestCase):
 
     def test_create_message(self):
         message = Message()
@@ -54,7 +54,7 @@ class Test(unittest.TestCase):
             b'<html><body><a href="http://example.com/about.html#contacts">Click here</a></body></html>')
         cache = Cache(1, 100000)
         cache.put(message, message)
-        time.sleep(5)
+        sleep(5)
         getting_message = cache.get(message)
         self.assertEqual(None, getting_message)
 

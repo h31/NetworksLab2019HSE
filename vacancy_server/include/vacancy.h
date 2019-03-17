@@ -18,7 +18,7 @@ namespace vacancy_service {
         VacancyInfo(int32_t speciality_id, const std::string &company, const std::string &position,
                     int32_t min_age, int32_t max_age, int32_t salary);
 
-        bool suits(int32_t speciality, int32_t age, int32_t salary) const;
+        bool is_suitable(int32_t speciality, int32_t age, int32_t salary) const;
 
         int32_t speciality_id;
         std::string company;

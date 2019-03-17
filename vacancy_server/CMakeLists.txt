@@ -66,11 +66,7 @@ add_executable(
         src/util/user_view.cpp
 )
 
-# ubuntu 18
-target_link_libraries(${PROJECT_NAME} TBB::tbb)
-
-# ubuntu 16
-#target_link_libraries(${PROJECT_NAME} ${TBB_IMPORTED_TARGETS})
+target_link_libraries(${PROJECT_NAME} ${TBB_IMPORTED_TARGETS})
 
 target_include_directories(
         ${PROJECT_NAME}

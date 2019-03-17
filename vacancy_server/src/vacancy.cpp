@@ -11,11 +11,11 @@ namespace vacancy_service {
           max_age(max_age),
           salary(salary) {}
 
-    bool VacancyInfo::suits(int32_t speciality, int32_t age, int32_t salary) const {
+    bool VacancyInfo::is_suitable(int32_t speciality, int32_t age, int32_t salary) const {
         return available &&
                (speciality < 0 || speciality_id == speciality) &&
-               (age < 0 || (min_age <= age && max_age >= age)) &&
-               (salary < 0 || (this->salary < salary));
+               (age < 0 || (min_age <= age && age <= max_age)) &&
+               (salary < 0 || (this->salary >= salary));
     }
 
     void to_json(nlohmann::json &j, const VacancyInfo &info) {

@@ -152,7 +152,7 @@ namespace vacancy_service {
         std::vector<VacancyInfo> infos;
         for (const auto &p : statistics_->vacancies) {
             const VacancyInfo &vacancy = p.second;
-            if (vacancy.suits(speciality_id, age, salary)) {
+            if (vacancy.is_suitable(speciality_id, age, salary)) {
                 infos.push_back(vacancy);
             }
         }

@@ -67,7 +67,8 @@ class Message:
     def __eq__(self, other):
         if not isinstance(other, Message):
             return False
-        return self.__body == other.__body and self.__start_line == other.__start_line and self.__headers == other.__headers
+        return (self.__body == other.__body
+                and self.__start_line == other.__start_line and self.__headers == other.__headers)
 
     def __str__(self):
         return self.__start_line + str(self.__headers)

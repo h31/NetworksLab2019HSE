@@ -11,16 +11,13 @@ class Cache:
         self.__max_size = max_size
 
     def get(self, request):
-        print(self.__check_expire(request))
         if request.can_cache() and not self.__check_expire(request):
-            print("WIN!!!!!!")
             logging.info("Get from cache: %s" % (str(request)))
             return self.__cache.get(hash(request), (None, None))
         else:
             return None, None
 
     def put(self, request, response):
-        print(request, hash(request))
         self.__clear_old_cache()
         if request.can_cache() and response.can_cache():
             self.__cache[hash(request)] = (time.time(), response)

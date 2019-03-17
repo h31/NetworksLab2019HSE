@@ -1,5 +1,6 @@
 from socket import socket, AF_INET, SOCK_STREAM, SOL_SOCKET, SO_REUSEADDR, SHUT_WR
 from threading import Thread, RLock
+import logging
 
 from cache import Cache
 from worker import Worker
@@ -10,6 +11,7 @@ BACKLOG_SIZE = 10
 class Acceptor(Thread):
     def __init__(self, address, port, cache_expire, cache_max_size):
         super().__init__()
+        logging.info("Accept connection address: %s, port %s" % (address, port))
         self.__address = address
         self.__port = port
         self.__cache_expire = cache_expire

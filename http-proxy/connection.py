@@ -1,5 +1,5 @@
 from socket import socket, AF_INET, SOCK_STREAM, SHUT_WR
-
+import logging
 
 from httparser import HTTParser
 
@@ -25,6 +25,7 @@ class Connection:
         while True:
             chunk = self.__socket.recv(MAX_CHUNK_LEN)
             if not chunk:
+                logging.error("Connect aborted %s" % self.__host)
                 raise ConnectionAbortedError(self.__host)
             message = parser.append(chunk)
             if message:

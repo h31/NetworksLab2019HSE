@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <netinet/in.h>
 #include <thread>
-
+#include <boost/lockfree/queue.hpp>
 #include "../include/roulette_server.h"
 
 

@@ -1,4 +1,3 @@
-
 #ifndef ROULETTE_CLIENT_H
 #define ROULETTE_CLIENT_H
 

@@ -18,19 +18,21 @@ void error(const std::string &s);
 
 void error(const std::string &type, const std::string &s);
 
-int connectToServer(std::string const &hostname, uint16_t port);
+sockaddr_in initializeHost(std::string const &hostname, uint16_t port);
+
+int initializeSocket();
 
 template<typename T>
 void writeObject(int socketDescriptor, const T &object) {
-    writeToSocket(socketDescriptor, (uint8_t const *) &object, sizeof(T));
+  writeToSocket(socketDescriptor, (uint8_t const *) &object, sizeof(T));
 }
 
 template<typename T>
 T readObject(int socketDescriptor) {
-    T object;
-    readFromSocket(socketDescriptor, (uint8_t *) &object, sizeof(T));
+  T object;
+  readFromSocket(socketDescriptor, (uint8_t *) &object, sizeof(T));
 
-    return object;
+  return object;
 }
 
 std::string read_until_zero(int *ptr, char *buffer, size_t buffer_size);

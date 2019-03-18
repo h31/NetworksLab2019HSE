@@ -19,7 +19,8 @@ enum request_type {
     MULT,
     DIV,
     SQRT,
-    FACT
+    FACT,
+    LONG_COMPUTATION_RESULT
 };
 
 std::string request_to_string(struct dctp_request_header request) {

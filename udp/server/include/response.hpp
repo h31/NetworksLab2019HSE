@@ -16,7 +16,7 @@ struct dctp_response_header {
 enum return_code {
     OK = 0,
     WAIT_FOR_RESULT,
-    OVERFLOW,   // not used
+    OVERFLOW,
     DIV_BY_ZERO,
     FACT_OF_NEGATIVE,
     SQRT_OF_NEGATIVE,
@@ -28,7 +28,7 @@ enum operation_type {
     SLOW
 };
 
-std::string response_to_string(struct dctp_response_header response) {
+inline std::string response_to_string(struct dctp_response_header response) {
     return "Return code: " + std::to_string(response.return_code)
            + "; type: " + std::to_string(response.operation_type)
            + "; id:  " + std::to_string(response.id)

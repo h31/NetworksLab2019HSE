@@ -31,7 +31,7 @@ class Cache:
         set_time, value = self.__cache.get(str(request), (None, None))
         if set_time is not None:
             if set_time + self.__expire < time():
-                self.__cache.pop(request)
+                self.__pop_key_and_log(request)
                 return True
             return False
         return True
@@ -55,5 +55,5 @@ class Cache:
                     return
 
     def __pop_key_and_log(self, key):
-        logging.info("Remove from cache: %s" % str(self.__cache[key][1]))
-        self.__cache.pop(key)
+        logging.info("Remove from cache: %s" % str(self.__cache[str(key)][1]))
+        self.__cache.pop(str(key))

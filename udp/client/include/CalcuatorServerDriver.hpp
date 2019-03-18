@@ -6,6 +6,7 @@
 #include <queue>
 #include <thread>
 #include <mutex>
+#include <unordered_set>
 #include "requests.hpp"
 #include "socketUtils.hpp"
 #include "ConcurrentQueue.hpp"
@@ -56,6 +57,6 @@ private:
   std::thread m_readingThread;
   PacketManager m_packetManager;
   CalculatorRequest m_lastRequest{};
-  std::vector<uint32_t> m_longComputations;
+  std::unordered_set<uint32_t> m_longComputations;
   volatile bool m_terminated = false;
 };

@@ -1,7 +1,3 @@
-//
-// Created by karvozavr on 16/02/19.
-//
-
 #include "CalcuatorServerDriver.hpp"
 
 CalcuatorServerDriver::~CalcuatorServerDriver() {
@@ -13,8 +9,8 @@ CalcuatorServerDriver::~CalcuatorServerDriver() {
 void CalcuatorServerDriver::initialize() {
   m_socket = initializeSocket();
   m_server = initializeHost(m_host, m_port);
-  m_readingThread = std::thread(&CalcuatorServerDriver::readingThreadTask, this);
   m_packetManager = PacketManager(m_server, m_port, m_socket);
+  m_readingThread = std::thread(&CalcuatorServerDriver::readingThreadTask, this);
 }
 
 void CalcuatorServerDriver::readingThreadTask() {
@@ -25,6 +21,7 @@ void CalcuatorServerDriver::readingThreadTask() {
     if (response.errorCode != WAIT_FOR_RESULT) {
       if (response.type == SLOW) {
         m_longResults.push(response);
+        m_instantResults.add(response.computationId, response);
       } else if (response.type == FAST) {
         m_instantResults.add(response.computationId, response);
       }
@@ -39,17 +36,21 @@ bool CalcuatorServerDriver::hasResult() {
 }
 
 CalculatorResponse CalcuatorServerDriver::getResult() {
-  return m_longResults.pop();
+  auto response = m_longResults.pop();
+  m_longComputations.erase(response.computationId);
+  return response;
 }
 
 void CalcuatorServerDriver::factorial(uint32_t id, int64_t arg) {
   sendRequest({FACT, id, arg, 0});
   getResponse(id);
+  m_longComputations.insert(id);
 }
 
 void CalcuatorServerDriver::sqrt(uint32_t id, int64_t arg) {
   sendRequest({SQRT, id, arg, 0});
   getResponse(id);
+  m_longComputations.insert(id);
 }
 
 CalculatorResponse CalcuatorServerDriver::plus(uint32_t id, int64_t arg1, int64_t arg2) {
@@ -84,7 +85,7 @@ void CalcuatorServerDriver::sendRequest(CalculatorRequest const &request) {
 
 CalculatorResponse CalcuatorServerDriver::getResponse(uint32_t computationId) {
   const int COUNTER_INITIAL = 5;
-  const int MAX_TIMES_RESEND = 10;
+  const int MAX_TIMES_RESEND = 5;
   const int MILLISECONDS_WAIT = 100;
 
   int counter = COUNTER_INITIAL;
@@ -97,7 +98,7 @@ CalculatorResponse CalcuatorServerDriver::getResponse(uint32_t computationId) {
       if (timesResend == MAX_TIMES_RESEND) {
         error("Lost connection.");
       }
-      sendRequest(m_lastRequest);
+      sendRequestImpl(m_lastRequest);
       ++timesResend;
       counter = COUNTER_INITIAL;
     }
@@ -108,6 +109,7 @@ CalculatorResponse CalcuatorServerDriver::getResponse(uint32_t computationId) {
     --counter;
   }
 
+  m_instantResults.remove(computationId);
   return response.value();
 }
 

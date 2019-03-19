@@ -3,16 +3,12 @@ project(server)
 set(CMAKE_CXX_STANDARD 17)
 
 set(SOURCE_FILES
-        src/main.cpp include/response.hpp src/server.cpp src/server.hpp src/wallet.cpp src/wallet.hpp)
+        src/main.cpp include/response.hpp src/server.cpp include/server.hpp src/wallet.cpp include/wallet.hpp)
 
 include_directories(include)
 
+find_package(Threads REQUIRED)
+
 add_executable(server ${SOURCE_FILES})
 
-find_package(Threads REQUIRED)
-if(THREADS_HAVE_PTHREAD_ARG)
-    target_compile_options(server PUBLIC "-pthread")
-endif()
-if(CMAKE_THREAD_LIBS_INIT)
-    target_link_libraries(server "${CMAKE_THREAD_LIBS_INIT}")
-endif()
+target_link_libraries(server Threads::Threads)

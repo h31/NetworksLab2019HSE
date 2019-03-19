@@ -26,7 +26,14 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    server_main_loop(static_cast<uint16_t>(atoi(argv[1])));
+    int port = atoi(argv[1]);
+
+    if (port > 0 && port < (16 << 1)) {
+        server_main_loop(static_cast<uint16_t>(port));
+    } else {
+        std::cerr << "Port has to be 1-65535.\n";
+        return 1;
+    }
 
     return 0;
 }

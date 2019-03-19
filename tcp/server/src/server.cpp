@@ -141,7 +141,7 @@ bool server::handle_check_login(int client_socket_fd, pstp_request_header const 
   wallets_mutex.lock();
   id_type id = header.wallet_id;
   auto wallet = wallets.find(id);
-  if (wallets.find(id) != wallets.end() && std::string(header.password) == (*wallet).second.password) {
+  if (wallet != wallets.end() && std::string(header.password) == (*wallet).second.password) {
     wallets_mutex.unlock();
     auto response = pstp_check_login_response(OK);
     return send_simple_response(client_socket_fd, response);

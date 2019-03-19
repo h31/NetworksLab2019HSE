@@ -115,7 +115,6 @@ struct pstp_confirm_payment_response {
     pstp_response_header header;
 };
 
-// TODO get_requests_for_payments_response
 struct pstp_get_request_for_payments_response {
 
     explicit pstp_get_request_for_payments_response(

@@ -165,7 +165,7 @@ struct pstp_get_payment_results_response {
     explicit pstp_get_payment_results_response(
             uint8_t code,
             std::vector<std::pair<std::string, uint64_t>> results = std::vector<std::pair<std::string, uint64_t>>())
-            : header({GET_REQUESTS_FOR_PAYMENTS, code, 0}), results(std::move(results)) {}
+            : header({PAYMENT_RESULTS, code, 0}), results(std::move(results)) {}
 
     uint32_t content_size() {
         uint32_t size = sizeof(uint32_t);

@@ -13,25 +13,13 @@
 #include "io_util.h"
 #include "main_cycle.h"
 
-
-int main(int argc, char *argv[]) {
-    std::cout << "Hello!\n";
-
-    if (argc < 3) {
-        error("hostname and port number are required!");
-    }
-
-    println("Establishing connection...");
-
-    std::string hostname = argv[1];
-    auto port_number = (uint16_t) atoi(argv[2]); // NOLINT(cert-err34-c)
-
+int connect(std::string& hostname, uint16_t port_number) {
     int socket_descriptor = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_descriptor < 0) {
         error("Failed to open the magic gates to Internet!");
     }
 
-    struct hostent *server = gethostbyname(argv[1]);
+    struct hostent *server = gethostbyname(hostname.c_str());
 
     if (server == nullptr) {
         error("no such host");
@@ -47,25 +35,43 @@ int main(int argc, char *argv[]) {
         error("connection failed (for some reason)!");
     }
 
-    println("Connection established!");
+    return socket_descriptor;
+}
 
-    struct Identifier ident;
+Identifier get_identifier(int socket_descriptor) {
     std::string answer = has_account();
     if (answer == "y") {
-        ident = login(socket_descriptor);
+        return login(socket_descriptor);
     } else if (answer == "n") {
-        ident = registration(socket_descriptor);
+        return registration(socket_descriptor);
     } else {
         error("unknown answer!");
     }
+}
 
+int main(int argc, char *argv[]) {
+    std::cout << "Hello!\n";
+
+    if (argc < 3) {
+        error("hostname and port number are required!");
+    }
+
+    println("Establishing connection...");
+
+    std::string hostname = argv[1];
+    auto port_number = (uint16_t) atoi(argv[2]); // NOLINT(cert-err34-c)
+
+    int socket_descriptor = connect(hostname, port_number);
+
+    println("Connection established!");
+
+    Identifier ident = get_identifier(socket_descriptor);
     println("Welcome, user " + ident.login + "!");
 
     println("");
 
     print_help();
     main_cycle(ident, socket_descriptor);
-
 
     return 0;
 }

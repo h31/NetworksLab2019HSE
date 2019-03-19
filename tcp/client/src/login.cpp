@@ -48,7 +48,7 @@ Identifier login(int socket_descriptor) {
     return ident;
 }
 
-std::string create_password() {
+std::string read_password() {
     std::cout << "Enter your password (max size - 63): \n";
 
     std::string password;
@@ -59,7 +59,7 @@ std::string create_password() {
 }
 
 Identifier registration(int socket_descriptor) {
-    std::string password = create_password();
+    std::string password = read_password();
     struct pstp_register_request register_request(password);
     write_to_socket(socket_descriptor, (char *) &register_request, sizeof(register_request));
 
@@ -76,11 +76,8 @@ Identifier registration(int socket_descriptor) {
     bzero(buffer, TEXT_UNIT_SIZE);
     read_from_socket(socket_descriptor, buffer, register_response_header.content_size);
 
-    Identifier ident;
-    ident.login = std::string(buffer);
-    println("Your login: " + ident.login);
-    ident.password = password;
+    std::string login(buffer);
 
-    return ident;
+    return Identifier(login, password);
 }
 

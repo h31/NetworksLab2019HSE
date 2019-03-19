@@ -57,6 +57,12 @@ void server::handle_client(int client_socket_fd) {
   while (true) {
 
     ssize_t n = read(client_socket_fd, (char *) &header, sizeof(header));
+    size_t bytes_read = n;
+
+    while (n > 0 && bytes_read < sizeof(header)) {
+      n = read(client_socket_fd, ((char *) &header) + bytes_read, sizeof(header) - bytes_read);
+      bytes_read += n;
+    }
 
     if (n < 0) {
       perror("ERROR reading from socket");

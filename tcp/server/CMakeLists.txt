@@ -3,7 +3,7 @@ project(server)
 set(CMAKE_CXX_STANDARD 17)
 
 set(SOURCE_FILES
-        src/main.cpp include/response.hpp src/server.cpp include/server.hpp src/wallet.cpp include/wallet.hpp)
+        src/main.cpp include/response.hpp src/server.cpp include/server.hpp src/wallet.cpp include/wallet.hpp include/logger.hpp)
 
 include_directories(include)
 

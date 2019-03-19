@@ -13,6 +13,8 @@ void write_to_socket(int socket_descriptor, const void *buf, size_t size);
 
 void read_from_socket(int socket_descriptor, void *buf, size_t size);
 
+void print(const std::string &s);
+
 void println(const std::string &s);
 
 void error(const std::string &s);

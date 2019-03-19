@@ -29,7 +29,10 @@ class Connection:
     def receive_message(self):
         parser = HTTParser()
         while True:
-            chunk = self.__socket.recv(MAX_CHUNK_LEN)
+            try:
+                chunk = self.__socket.recv(MAX_CHUNK_LEN)
+            except BrokenPipeError:
+                chunk = 0
             if not chunk:
                 logging.error("Connection aborted by %s" % self.__host)
                 return None
@@ -41,7 +44,11 @@ class Connection:
         msg = message.to_bytes()
         total_sent = 0
         while total_sent < len(msg):
-            sent = self.__socket.send(msg[total_sent:])
-            if sent == 0:
+            try:
+                sent = self.__socket.send(msg[total_sent:])
+            except BrokenPipeError:
+                sent = 0
+            if not sent:
+                logging.error("Connection aborted by %s" % self.__host)
                 break
             total_sent += sent

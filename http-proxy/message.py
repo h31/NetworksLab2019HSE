@@ -1,3 +1,4 @@
+import sys
 from re import split, search
 from time import ctime
 
@@ -61,6 +62,9 @@ class Message:
         if self.__headers.get("Cache-Control") is None:
             return True
         return search(r"no-cache|no-store", self.__headers.get("Cache-Control")) is None
+
+    def can_cache_with_size(self, cache_size):
+        return self.can_cache() and sys.getsizeof(self) <= cache_size
 
     def is_modify(self):
         return self.get_status() != 304

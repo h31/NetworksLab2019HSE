@@ -74,7 +74,7 @@ class Test(TestCase):
         message1.add_header("Content-Length", "110")
         message.append_to_body(BODY)
         message1.append_to_body(BODY)
-        cache = Cache(100000, 1)
+        cache = Cache(100000, 60)
         cache.put(message, message)
         _, getting_message = cache.get(message)
         cache.put(message1, message1)

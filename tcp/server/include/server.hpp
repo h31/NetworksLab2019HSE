@@ -70,5 +70,5 @@ private:
     sockaddr_in client_addr = {};
     std::unordered_map<std::string, wallet> wallets;
     std::mutex wallets_mutex;
-    // std::vector<std::thread *> threads;
+    std::vector<std::thread *> threads;
 };

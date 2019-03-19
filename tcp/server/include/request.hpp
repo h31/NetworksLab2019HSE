@@ -7,8 +7,9 @@
 
 #pragma pack(0)
 
+static const std::size_t TEXT_UNIT_SIZE = 64;
+
 struct pstp_request_header {
-#define TEXT_UNIT_SIZE (std::size_t)64
 
     explicit pstp_request_header(uint8_t type = 0,
                                  const std::string &wallet_id = "",

@@ -7,6 +7,7 @@ static server *serv = nullptr;
 
 void term_handler(int signum) {
     shutdown(serv->get_socket_fd(), SHUT_RD);
+    close(serv->get_socket_fd());
     serv->done = 1;
 }
 

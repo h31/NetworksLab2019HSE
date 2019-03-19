@@ -144,7 +144,7 @@ content_size (uint32_t) - размер содержимого request'а
 
 		num_of_requests (uint32_t) - количество необработанных request'ов
 		
-		requests ({char[]'\0', uint64_t}[num_of_request]) - сами request'ы, состоящие из wallet_id и суммы, запрошенной пользователем с этим wallet_id.
+		requests ({char[]'\0', char[]'\0'}[num_of_request]) - сами request'ы, состоящие из wallet_id и суммы, запрошенной пользователем с этим wallet_id.
 
 	Комментарий: Так же, как и в GET_ALL_WALLETS, размер wallet_id не равен TEXT_UNIT_SIZE для экономии. 
 
@@ -156,7 +156,7 @@ content_size (uint32_t) - размер содержимого request'а
 
 		num_of_results (uint32_t) - количество непрочитанных результатов
 		
-		requests ({char[]'\0', uint64_t}[num_of_request]) - сами результаты: wallet_id пользователя, которому мы направляли запрос, и amount, который он нам заплатил (0, если он отверг запрос)
+		requests ({char[]'\0', char[]'\0'}[num_of_request]) - сами результаты: wallet_id пользователя, которому мы направляли запрос, и amount, который он нам заплатил (0, если он отверг запрос)
 
 	Комментарий: Так же, как и в GET_ALL_WALLETS, размер wallet_id не равен TEXT_UNIT_SIZE для экономии.
 

@@ -79,7 +79,7 @@ private:
     ssize_t n = read(client_socket_fd, ((char *) &request) + sizeof(header), header.content_size);
     size_t bytes_read = n;
 
-    while (n > 0 && bytes_read < sizeof(header)) {
+    while (n > 0 && bytes_read < header.content_size) {
       n = read(client_socket_fd, ((char *) &request) + sizeof(header) + bytes_read, header.content_size - bytes_read);
       bytes_read += n;
     }

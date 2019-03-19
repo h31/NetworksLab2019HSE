@@ -12,9 +12,13 @@ server::server(uint16_t port) : port(port) {
     perror("Error opening socket");
   }
 
+  int k = 1;
+  if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &k, sizeof(int)) < 0) {
+    perror("setsockopt(SO_REUSEADDR) failed.");
+  }
+
   /* Initialize socket structure */
   bzero((char *) &server_addr, sizeof(server_addr));
-
 
   server_addr.sin_family = AF_INET;
   server_addr.sin_addr.s_addr = INADDR_ANY;
@@ -287,7 +291,8 @@ bool server::handle_confirm_payment(int client_socket_fd, pstp_request_header co
     if (wallets.find(request.recipient_id) == wallets.end() ||
         w.payment_requests.find(request.recipient_id) == w.payment_requests.end() ||
         (request.amount > w.balance) ||
-        w.payment_requests.find(request.recipient_id)->second != request.amount) {
+        (w.payment_requests.find(request.recipient_id)->second != request.amount &&
+         request.amount != 0)) {
       wallets_mutex.unlock();
       auto response = pstp_confirm_payment_response(INVALID_CONTENT);
       return send_simple_response(client_socket_fd, response);

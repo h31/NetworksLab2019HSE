@@ -31,6 +31,6 @@ T read_thing(int socket_descriptor) {
     return thing;
 }
 
-std::string read_until_zero(int* ptr, char* buffer, size_t buffer_size);
+std::string read_until_zero(int* ptr, char* buffer);
 
 #endif //CLIENT_UTIL_H

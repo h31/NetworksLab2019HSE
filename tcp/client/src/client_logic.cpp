@@ -18,8 +18,7 @@ std::vector<std::string> get_all(Identifier& ident, int socket_descriptor) {
     int ptr = 0;
     std::vector<std::string> result(num_of_accounts);
     for (int i = 0; i < num_of_accounts; i++) {
-        std::string acc = read_until_zero(&ptr, buffer, acc_size_byte);
-        result[i] = acc;
+        result[i] = read_until_zero(&ptr, buffer);
     }
     return result;
 }
@@ -63,8 +62,8 @@ std::vector<std::pair<std::string, std::string>> get_payment_results(Identifier&
 
         int ptr = 0;
         for (int i = 0; i < num_of_results; i++) {
-            std::string acc = read_until_zero(&ptr, buffer, res_size_byte);
-            std::string amount = read_until_zero(&ptr, buffer, res_size_byte);
+            std::string acc = read_until_zero(&ptr, buffer);
+            std::string amount = read_until_zero(&ptr, buffer);
             result.emplace_back(acc, amount);
         }
     }
@@ -88,8 +87,8 @@ std::vector<std::pair<std::string, std::string>> get_request_for_payments(Identi
 
         int ptr = 0;
         for (int i = 0; i < num_of_requests; i++) {
-            std::string acc = read_until_zero(&ptr, buffer, res_size_byte);;
-            std::string amount = read_until_zero(&ptr, buffer, res_size_byte);
+            std::string acc = read_until_zero(&ptr, buffer);
+            std::string amount = read_until_zero(&ptr, buffer);
             result.emplace_back(acc, amount);
         }
     }

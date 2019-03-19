@@ -39,6 +39,7 @@ void main_cycle(Identifier ident, int socket_descriptor) {
 
         if (code == "D") {
             println("Bye!");
+            close(socket_descriptor);
             break;
         } else if (code == "H") {
             print_help();
@@ -88,7 +89,7 @@ void main_cycle(Identifier ident, int socket_descriptor) {
                 println("No requests!");
             } else {
                 for (const auto &request: result) {
-                    println("Request from user " + request.first + " on sum " + request.second); // NOLINT(performance-inefficient-string-concatenation)
+                    println("Request from user " + request.first + " on sum " + request.second);
                 }
             }
         } else if (code == "ASK") {

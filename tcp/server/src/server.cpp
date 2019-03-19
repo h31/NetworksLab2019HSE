@@ -137,11 +137,17 @@ bool server::handle_register(int client_socket_fd, pstp_request_header const &he
   return send_simple_response(client_socket_fd, response);
 }
 
+bool check_authentification(std::unordered_map<std::string, wallet> const &wallets,
+                            std::unordered_map<std::string, wallet>::iterator const &wallet_,
+                            pstp_request_header const &header) {
+  return wallet_ != wallets.end() && std::string(header.password) == (*wallet_).second.password;
+}
+
 bool server::handle_check_login(int client_socket_fd, pstp_request_header const &header) {
   wallets_mutex.lock();
   id_type id = header.wallet_id;
   auto wallet = wallets.find(id);
-  if (wallet != wallets.end() && std::string(header.password) == (*wallet).second.password) {
+  if (check_authentification(wallets, wallet, header)) {
     wallets_mutex.unlock();
     auto response = pstp_check_login_response(OK);
     return send_simple_response(client_socket_fd, response);
@@ -157,7 +163,7 @@ bool server::handle_get_all_wallets(int client_socket_fd, pstp_request_header co
   id_type id = header.wallet_id;
   auto wallet_id = wallets.find(id);
 
-  if (wallets.find(id) != wallets.end() && std::string(header.password) == (*wallet_id).second.password) {
+  if (check_authentification(wallets, wallet_id, header)) {
     std::vector<id_type> wallet_ids;
     for (auto const &entry : wallets) {
       wallet_ids.push_back(entry.first);
@@ -182,7 +188,7 @@ bool server::handle_account_info(int client_socket_fd, pstp_request_header const
   wallets_mutex.lock();
   id_type id = header.wallet_id;
   auto wallet_ = wallets.find(id);
-  if (wallets.find(id) != wallets.end() && std::string(header.password) == (*wallet_).second.password) {
+  if (check_authentification(wallets, wallet_, header)) {
     auto response = pstp_account_info_response(OK, (*wallet_).second.balance);
     wallets_mutex.unlock();
     return send_simple_response(client_socket_fd, response);
@@ -206,8 +212,9 @@ bool server::handle_payment(int client_socket_fd, pstp_request_header const &hea
   wallets_mutex.lock();
   id_type id = header.wallet_id;
   auto wallet_ = wallets.find(id);
-  wallet &w = wallet_->second;
-  if (wallets.find(id) != wallets.end() && std::string(header.password) == w.password) {
+
+  if (check_authentification(wallets, wallet_, header)) {
+    wallet &w = wallet_->second;
     if (request.amount > w.balance || wallets.find(request.recipient_id) == wallets.end()) {
       wallets_mutex.unlock();
       auto response = pstp_payment_response(INVALID_CONTENT);
@@ -240,9 +247,9 @@ bool server::handle_ask_for_payment(int client_socket_fd, pstp_request_header co
   wallets_mutex.lock();
   id_type id = header.wallet_id;
   auto wallet_ = wallets.find(id);
-  wallet &w = wallet_->second;
 
-  if (wallets.find(id) != wallets.end() && std::string(header.password) == w.password) {
+  if (check_authentification(wallets, wallet_, header)) {
+    wallet &w = wallet_->second;
     if (wallets.find(request.recipient_id) == wallets.end() || request.amount == 0) {
       wallets_mutex.unlock();
       auto response = pstp_ask_for_payment_response(INVALID_CONTENT);
@@ -274,9 +281,9 @@ bool server::handle_confirm_payment(int client_socket_fd, pstp_request_header co
   wallets_mutex.lock();
   id_type id = header.wallet_id;
   auto wallet_ = wallets.find(id);
-  wallet &w = wallet_->second;
 
-  if (wallets.find(id) != wallets.end() && std::string(header.password) == w.password) {
+  if (check_authentification(wallets, wallet_, header)) {
+    wallet &w = wallet_->second;
     if (wallets.find(request.recipient_id) == wallets.end() ||
         w.payment_requests.find(request.recipient_id) == w.payment_requests.end() ||
         (request.amount > w.balance) ||
@@ -308,8 +315,9 @@ bool server::handle_get_payment_requests(int client_socket_fd, pstp_request_head
   wallets_mutex.lock();
   id_type id = header.wallet_id;
   auto wallet_ = wallets.find(id);
-  wallet &w = wallet_->second;
-  if (wallets.find(id) != wallets.end() && std::string(header.password) == w.password) {
+
+  if (check_authentification(wallets, wallet_, header)) {
+    wallet &w = wallet_->second;
     std::vector<std::pair<id_type, money_type>> requests;
     for (auto const &entry : w.payment_requests) {
       requests.emplace_back(entry);
@@ -329,8 +337,8 @@ bool server::handle_payment_results(int client_socket_fd, pstp_request_header co
   wallets_mutex.lock();
   id_type id = header.wallet_id;
   auto wallet_ = wallets.find(id);
-  wallet &w = wallet_->second;
-  if (wallets.find(id) != wallets.end() && std::string(header.password) == w.password) {
+  if (check_authentification(wallets, wallet_, header)) {
+    wallet &w = wallet_->second;
     auto response = pstp_get_payment_results_response(OK, w.payment_results);
     w.payment_results = {};
     wallets_mutex.unlock();

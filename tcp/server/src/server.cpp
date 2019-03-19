@@ -207,11 +207,7 @@ bool server::handle_payment(int client_socket_fd, pstp_request_header const &hea
   pstp_payment_request request;
   request.header = header;
 
-  ssize_t red = read(client_socket_fd, ((char *) &request) + sizeof(header), header.content_size);
-
-  if (red != header.content_size) {
-    return false;
-  }
+  get_request(client_socket_fd, header, request);
 
   wallets_mutex.lock();
   id_type id = header.wallet_id;
@@ -242,11 +238,7 @@ bool server::handle_ask_for_payment(int client_socket_fd, pstp_request_header co
   pstp_ask_for_payment_request request;
   request.header = header;
 
-  ssize_t red = read(client_socket_fd, ((char *) &request) + sizeof(header), header.content_size);
-
-  if (red != header.content_size) {
-    return false;
-  }
+  get_request(client_socket_fd, header, request);
 
   wallets_mutex.lock();
   id_type id = header.wallet_id;
@@ -276,11 +268,7 @@ bool server::handle_confirm_payment(int client_socket_fd, pstp_request_header co
   pstp_confirm_payment_request request;
   request.header = header;
 
-  ssize_t red = read(client_socket_fd, ((char *) &request) + sizeof(header), header.content_size);
-
-  if (red != header.content_size) {
-    return false;
-  }
+  get_request(client_socket_fd, header, request);
 
   wallets_mutex.lock();
   id_type id = header.wallet_id;

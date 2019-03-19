@@ -8,7 +8,6 @@ void write_to_socket(int socket_descriptor, const void *buf, size_t size) {
 
     if (n != size) {
         error("write", "unexpected end of socket! (Maybe server disconnect?)");
-        exit(0);
     }
 }
 
@@ -16,12 +15,10 @@ void read_from_socket(int socket_descriptor, void *buf, size_t size) {
     ssize_t n = read(socket_descriptor, buf, size);
     if (n < 0) {
         error("read", "failed to read from socket!");
-        exit(0);
     }
 
     if (n != size) {
         error("read", "unexpected end of socket! (Maybe server disconnect?)");
-        exit(0);
     }
 }
 
@@ -31,12 +28,11 @@ void println(const std::string &s) {
 
 void error(const std::string &s) {
     println("Error: " + s);
-    exit(0);
+    exit(1);
 }
 
 void error(const std::string &type, const std::string &s) {
-    println("Error " + type + ": " + s);
-    exit(0);
+    error(type + ": " + s);
 }
 
 pstp_response_header read_header(int socket_descriptor) {

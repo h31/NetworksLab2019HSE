@@ -1,4 +1,5 @@
 #include <io_util.h>
+#include <client_exception.h>
 
 void write_to_socket(int socket_descriptor, const void *buf, size_t size) {
     ssize_t n = write(socket_descriptor, buf, size);
@@ -39,7 +40,7 @@ void println(const std::string &s) {
 
 void error(const std::string &s) {
     println("Error: " + s);
-    exit(1);
+    throw client_exception(s);
 }
 
 void error(const std::string &type, const std::string &s) {
@@ -61,5 +62,29 @@ std::string read_until_zero(int* ptr, char* buffer) {
     std::string dest(buffer + *ptr);
     *ptr += dest.size() + 1;
     return dest;
+}
+
+char *read_bytes(int socket_descriptor, size_t size) {
+    char* buffer = new char[size];
+
+    try {
+        read_from_socket(socket_descriptor, buffer, size);
+    } catch (client_exception& e) {
+        delete[] buffer;
+        throw e;
+    }
+
+    return buffer;
+}
+
+void read_string_pair_vector(char *buffer, uint32_t num_of_elements, std::vector<std::pair<std::string, std::string>>& dest) {
+    dest.resize(num_of_elements);
+
+    int ptr = 0;
+    for (int i = 0; i < num_of_elements; i++) {
+        std::string first = read_until_zero(&ptr, buffer);
+        std::string second = read_until_zero(&ptr, buffer);
+        dest[i] = {first, second};
+    }
 }
 

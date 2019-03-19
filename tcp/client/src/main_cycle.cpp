@@ -39,7 +39,6 @@ void main_cycle(Identifier ident, int socket_descriptor) {
 
         if (code == "D") {
             println("Bye!");
-            close(socket_descriptor);
             break;
         } else if (code == "H") {
             print_help();

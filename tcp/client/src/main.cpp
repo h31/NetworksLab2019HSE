@@ -9,6 +9,7 @@
 
 #include <request.hpp>
 #include <response.hpp>
+#include <client_exception.h>
 #include "login.h"
 #include "io_util.h"
 #include "main_cycle.h"
@@ -22,6 +23,7 @@ int connect(std::string& hostname, uint16_t port_number) {
     struct hostent *server = gethostbyname(hostname.c_str());
 
     if (server == nullptr) {
+        close(socket_descriptor);
         error("no such host");
     }
 
@@ -32,6 +34,7 @@ int connect(std::string& hostname, uint16_t port_number) {
     server_addr.sin_port = htons(port_number);
 
     if (connect(socket_descriptor, (struct sockaddr *) &server_addr, sizeof(server_addr)) < 0) {
+        close(socket_descriptor);
         error("connection failed (for some reason)!");
     }
 
@@ -65,13 +68,19 @@ int main(int argc, char *argv[]) {
 
     println("Connection established!");
 
-    Identifier ident = get_identifier(socket_descriptor);
-    println("Welcome, user " + ident.login + "!");
+    try {
+        Identifier ident = get_identifier(socket_descriptor);
+        println("Welcome, user " + ident.login + "!");
 
-    println("");
+        println("");
 
-    print_help();
-    main_cycle(ident, socket_descriptor);
+        print_help();
+        main_cycle(ident, socket_descriptor);
+        close(socket_descriptor);
+    } catch (client_exception& e) {
+        close(socket_descriptor);
+        throw e;
+    }
 
     return 0;
 }

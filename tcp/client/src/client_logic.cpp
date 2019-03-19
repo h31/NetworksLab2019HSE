@@ -1,6 +1,7 @@
 #include <request.hpp>
 #include <io_util.h>
 #include <client_logic.h>
+#include <client_exception.h>
 
 
 std::vector<std::string> get_all(Identifier& ident, int socket_descriptor) {
@@ -12,14 +13,15 @@ std::vector<std::string> get_all(Identifier& ident, int socket_descriptor) {
     auto num_of_accounts = read_thing<uint32_t>(socket_descriptor);
 
     size_t acc_size_byte = get_all_response_header.content_size - sizeof(uint32_t);
-    char buffer[acc_size_byte];
-    read_from_socket(socket_descriptor, buffer, acc_size_byte);
+    char* buffer = read_bytes(socket_descriptor, acc_size_byte);
 
     int ptr = 0;
     std::vector<std::string> result(num_of_accounts);
     for (int i = 0; i < num_of_accounts; i++) {
         result[i] = read_until_zero(&ptr, buffer);
     }
+    delete[] buffer;
+
     return result;
 }
 
@@ -57,15 +59,9 @@ std::vector<std::pair<std::string, std::string>> get_payment_results(Identifier&
 
     if (num_of_results != 0) {
         size_t res_size_byte = payment_response_header.content_size - sizeof(uint32_t);
-        char buffer[res_size_byte];
-        read_from_socket(socket_descriptor, buffer, res_size_byte);
-
-        int ptr = 0;
-        for (int i = 0; i < num_of_results; i++) {
-            std::string acc = read_until_zero(&ptr, buffer);
-            std::string amount = read_until_zero(&ptr, buffer);
-            result.emplace_back(acc, amount);
-        }
+        char* buffer = read_bytes(socket_descriptor, res_size_byte);
+        read_string_pair_vector(buffer, num_of_results, result);
+        delete[] buffer;
     }
     return result;
 }
@@ -81,16 +77,10 @@ std::vector<std::pair<std::string, std::string>> get_request_for_payments(Identi
     auto num_of_requests = read_thing<uint32_t>(socket_descriptor);
 
     if (num_of_requests != 0) {
-        size_t res_size_byte = get_request_for_payments_response_header.content_size - sizeof(uint32_t);
-        char buffer[res_size_byte];
-        read_from_socket(socket_descriptor, buffer, res_size_byte);
-
-        int ptr = 0;
-        for (int i = 0; i < num_of_requests; i++) {
-            std::string acc = read_until_zero(&ptr, buffer);
-            std::string amount = read_until_zero(&ptr, buffer);
-            result.emplace_back(acc, amount);
-        }
+        size_t req_size_byte = get_request_for_payments_response_header.content_size - sizeof(uint32_t);
+        char* buffer = read_bytes(socket_descriptor, req_size_byte);
+        read_string_pair_vector(buffer, num_of_requests, result);
+        delete[] buffer;
     }
 
     return result;

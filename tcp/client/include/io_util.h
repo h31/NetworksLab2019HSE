@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <response.hpp>
+#include "client_exception.h"
 
 void write_to_socket(int socket_descriptor, const void *buf, size_t size);
 
@@ -32,5 +33,9 @@ T read_thing(int socket_descriptor) {
 }
 
 std::string read_until_zero(int* ptr, char* buffer);
+
+char* read_bytes(int socket_descriptor, size_t size);
+
+void read_string_pair_vector(char *buffer, uint32_t num_of_elements, std::vector<std::pair<std::string, std::string>>& dest);
 
 #endif //CLIENT_UTIL_H

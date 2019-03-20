@@ -52,7 +52,7 @@ class Cache:
                 key_for_deleted.append(key)
         for key in key_for_deleted:
             self.__pop_key_and_log(key)
-        sorted_by_time_cache = sorted(self.__cache.items(), key=itemgetter(1))
+        sorted_by_time_cache = sorted(self.__cache.items(), key=itemgetter(0))
         for key, value in sorted_by_time_cache:
             if self.__check_cache_size(response):
                 return

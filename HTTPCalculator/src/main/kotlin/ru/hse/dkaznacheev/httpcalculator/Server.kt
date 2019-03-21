@@ -1,7 +1,7 @@
 package ru.hse.dkaznacheev.httpcalculator
 
-import ru.hse.dkaznacheev.httpcalculator.Calculation.Companion.parseCalculation
-import ru.hse.dkaznacheev.httpcalculator.HTTPService.receiveRequest
+import ru.hse.dkaznacheev.httpcalculator.Calculation.Companion.parseCalculationfromURL
+import ru.hse.dkaznacheev.httpcalculator.HTTPService.receiveMessage
 import ru.hse.dkaznacheev.httpcalculator.HTTPService.respondBadCalculation
 import ru.hse.dkaznacheev.httpcalculator.HTTPService.respondBadRequest
 import ru.hse.dkaznacheev.httpcalculator.HTTPService.respondSuccessfulCalculation
@@ -23,33 +23,33 @@ class Server(port: Int) {
     }
 
     private fun clientHandler(socket: Socket) {
+        while (true) {
+            try {
+                val writer = socket.getOutputStream().bufferedWriter()
+                val request = receiveMessage(socket.getInputStream().bufferedReader())
 
-        try {
-            val writer = socket.getOutputStream().bufferedWriter()
-            val request = receiveRequest(socket.getInputStream().bufferedReader())
+                if (request == null) {
+                    respondBadRequest(writer)
+                    return
+                }
 
-            if (request == null) {
-                respondBadRequest(writer)
+                val calculation = parseCalculationfromURL(request.url)
+
+                if (calculation == null) {
+                    respondBadRequest(writer)
+                    return
+                }
+
+                if (!calculation.isLong()) {
+                    processCalculation(calculation, writer)
+                } else {
+                    Thread { processCalculation(calculation, writer) }.start()
+                }
+            } catch (e: SocketException) {
+                socket.close()
+                println("Client disconnected")
                 return
             }
-
-            val calculation = parseCalculation(request.url)
-
-            if (calculation == null) {
-                respondBadRequest(writer)
-                return
-            }
-
-            if (!calculation.isLong()) {
-                processCalculation(calculation, writer)
-            } else {
-                Thread { processCalculation(calculation, writer) }.start()
-            }
-
-        } catch (e: SocketException) {
-            e.printStackTrace()
-            println("Client disconnected")
-            return
         }
     }
 

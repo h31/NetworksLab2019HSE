@@ -2,17 +2,17 @@ package ru.hse.dkaznacheev.httpcalculator
 
 import java.io.BufferedReader
 import java.io.BufferedWriter
-import kotlin.collections.LinkedHashMap
+import java.net.SocketException
 
 object HTTPService {
-    fun receiveRequest(reader: BufferedReader): HTTPRequest? {
+
+    fun receiveMessage(reader: BufferedReader): HTTPMessage? {
         var line: String
         val headers = LinkedHashMap<String, String>()
 
-        val requestLine = reader.readLine() ?: return null
+        val requestLine = reader.readLine() ?: throw SocketException()
         while (true) {
             line = reader.readLine()
-            println(line)
             if (line == "")
                 break
             val parts = line.split(": ")
@@ -24,9 +24,10 @@ object HTTPService {
             val length = headers["Content-Length"]!!.toInt()
             val buffer = CharArray(length)
             reader.read(buffer, 0, length)
-            return HTTPRequest(requestLine, headers, buffer.contentToString())
+            return HTTPMessage(requestLine, headers, buffer.joinToString(""))
         }
-        return HTTPRequest(requestLine, headers, "")
+        println(HTTPMessage(requestLine, headers, ""))
+        return HTTPMessage(requestLine, headers, "")
     }
 
     private fun respond(statusCode: String, body: String, writer: BufferedWriter) {
@@ -55,10 +56,23 @@ object HTTPService {
     }
 
     fun respondBadCalculation(writer: BufferedWriter) {
-        respond("409 Conflict", "Division by zero\n", writer)
+        respond("409 Conflict", "Division by zero", writer)
     }
 
     fun respondSuccessfulCalculation(result: Long, writer: BufferedWriter) {
         respond("200 OK", "$result\n", writer)
+    }
+
+    fun sendGetRequest(url: String, writer: BufferedWriter) {
+        writer.write("GET $url HTTP/1.1\n")
+        writer.write("User-Agent: calculator/1.0\n")
+        writer.write("Accept: */*\n")
+        writer.newLine()
+        writer.flush()
+    }
+
+    fun resultCode(line: String): String {
+        val tokens = line.split(" ")
+        return tokens[1]
     }
 }

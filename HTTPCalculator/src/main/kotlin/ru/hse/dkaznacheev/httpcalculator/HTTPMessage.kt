@@ -3,7 +3,7 @@ package ru.hse.dkaznacheev.httpcalculator
 import java.net.URLDecoder
 import java.util.LinkedHashMap
 
-data class HTTPRequest(val requestLine: String, val headers: LinkedHashMap<String, String>, val body: String) {
+data class HTTPMessage(val requestLine: String, val headers: LinkedHashMap<String, String>, val body: String) {
     val requestType: String
     val url: String
 

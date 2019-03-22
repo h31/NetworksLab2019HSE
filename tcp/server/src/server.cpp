@@ -93,15 +93,8 @@ void Server::ClientLifeCycle(int newsockfd)
         }
     }
 
-    try
-    {
-        shutdown(newsockfd, SHUT_RD);
-        close(newsockfd);
-    }
-    catch (...)
-    {
-        // Nothing to do here
-    }
+    shutdown(newsockfd, SHUT_RD);
+    close(newsockfd);
 
     delete buf;
 }

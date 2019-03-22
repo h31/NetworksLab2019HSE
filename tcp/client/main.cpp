@@ -37,7 +37,9 @@ void receive_responses(int sockfd) {
         char operation = result.GetOperation();
         double value = result.GetResult();
 
-        if (operation == 's') {
+        if (operation == 'e') {
+            cout << "calculation error!" << "\n";
+        } else if (operation == 's') {
             cout << "sqrt " << arg_left << " = " << value << "\n";
         } else if (operation == '!') {
             cout << arg_left << "! = " << value << "\n";

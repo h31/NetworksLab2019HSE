@@ -54,6 +54,9 @@ private:
 
   bool SendCalculationResult(int newsockfd, const Calculation& calculation) const;
 
+  bool SendError(int newsockfd) const;
+
+
 };
 
 #endif // TCP_SERVER_H

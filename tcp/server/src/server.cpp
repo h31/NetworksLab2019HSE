@@ -89,6 +89,7 @@ void Server::ClientLifeCycle(int newsockfd)
         }
         catch (std::exception e)
         {
+            SendError(newsockfd);
             break;
         }
     }
@@ -193,4 +194,8 @@ bool Server::SendCalculationResult(int newsockfd, const Calculation &calculation
     {
         return false;
     }
+}
+
+bool Server::SendError(int newsockfd) const {
+    return SendCalculationResult(newsockfd, Calculation('e', 0, 0));
 }

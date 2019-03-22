@@ -1,13 +1,14 @@
 #include <cstring>
 #include <cstdio>
+#include <memory>
 #include "include/message.h"
 
-char* Calculation::Serialize() const {
-    char* result = new char[sizeof(char) + sizeof(int) + sizeof(int)];
-    memcpy(result, &(this->operation), sizeof(char));
-    memcpy(result + sizeof(char), &(this->arg_left), sizeof(int));
-    memcpy(result + sizeof(char) + sizeof(int), &(this->arg_right), sizeof(int));
-    memcpy(result + sizeof(char) + 2 * sizeof(int), &(this->result), sizeof(double));
+std::unique_ptr<char> Calculation::Serialize() const {
+    std::unique_ptr<char> result(new char[sizeof(char) + sizeof(int) + sizeof(int)]);
+    memcpy(result.get(), &(this->operation), sizeof(char));
+    memcpy(result.get() + sizeof(char), &(this->arg_left), sizeof(int));
+    memcpy(result.get() + sizeof(char) + sizeof(int), &(this->arg_right), sizeof(int));
+    memcpy(result.get() + sizeof(char) + 2 * sizeof(int), &(this->result), sizeof(double));
     return result;
 }
 

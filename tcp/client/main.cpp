@@ -15,9 +15,8 @@ using namespace std;
 
 void send_calculation(Calculation* calculation, int sockfd) {
     int n;
-    char* serialized = calculation->Serialize();
-    n = write(sockfd, serialized, sizeof(Calculation));
-    delete serialized;
+    std::unique_ptr<char> serialized = calculation->Serialize();
+    n = write(sockfd, serialized.get(), sizeof(Calculation));
 
     if (n < 0) {
         cerr << "ERROR writing to socket\n";

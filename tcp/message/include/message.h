@@ -12,7 +12,7 @@ class Calculation
     Calculation(char operation, int arg_left, int arg_right, double result):
             operation(operation), arg_left(arg_left), arg_right(arg_right), result(result){};
 
-    char* Serialize() const;
+    std::unique_ptr<char> Serialize() const;
 
     static Calculation Deserialize(char* bytes);
     int GetArgLeft();

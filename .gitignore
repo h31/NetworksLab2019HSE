@@ -600,3 +600,6 @@ __pycache__/
 # should be stored in the .pubxml.user file.
 
 # End of https://www.gitignore.io/api/c++,latex,cmake,netbeans,qtcreator,visualstudio
+.vscode/c_cpp_properties.json
+tcp/server/.vscode/c_cpp_properties.json
+tcp/server/.vscode/settings.json

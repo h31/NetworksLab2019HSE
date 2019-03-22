@@ -25,5 +25,6 @@ int main(int argc, char **argv)
     }
 
     std::cout << "Server stoped" << std::endl;
+    server.Stop();
     return 0;
 }

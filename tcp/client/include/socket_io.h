@@ -1,39 +1,35 @@
 #ifndef SERVER_SOCKETIO_H
 #define SERVER_SOCKETIO_H
 
-#include <netdb.h>
-#include <netinet/in.h>
+#include <string>
 #include <unistd.h>
 
-#include <string>
-#include <strings.h>
-#include <boost/lexical_cast.hpp>
-#include "socket_reading_exception.h"
-#include "socket_writing_exception.h"
-
-
 class socket_io {
-    private:
-        int socket_fd;
+private:
+    int socket_fd;
 
-        void read_bytes(char *bytes, size_t amount);
+    void read_bytes(char *bytes, size_t amount);
 
-        void write_bytes(const char *bytes, size_t amount);
+    void write_bytes(const char *bytes, size_t amount);
 
-    public:
-        explicit socket_io(int socket_fd);
+public:
+    explicit socket_io(int socket_fd);
 
-        int read_int();
+    std::string read_string(std::size_t size);
 
-        size_t read_size_t();
+    template<class T>
+    T read_data() {
+        char buffer[sizeof(T)];
+        read_bytes(buffer, sizeof(T));
+        T result;
+        memcpy(&result, buffer, sizeof(T));
+        return result;
+    }
 
-        std::string read_string(size_t size);
-
-        void write_int(int n);
-
-        void write_size_t(size_t n);
-
-        void write_string(const std::string &string);
+    template<class T>
+    void write_data(const T &value) {
+        write_bytes(static_cast<const char*>(static_cast<const void*>(&value)), sizeof(T));
+    }
 };
 
 #endif //SERVER_SOCKETIO_H

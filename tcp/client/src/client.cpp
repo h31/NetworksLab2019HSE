@@ -1,8 +1,8 @@
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
-
 #include <arpa/inet.h>
+#include <unistd.h>
 
 #include "client.h"
 #include "socket_io.h"
@@ -13,12 +13,7 @@
 #include "nonexistend_product_exception.h"
 
 client::client(const char *host, const char *port): port((uint16_t) strtol(port, nullptr, 0)) {
-    in_addr* ip;
-    if (inet_pton(AF_INET, host, &ip) > 0) {
-        server = gethostbyaddr(&ip, sizeof(in_addr), AF_INET);
-    } else {
-        server = gethostbyname(host);
-    }
+    server = gethostbyname(host);
     if (server == nullptr) {
         throw no_such_host_exception();
     }
@@ -43,14 +38,15 @@ void client::start() {
 void client::output_help() {
     std::cout << "This application supports the following commands:" << "\n";
     std::cout << "1: add a new product;" << "\n";
-    std::cout << "2: purchase a product;" << "\n";
-    std::cout << "3: terminate the connection, exit the application;" << "\n";
-    std::cout << "4: output this help message;" << "\n";
+    std::cout << "2: list products;" << "\n";
+    std::cout << "3: purchase a product;" << "\n";
+    std::cout << "4: terminate the connection, exit the application;" << "\n";
+    std::cout << "5: output this help message;" << "\n";
     std::cout << "Input a single digit to make a query." << "\n";
 }
 
 void client::output_incorrect_argument_for_cli_option_message() {
-    std::cout << "Incorrect argument. Your input must contain a single digit: 1, 2, or 3." << "\n";
+    std::cout << "Incorrect argument. Your input must contain a single digit between 1 and 5." << "\n";
 }
 
 void client::request_response_cycle() {
@@ -77,10 +73,10 @@ void client::request_response_cycle() {
                     size_t price = 0;
                     size_t amount = 0;
                     getline(std::cin, name);
-                    getline(std::cin ,input);
-                    getline(std::cin ,input);
                     try {
+                        getline(std::cin, input);
                         price = std::stoul(input);
+                        getline(std::cin, input);
                         amount = std::stoul(input);
                     } catch (std::invalid_argument& e) {
                         std::cout << "Invalid argument; try again" << "\n";
@@ -96,7 +92,11 @@ void client::request_response_cycle() {
                     std::cout << "Added new product" << "\n";
                     break;
                 }
-                case 2: {
+                case 2 : {
+                    list_products_query(io);
+                    break;
+                }
+                case 3: {
                     std::cout << "Input the name of the product you are willing to purchase." << "\n";
                     std::string name;
                     getline(std::cin, name);
@@ -122,10 +122,10 @@ void client::request_response_cycle() {
                     }
                     break;
                 }
-                case 3:
+                case 4:
                     stop();
                     return;
-                case 4:
+                case 5:
                     output_help();
                     break;
                 default:
@@ -140,26 +140,28 @@ void client::request_response_cycle() {
 }
 
 void client::add_product_query(const std::string& name, size_t price, size_t amount, socket_io& io) {
-    io.write_int(1);
-    io.write_size_t(name.size());
-    io.write_string(name);
-    io.write_size_t(price);
-    io.write_size_t(amount);
+    io.write_data(1);
+    io.write_data(name.size());
+    io.write_data(name);
+    io.write_data(price);
+    io.write_data(amount);
 }
 
 int client::find_product_id(const std::string &name, socket_io& io) {
-    io.write_int(2);
-    size_t products_amount = io.read_size_t();
+    io.write_data(2);
+    auto products_amount = io.read_data<size_t>();
     int product_id = -1;
     for (size_t i = 0; i < products_amount; i++) {
-        int id = io.read_int();
-        size_t string_size = io.read_size_t();
+        int id = io.read_data<int>();
+        auto string_size = io.read_data<size_t>();
         std::string product_name = io.read_string(string_size);
+
         if (name == product_name) {
             product_id = id;
         }
-        io.read_size_t(); // read price; no need to save the value
-        io.read_size_t(); // read amount; no need to save the value
+
+        io.read_data<size_t>(); // read price; no need to save the value
+        io.read_data<size_t>(); // read amount; no need to save the value
     }
     return product_id;
 }
@@ -169,13 +171,28 @@ int client::purchase_product_query(const std::string& name, socket_io& io) {
     if (id == -1) {
         throw nonexistent_product_exception();
     }
-    io.write_int(3);
-    io.write_int(id);
-    int response = io.read_int();
+    io.write_data(3);
+    io.write_data(id);
+    int response = io.read_data<int>();
     return response;
+}
+
+void client::list_products_query(socket_io& io) {
+    io.write_data(2);
+    auto products_amount = io.read_data<size_t>();
+    for (size_t i = 0; i < products_amount; i++) {
+        io.read_data<int>(); // read id; no need to store the value
+        auto string_size = io.read_data<size_t>();
+        std::string product_name = io.read_string(string_size);
+        auto price = io.read_data<size_t>();
+        auto amount = io.read_data<size_t>();
+
+        std::cout << "Name: " << product_name << "; price: " << price << "; in stock: " << amount << "\n";
+    }
 }
 
 void client::stop() {
     shutdown(socket_file_descriptor, SHUT_RDWR);
     close(socket_file_descriptor);
 }
+

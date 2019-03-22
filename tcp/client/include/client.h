@@ -24,6 +24,7 @@ public:
     void start();
     void request_response_cycle();
     void add_product_query(const std::string& name, size_t price, size_t amount, socket_io& io);
+    void list_products_query(socket_io& io);
     int purchase_product_query(const std::string& name, socket_io& io);
     void stop();
 };

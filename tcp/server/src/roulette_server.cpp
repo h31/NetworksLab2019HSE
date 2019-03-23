@@ -10,14 +10,19 @@
 void RouletteServer::StartWorkingWithClient(int sock_fd) {
     ClientStatus status = ClientStatus::NEW;
     Player* player;
-    while (true) {
+    while (status != ClientStatus::FINISH) {
         Message message = Message::Read(sock_fd);
+        ClientStatus request_status;
         if (status == ClientStatus::NEW) {
-            status = WorkWithUnauthorized(sock_fd, message, &player);
+            request_status = WorkWithUnauthorized(sock_fd, message, &player);
         } else if (status == ClientStatus::PLAYER) {
-            WorkWithPlayer(player, message);
+            request_status = WorkWithPlayer(player, message);
         } else {
-            WorkWithCroupier(sock_fd, message);
+            request_status = WorkWithCroupier(sock_fd, message);
+        }
+
+        if (request_status != UNCHANGED) {
+            status = request_status;
         }
     }
 }
@@ -49,17 +54,22 @@ RouletteServer::ClientStatus RouletteServer::WorkWithUnauthorized(
         } else {
             ans_type = Message::CANT_ADD_CROUPIER;
         }
+    } else if (Message::UNDEFINED == message.type) {
+        close(sock_fd);
+        return ClientStatus::FINISH;
     } else {
         ans_type = Message::UNAUTHORIZED;
     }
 
     Message ans_message(ans_type);
-    ans_message.Write(sock_fd);
-    return status;
+    ans_message.
+                       Write(sock_fd);
+    return
+            status;
 }
 
 
-void RouletteServer::WorkWithCroupier(int sock_fd, const Message& message) {
+RouletteServer::ClientStatus RouletteServer::WorkWithCroupier(int sock_fd, const Message& message) {
     Message ans_message;
     switch (message.type) {
         case Message::START_DRAW: {
@@ -80,7 +90,7 @@ void RouletteServer::WorkWithCroupier(int sock_fd, const Message& message) {
             croupier_mutex_.unlock();
             close(sock_fd);
             std::cout << "Croupier left\n";
-            return;
+            return ClientStatus::FINISH;
         }
 
         default: {
@@ -89,9 +99,11 @@ void RouletteServer::WorkWithCroupier(int sock_fd, const Message& message) {
 
     }
     ans_message.Write(sock_fd);
+    return ClientStatus::UNCHANGED;
 }
 
-void RouletteServer::WorkWithPlayer(Player* player, const Message& message) {
+RouletteServer::ClientStatus
+RouletteServer::WorkWithPlayer(Player* player, const Message& message) {
     Message ans_message;
     switch (message.type) {
         case Message::NEW_BET: {
@@ -113,7 +125,7 @@ void RouletteServer::WorkWithPlayer(Player* player, const Message& message) {
         case Message::UNDEFINED: {
             DeletePlayer(player);
             std::cout << "Player left\n";
-            return;
+            return ClientStatus::FINISH;
         }
 
         default: {
@@ -121,6 +133,8 @@ void RouletteServer::WorkWithPlayer(Player* player, const Message& message) {
         }
     }
     player->messages_.push(ans_message);
+    return ClientStatus::UNCHANGED;
+
 }
 
 Message RouletteServer::ProcessStartDraw() {

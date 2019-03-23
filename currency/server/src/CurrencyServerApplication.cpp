@@ -11,9 +11,14 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "usage: .%s <port>\n", argv[0]);
         return 0;
     }
-    uint16_t portNumber = static_cast<uint16_t>(strtol(argv[1], nullptr, 10));
+    long portNumber = strtol(argv[1], nullptr, 10);
+    
+    if (portNumber <= 0 || portNumber > UINT16_MAX) {
+        fprintf(stderr, "illegal port number\n");
+        return 0;
+    }
 
-    Server server(portNumber);
+    Server server(static_cast<uint16_t>(portNumber));
     pthread_t serverThread;
     typedef void * (*PTHREAD_FUNC_PTR)(void *);
     

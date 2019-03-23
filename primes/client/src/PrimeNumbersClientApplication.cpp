@@ -12,9 +12,14 @@ int main(int argc, char *argv[]) {
         return 0;
     }
     string hostname = argv[1];
-    uint16_t portNumber = static_cast<uint16_t>(strtol(argv[2], nullptr, 10));
+    long portNumber = strtol(argv[1], nullptr, 10);
+    
+    if (portNumber <= 0 || portNumber > UINT16_MAX) {
+        fprintf(stderr, "illegal port number\n");
+        return 0;
+    }
 
-    Client client(hostname, portNumber);
+    Client client(hostname, static_cast<uint16_t>(portNumber));
     string command;
     
     cout << "maxp -- get maximum prime on server" << endl;

@@ -44,6 +44,12 @@ class RouletteServer : public TcpServer {
         int CalculateProfit(int winning_number);
     };
 
+    enum ClientStatus {
+        NEW,
+        PLAYER,
+        CROUPIER
+    };
+
     const char* CROUPIER_PASSWORD = "ANDREY_THE_BEST";
     const int AMOUNT_OF_NUMBERS = 37;
     int croupier_socket_ = 0;
@@ -62,9 +68,11 @@ class RouletteServer : public TcpServer {
 
     void StartWorkingWithClient(int sock_fd) override;
 
-    void WorkWithCroupier(int sock_fd);
+    void WorkWithCroupier(int sock_fd, const Message& message);
 
-    void WorkWithPlayer(Player* player);
+    void WorkWithPlayer(Player* player, const Message& message);
+
+    RouletteServer::ClientStatus WorkWithUnauthorized(int sock_fd, Message message, Player* player);
 
     Message ProcessGetAllBets();
 

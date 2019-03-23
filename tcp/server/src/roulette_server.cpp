@@ -8,117 +8,119 @@
 
 
 void RouletteServer::StartWorkingWithClient(int sock_fd) {
-    std::function<void()> workWithClient = nullptr;
+    ClientStatus status = ClientStatus::NEW;
+    Player* player;
     while (true) {
         Message message = Message::Read(sock_fd);
-        Message::Type ans_type;
-        if (Message::NEW_PLAYER == message.type) {
-            players_mutex_.lock();
-            if (players.count(message.body) == 0) {
-                auto* player = new Player(message.body, sock_fd);
-                players[message.body] = player;
-                workWithClient = std::bind(&RouletteServer::WorkWithPlayer, this, player);
-                ans_type = Message::PLAYER_ADDED;
-                std::cout << "New player\n";
-            } else {
-                ans_type = Message::CANT_ADD_PLAYER;
-            }
-            players_mutex_.unlock();
-        } else if (Message::NEW_CROUPIER == message.type) {
-            croupier_mutex_.lock();
-            if (croupier_socket_) {
-                ans_type = Message::CROUPIER_ALREADY_EXISTS;
-            } else if (message.body == CROUPIER_PASSWORD) {
-                croupier_socket_ = sock_fd;
-                workWithClient = std::bind(&RouletteServer::WorkWithCroupier, this, sock_fd);
-                ans_type = Message::CROUPIER_ADDED;
-                std::cout << "New croupier\n";
-            } else {
-                ans_type = Message::CANT_ADD_CROUPIER;
-            }
-            croupier_mutex_.unlock();
+        if (status == ClientStatus::NEW) {
+            status = WorkWithUnauthorized(sock_fd, message, player);
+        } else if (status == ClientStatus::PLAYER) {
+            WorkWithPlayer(player, message);
         } else {
-            ans_type = Message::UNAUTHORIZED;
+            WorkWithCroupier(sock_fd, message);
         }
+    }
+}
 
-        Message ans_message(ans_type);
-        ans_message.Write(sock_fd);
+RouletteServer::ClientStatus RouletteServer::WorkWithUnauthorized(
+        int sock_fd, Message message, Player* player) {
+    Message::Type ans_type;
+    ClientStatus status = ClientStatus::NEW;
+    if (Message::NEW_PLAYER == message.type) {
+        std::lock_guard<std::mutex> players_lock(players_mutex_);
+        if (players.count(message.body) == 0) {
+            player = new Player(message.body, sock_fd);
+            players[message.body] = player;
+            ans_type = Message::PLAYER_ADDED;
+            std::cout << "New player\n";
+            status = ClientStatus::PLAYER;
+        } else {
+            ans_type = Message::CANT_ADD_PLAYER;
+        }
+    } else if (Message::NEW_CROUPIER == message.type) {
+        std::lock_guard<std::mutex> croupier_lock(croupier_mutex_);
+        if (croupier_socket_) {
+            ans_type = Message::CROUPIER_ALREADY_EXISTS;
+        } else if (message.body == CROUPIER_PASSWORD) {
+            croupier_socket_ = sock_fd;
+            ans_type = Message::CROUPIER_ADDED;
+            std::cout << "New croupier\n";
+            status = ClientStatus::CROUPIER;
+        } else {
+            ans_type = Message::CANT_ADD_CROUPIER;
+        }
+    } else {
+        ans_type = Message::UNAUTHORIZED;
+    }
 
-        if (workWithClient != nullptr) {
+    Message ans_message(ans_type);
+    ans_message.Write(sock_fd);
+    return status;
+}
+
+
+void RouletteServer::WorkWithCroupier(int sock_fd, const Message& message) {
+    Message ans_message;
+    switch (message.type) {
+        case Message::START_DRAW: {
+            ans_message = ProcessStartDraw();
             break;
         }
+        case Message::END_DRAW: {
+            ans_message = ProcessEndDraw();
+            break;
+        }
+        case Message::GET_ALL_BETS: {
+            ans_message = ProcessGetAllBets();
+            break;
+        }
+        case Message::UNDEFINED: {
+            croupier_mutex_.lock();
+            croupier_socket_ = 0;
+            croupier_mutex_.unlock();
+            close(sock_fd);
+            std::cout << "Croupier left\n";
+            return;
+        }
+
+        default: {
+            ans_message = Message(Message::INCORRECT_MESSAGE);
+        }
+
     }
-    workWithClient();
+    ans_message.Write(sock_fd);
 }
 
-void RouletteServer::WorkWithCroupier(int sock_fd) {
-    while (true) {
-        Message message = Message::Read(sock_fd);
-        Message ans_message;
-        switch (message.type) {
-            case Message::START_DRAW: {
-                ans_message = ProcessStartDraw();
+void RouletteServer::WorkWithPlayer(Player* player, const Message& message) {
+    Message ans_message;
+    switch (message.type) {
+        case Message::NEW_BET: {
+            if (!rolling_mutex_.try_lock_shared()) {
+                ans_message = Message(Message::UNTIMELY_BET);
                 break;
-            }
-            case Message::END_DRAW: {
-                ans_message = ProcessEndDraw();
-                break;
-            }
-            case Message::GET_ALL_BETS: {
-                ans_message = ProcessGetAllBets();
-                break;
-            }
-            case Message::UNDEFINED: {
-                croupier_mutex_.lock();
-                croupier_socket_ = 0;
-                croupier_mutex_.unlock();
-                close(sock_fd);
-                std::cout << "Croupier left\n";
-                return;
             }
 
-            default: {
-                ans_message = Message(Message::INCORRECT_MESSAGE);
-            }
-
+            // Otherwise game wasn't started.
+            ans_message = ProcessBet(*player, message.body);
+            rolling_mutex_.unlock_shared();
+            break;
         }
-        ans_message.Write(sock_fd);
-    }
-}
-
-void RouletteServer::WorkWithPlayer(Player* player) {
-    while (true) {
-        Message message = Message::Read(player->socket_fd);
-        Message ans_message;
-        switch (message.type) {
-            case Message::NEW_BET: {
-                if (!rolling_mutex_.try_lock_shared()) {
-                    ans_message = Message(Message::UNTIMELY_BET);
-                    break;
-                }
-
-                // Otherwise game wasn't started.
-                ans_message = ProcessBet(*player, message.body);
-                rolling_mutex_.unlock_shared();
-                break;
-            }
-            case Message::GET_ALL_BETS: {
-                ans_message = ProcessGetAllBets();
-                break;
-            }
-
-            case Message::UNDEFINED: {
-                DeletePlayer(player);
-                std::cout << "Player left\n";
-                return;
-            }
-
-            default: {
-                ans_message = Message(Message::INCORRECT_MESSAGE);
-            }
+        case Message::GET_ALL_BETS: {
+            ans_message = ProcessGetAllBets();
+            break;
         }
-        player->messages_.push(ans_message);
+
+        case Message::UNDEFINED: {
+            DeletePlayer(player);
+            std::cout << "Player left\n";
+            return;
+        }
+
+        default: {
+            ans_message = Message(Message::INCORRECT_MESSAGE);
+        }
     }
+    player->messages_.push(ans_message);
 }
 
 Message RouletteServer::ProcessStartDraw() {

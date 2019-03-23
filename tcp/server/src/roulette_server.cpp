@@ -129,12 +129,11 @@ Message RouletteServer::ProcessStartDraw() {
         return Message(Message::DRAW_STARTED);
     }
     return Message(Message::CANT_START_DRAW, "Game is already in progress.");
-
 }
 
 Message RouletteServer::ProcessEndDraw() {
     if (is_rolling_) {
-        players_mutex_.lock();
+        std::lock_guard<std::mutex> players_lock(players_mutex_);
         for (auto& player: players) {
             int winning_number = rand() % AMOUNT_OF_NUMBERS;
             int profit = player.second->CalculateProfit(winning_number);
@@ -144,16 +143,15 @@ Message RouletteServer::ProcessEndDraw() {
             player.second->bet_type = Player::NO_BET;
             player.second->messages_.push(msg);
         }
-        players_mutex_.unlock();
-        rolling_mutex_.unlock();
         is_rolling_ = false;
+        rolling_mutex_.unlock();
         return Message(Message::DRAW_ENDED);
     }
     return Message(Message::CANT_END_DRAW, "Game wasnt in progress.");
 }
 
 Message RouletteServer::ProcessGetAllBets() {
-    players_mutex_.lock();
+    std::lock_guard<std::mutex> players_lock(players_mutex_);
     std::string result;
     for (auto& p: players) {
         result += p.first;
@@ -161,7 +159,6 @@ Message RouletteServer::ProcessGetAllBets() {
         result += std::to_string(p.second->bet);
         result += '\n';
     }
-    players_mutex_.unlock();
     return Message(Message::LIST_OF_BETS, result);
 }
 
@@ -197,7 +194,7 @@ Message RouletteServer::ProcessBet(RouletteServer::Player& player, std::string b
                        bet.substr(delimeter_pos, bet.size() - delimeter_pos));
     }
 
-    players_mutex_.lock();
+    std::lock_guard<std::mutex> players_lock(players_mutex_);
     Message::Type result;
     if (player.bet != 0) {
         result = Message::REPEATED_BET;
@@ -207,7 +204,6 @@ Message RouletteServer::ProcessBet(RouletteServer::Player& player, std::string b
         player.number = betting_number;
         result = Message::BET_ACCEPTED;
     }
-    players_mutex_.unlock();
     return Message(result);
 }
 
@@ -228,21 +224,18 @@ RouletteServer::RouletteServer() {
 }
 
 void RouletteServer::DeletePlayer(RouletteServer::Player* player) {
-    players_mutex_.lock();
+    std::lock_guard<std::mutex> players_lock(players_mutex_);
     players.erase(player->name);
-    players_mutex_.unlock();
-
     delete player;
 }
 
 bool RouletteServer::BanPlayer(const std::string& name) {
     bool result = false;
-    players_mutex_.lock();
+    std::lock_guard<std::mutex> players_lock(players_mutex_);
     if (players.count(name)) {
         close(players[name]->socket_fd);
         result = true;
     }
-    players_mutex_.unlock();
     return result;
 }
 

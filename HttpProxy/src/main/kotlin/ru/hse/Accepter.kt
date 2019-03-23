@@ -5,27 +5,27 @@ import kotlin.concurrent.thread
 
 class Acceptor(cache: Cache, port: Int) {
 
-    lateinit var thread: Thread
+    private val listener: Thread
+    private val workers: MutableList<Thread> = ArrayList()
 
     init {
         val serverSocket = ServerSocket(port)
-        serverSocket.use {
-            thread = thread(start = false, name = "Acceptor") {
-                while (!Thread.currentThread().isInterrupted) {
+        listener = thread(start = false, name = "Acceptor") {
+            while (!Thread.currentThread().isInterrupted) {
+                serverSocket.use {
                     val socket = serverSocket.accept()
-                    socket.use {
-                        socket.getOutputStream()
-                    }
+                    workers.add(startClientHandler(socket, cache))
                 }
             }
         }
     }
 
     fun start() {
-        thread.start()
+        listener.start()
     }
 
     fun stop() {
-        thread.interrupt()
+        listener.interrupt()
+        workers.forEach(Thread::interrupt)
     }
 }

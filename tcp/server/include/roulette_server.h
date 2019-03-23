@@ -72,7 +72,8 @@ class RouletteServer : public TcpServer {
 
     void WorkWithPlayer(Player* player, const Message& message);
 
-    RouletteServer::ClientStatus WorkWithUnauthorized(int sock_fd, Message message, Player* player);
+    RouletteServer::ClientStatus
+    WorkWithUnauthorized(int sock_fd, Message message, Player** player);
 
     Message ProcessGetAllBets();
 

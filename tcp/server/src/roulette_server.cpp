@@ -13,7 +13,7 @@ void RouletteServer::StartWorkingWithClient(int sock_fd) {
     while (true) {
         Message message = Message::Read(sock_fd);
         if (status == ClientStatus::NEW) {
-            status = WorkWithUnauthorized(sock_fd, message, player);
+            status = WorkWithUnauthorized(sock_fd, message, &player);
         } else if (status == ClientStatus::PLAYER) {
             WorkWithPlayer(player, message);
         } else {
@@ -23,14 +23,14 @@ void RouletteServer::StartWorkingWithClient(int sock_fd) {
 }
 
 RouletteServer::ClientStatus RouletteServer::WorkWithUnauthorized(
-        int sock_fd, Message message, Player* player) {
+        int sock_fd, Message message, Player** player) {
     Message::Type ans_type;
     ClientStatus status = ClientStatus::NEW;
     if (Message::NEW_PLAYER == message.type) {
         std::lock_guard<std::mutex> players_lock(players_mutex_);
         if (players.count(message.body) == 0) {
-            player = new Player(message.body, sock_fd);
-            players[message.body] = player;
+            *player = new Player(message.body, sock_fd);
+            players[message.body] = *player;
             ans_type = Message::PLAYER_ADDED;
             std::cout << "New player\n";
             status = ClientStatus::PLAYER;

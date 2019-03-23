@@ -1,7 +1,7 @@
 package ru.hse
 
 fun main() {
-    val cache = Cache()
+    val cache = LruCache()
     val acceptor = Acceptor(cache, 111)
     acceptor.start()
 }

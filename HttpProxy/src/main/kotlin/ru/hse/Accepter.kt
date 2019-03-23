@@ -3,7 +3,7 @@ package ru.hse
 import java.net.ServerSocket
 import kotlin.concurrent.thread
 
-class Acceptor(cache: Cache, port: Int) {
+class Acceptor(cache: LruCache, port: Int) {
 
     lateinit var thread: Thread
 

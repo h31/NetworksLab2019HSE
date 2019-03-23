@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
     server_thread.detach();
 
     std::string in;
-    while (in != "exit") {
+    while (true) {
         std::cin >> in;
         if (in == "ban") {
             std::string name;
@@ -31,6 +31,8 @@ int main(int argc, char* argv[]) {
             } else {
                 std::cout << name << " doesn't play at this moment.\n";
             }
+        } else if (in == "exit") {
+            break;
         }
     }
     shutdown(port_number, SHUT_RDWR);

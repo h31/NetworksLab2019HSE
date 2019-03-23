@@ -29,7 +29,7 @@ void TcpServer::StartServer(uint16_t port_number) {
 
         if (new_socket_fd < 0) {
             perror("ERROR on accept");
-            exit(1);
+            break;
         }
 
         threads_.emplace_back(std::thread(&TcpServer::StartWorkingWithClient, this, new_socket_fd));

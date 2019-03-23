@@ -5,6 +5,7 @@
 #include <map>
 #include <pthread.h>
 #include <mutex>
+#include <unistd.h>
 
 #include "include/Currency.h"
 
@@ -36,15 +37,15 @@ private:
         int16_t readMessageDelimeter();
         const std::string readCurrencyName();
         int32_t readCurrencyRate();
-        
-        int32_t readInt32();
-        int16_t readInt16();
         void readChars(char *dst, size_t size);
 
         void sendMessageDelimeter();
         void sendString(const std::string &message, size_t len);
-        void sendInt32(int32_t n);
-        void sendInt8(int8_t n);
+
+        template<class T>
+        T readInt();
+        template<class T>
+        void sendInt(T d);
         
         void checkStatus(int n) const;
     
@@ -65,6 +66,21 @@ private:
     std::map<std::string, Currency> currencies;
     std::mutex mtx;
 };
+
+template<class T>
+T Server::ClientHandler::readInt() {
+    T intValue = 0;
+    int n = read(sockfd, &intValue, sizeof(intValue));
+    checkStatus(n);
+    
+    return intValue;
+}
+
+template<class T>
+void Server::ClientHandler::sendInt(T d) {
+    int n = write(sockfd, &d, sizeof(d));
+    checkStatus(n);
+}
 
 #endif // SERVER_H
 

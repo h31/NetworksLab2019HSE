@@ -63,7 +63,6 @@ void Server::start() {
 
 void Server::stop() const {
     shutdown(sockfd, SHUT_RDWR);
-    close(sockfd);
 }
 
 void Server::finish() const {
@@ -110,7 +109,6 @@ void Server::ClientHandler::run() {
 
 void Server::ClientHandler::stop() const {
     shutdown(sockfd, SHUT_RDWR);
-    close(sockfd);
 }
 
 void Server::ClientHandler::processCurrencyListQuery() {
@@ -133,10 +131,10 @@ void Server::ClientHandler::processCurrencyListQuery() {
         }
                 
         sendString(name, CURRENCY_NAME_SIZE);
-        sendInt32(rate);
-        sendInt8(hasPreviousRate);
-        sendInt32(absoluteChange);
-        sendInt32(relativeChange);  
+        sendInt<int32_t>(rate);
+        sendInt<int8_t>(hasPreviousRate);
+        sendInt<int32_t>(absoluteChange);
+        sendInt<int32_t>(relativeChange);  
     }
     
     server.mtx.unlock();
@@ -157,7 +155,7 @@ void Server::ClientHandler::processNewCurrencyQuery() {
 
     server.mtx.unlock();
     
-    sendInt8(success);
+    sendInt<int8_t>(success);
     sendMessageDelimeter();
 }
 
@@ -178,7 +176,7 @@ void Server::ClientHandler::processDeleteCurrencyQuery() {
 
     server.mtx.unlock();
     
-    sendInt8(success);
+    sendInt<int8_t>(success);
     sendMessageDelimeter();
 }
 
@@ -201,7 +199,7 @@ void Server::ClientHandler::processAddCurrencyRateQuery() {
 
     server.mtx.unlock();
     
-    sendInt8(success);
+    sendInt<int8_t>(success);
     sendMessageDelimeter();
 }
 
@@ -217,18 +215,18 @@ void Server::ClientHandler::processCurrencyRateHistoryQuery() {
     server.mtx.unlock();
     
     for (auto rate : rates) {
-        sendInt32(rate);
+        sendInt<int32_t>(rate);
     }   
 
     sendMessageDelimeter();
 }
 
 int32_t Server::ClientHandler::readCommand() {
-    return readInt32();    
+    return readInt<int32_t>();    
 }
 
 int16_t Server::ClientHandler::readMessageDelimeter() {
-    return readInt16();
+    return readInt<int16_t>();
 }
 
 const string Server::ClientHandler::readCurrencyName() {
@@ -239,21 +237,7 @@ const string Server::ClientHandler::readCurrencyName() {
 }
 
 int32_t Server::ClientHandler::readCurrencyRate() {
-    return readInt32();
-}
-
-int32_t Server::ClientHandler::readInt32() {
-    int32_t intValue = 0;
-    int n = read(sockfd, &intValue, sizeof(intValue)); // recv on Windows
-    checkStatus(n);
-    return intValue;
-}
-
-int16_t Server::ClientHandler::readInt16() {
-    int16_t intValue = 0;
-    int n = read(sockfd, &intValue, sizeof(intValue)); // recv on Windows
-    checkStatus(n);
-    return intValue;
+    return readInt<int32_t>();
 }
 
 void Server::ClientHandler::readChars(char *dst, size_t size) {
@@ -271,24 +255,14 @@ void Server::ClientHandler::readChars(char *dst, size_t size) {
 }
 
 void Server::ClientHandler::sendMessageDelimeter() {
-    sendInt8((int8_t) '\\');
-    sendInt8(0);
+    sendInt<int8_t>((int8_t) '\\');
+    sendInt<int8_t>(0);
 }
 
 void Server::ClientHandler::sendString(const string &message, size_t len) {
     string fitMessage(message);
     fitMessage.resize(len, 0);
     int n = write(sockfd, fitMessage.c_str(), fitMessage.size()); // send on Windows
-    checkStatus(n);
-}
-
-void Server::ClientHandler::sendInt32(int32_t d) {
-    int n = write(sockfd, &d, sizeof(d)); // send on Windows
-    checkStatus(n);
-}
-
-void Server::ClientHandler::sendInt8(int8_t d) {
-    int n = write(sockfd, &d, sizeof(d)); // send on Windows
     checkStatus(n);
 }
 

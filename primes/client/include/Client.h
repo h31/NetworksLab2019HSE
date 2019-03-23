@@ -2,6 +2,7 @@
 #define CLIENT_H
 
 #include <string>
+#include <unistd.h>
 
 class Client {
 public:
@@ -22,15 +23,12 @@ private:
 
     void sendCommand(int32_t command);
     int16_t readMessageDelimeter();
-    int64_t readInt64();
-    int32_t readInt32();
-    int16_t readInt16();
-    int8_t readInt8();
-    
     void sendMessageDelimeter();
-    void sendInt64(int64_t d);
-    void sendInt32(int32_t d);
-    void sendInt8(int8_t d);
+
+    template<class T>
+    T readInt();
+    template<class T>
+    void sendInt(T d);
     
     void checkStatus(int n) const;
 
@@ -38,6 +36,21 @@ private:
     static const int BUFFER_SIZE = 256;
     int8_t buffer[BUFFER_SIZE];
 };
+
+template<class T>
+T Client::readInt() {
+    T intValue = 0;
+    int n = read(sockfd, &intValue, sizeof(intValue));
+    checkStatus(n);
+    
+    return intValue;
+}
+
+template<class T>
+void Client::sendInt(T d) {
+    int n = write(sockfd, &d, sizeof(d));
+    checkStatus(n);
+}
 
 #endif // CLIENT_H
 

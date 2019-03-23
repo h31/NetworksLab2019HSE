@@ -46,7 +46,7 @@ int64_t Client::getMaxPrime() {
     sendCommand(command);
     sendMessageDelimeter();
     
-    int64_t p = readInt64();
+    int64_t p = readInt<int64_t>();
     readMessageDelimeter();
 
     return p;
@@ -55,12 +55,12 @@ int64_t Client::getMaxPrime() {
 int64_t Client::getLastPrimes(int64_t n, int64_t *dst) {
     int32_t command = 1;
     sendCommand(command);
-    sendInt64(n);
+    sendInt<int64_t>(n);
     sendMessageDelimeter();
 
-    int64_t m = readInt64();
+    int64_t m = readInt<int64_t>();
     for (int64_t i = 0; i < m; i++) {
-        dst[i] = readInt64();
+        dst[i] = readInt<int64_t>();
     }
     readMessageDelimeter();
     
@@ -70,10 +70,10 @@ int64_t Client::getLastPrimes(int64_t n, int64_t *dst) {
 int64_t Client::getCalculationInterval(int64_t len) {
     int32_t command = 2;
     sendCommand(command);
-    sendInt64(len);
+    sendInt<int64_t>(len);
     sendMessageDelimeter();
     
-    int64_t start = readInt64();
+    int64_t start = readInt<int64_t>();
     readMessageDelimeter();
 
     return start;
@@ -85,13 +85,13 @@ bool Client::processInterval(int64_t start, int64_t len) {
 
     int32_t command = 3;
     sendCommand(command);
-    sendInt64(cnt);
+    sendInt<int64_t>(cnt);
     for (int64_t i = 0; i < cnt; i++) {
-        sendInt64(primes[i]);
+        sendInt<int64_t>(primes[i]);
     }
     sendMessageDelimeter();
 
-    int8_t success = readInt8();
+    int8_t success = readInt<int8_t>();
     readMessageDelimeter();
     
     return (bool)success;
@@ -125,55 +125,16 @@ bool Client::isPrime(int64_t n) {
 }
 
 int16_t Client::readMessageDelimeter() {
-    return readInt16();
-}
-
-int64_t Client::readInt64() {
-    int64_t intValue = 0;
-    int n = read(sockfd, &intValue, sizeof(intValue)); // recv on Windows
-    checkStatus(n);
-
-    return intValue;
-}
-
-int16_t Client::readInt16() {
-    int16_t intValue = 0;
-    int n = read(sockfd, &intValue, sizeof(intValue)); // recv on Windows
-    checkStatus(n);
-
-    return intValue;
-}
-
-int8_t Client::readInt8() {
-    int8_t intValue = 0;
-    int n = read(sockfd, &intValue, sizeof(intValue)); // recv on Windows
-    checkStatus(n);
-
-    return intValue;
+    return readInt<int16_t>();
 }
 
 void Client::sendMessageDelimeter() {
-    sendInt8((int8_t) '\\');
-    sendInt8(0);
+    sendInt<int8_t>((int8_t) '\\');
+    sendInt<int8_t>(0);
 }
 
 void Client::sendCommand(int32_t command) {
-    sendInt32(command);
-}
-
-void Client::sendInt64(int64_t d) {
-    int n = write(sockfd, &d, sizeof(d)); // send on Windows
-    checkStatus(n);
-}
-
-void Client::sendInt32(int32_t d) {
-    int n = write(sockfd, &d, sizeof(d)); // send on Windows
-    checkStatus(n);
-}
-
-void Client::sendInt8(int8_t d) {
-    int n = write(sockfd, &d, sizeof(d)); // send on Windows
-    checkStatus(n);
+    sendInt<int32_t>(command);
 }
 
 void Client::checkStatus(int n) const {

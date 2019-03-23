@@ -62,10 +62,8 @@ RouletteServer::ClientStatus RouletteServer::WorkWithUnauthorized(
     }
 
     Message ans_message(ans_type);
-    ans_message.
-                       Write(sock_fd);
-    return
-            status;
+    ans_message.Write(sock_fd);
+    return status;
 }
 
 

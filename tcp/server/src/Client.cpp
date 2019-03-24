@@ -37,6 +37,7 @@ void Client::ShutdownSocket() {
         return;
     }
     shutdown(socket_fd, SHUT_RDWR);
+    close(socket_fd);
     socket_fd = -1;
 }
 

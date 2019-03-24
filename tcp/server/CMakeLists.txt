@@ -16,11 +16,11 @@ add_executable(server
         src/serverMessages/GroupMessageMessage.cpp
         src/serverMessages/DisconnectMessage.cpp
         src/serverMessages/LoginSuccessMessage.cpp
-        src/clientMessages/ClientMessage.cpp
         src/clientMessages/LoginMessage.cpp
         src/clientMessages/SingleMessageMessage.cpp
         src/clientMessages/BroadcastMessageMessage.cpp
         src/Acceptor.cpp
-        src/Worker.cpp)
+        src/Worker.cpp
+        src/SocketReader.cpp)
 
 target_link_libraries (server ${CMAKE_THREAD_LIBS_INIT})

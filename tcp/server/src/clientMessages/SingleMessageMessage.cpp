@@ -2,8 +2,8 @@
 #include "clientMessages/SingleMessageMessage.h"
 #include "Client.h"
 
-bool SingleMessageMessage::ReadBody(int socket_fd) {
-    return ReadString(socket_fd, user_name) && ReadString(socket_fd, message);
+bool SingleMessageMessage::ReadBody(SocketReader &reader) {
+    return reader.ReadString(user_name) && reader.ReadString(message);
 }
 
 bool SingleMessageMessage::Process(Server *server, Client *client) {

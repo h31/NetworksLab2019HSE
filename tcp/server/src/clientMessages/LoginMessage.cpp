@@ -3,8 +3,8 @@
 #include "clientMessages/LoginMessage.h"
 #include "Client.h"
 
-bool LoginMessage::ReadBody(int socket_fd) {
-    return ReadString(socket_fd, user_name);
+bool LoginMessage::ReadBody(SocketReader &reader) {
+    return reader.ReadString(user_name);
 }
 
 bool LoginMessage::Process(Server *server, Client *client) {

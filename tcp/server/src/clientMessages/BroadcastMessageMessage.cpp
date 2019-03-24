@@ -1,8 +1,8 @@
 #include "clientMessages/BroadcastMessageMessage.h"
 #include "Client.h"
 
-bool BroadcastMessageMessage::ReadBody(int socket_fd) {
-    return ReadString(socket_fd, message);
+bool BroadcastMessageMessage::ReadBody(SocketReader &reader) {
+    return reader.ReadString(message);
 }
 
 bool BroadcastMessageMessage::Process(Server *server, Client *client) {

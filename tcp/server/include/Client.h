@@ -8,11 +8,13 @@
 
 #include "clientMessages/ClientMessage.h"
 #include "serverMessages/ServerMessage.h"
+#include "SocketReader.h"
 
 class Client {
 
 private:
     int socket_fd;
+    SocketReader reader;
     std::string user_name;
     std::recursive_mutex user_name_mtx;
 

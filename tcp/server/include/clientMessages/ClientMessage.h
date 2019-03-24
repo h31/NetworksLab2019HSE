@@ -3,6 +3,7 @@
 
 #include <string>
 
+#include "SocketReader.h"
 #include "Server.h"
 
 enum struct ClientMessageType : unsigned char {
@@ -13,11 +14,8 @@ enum struct ClientMessageType : unsigned char {
 
 class ClientMessage {
 
-protected:
-    static bool ReadString(int socket_fd, std::string &dst);
-
 public:
-    virtual bool ReadBody(int socket_fd) { return true; };
+    virtual bool ReadBody(SocketReader &reader) { return true; };
     virtual bool Process(Server *server, Client *client) = 0;
 };
 

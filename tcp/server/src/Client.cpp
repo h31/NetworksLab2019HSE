@@ -6,9 +6,7 @@
 #include "clientMessages/BroadcastMessageMessage.h"
 #include "Client.h"
 
-Client::Client(int socket_fd) {
-    this->socket_fd = socket_fd;
-}
+Client::Client(int socket_fd) : socket_fd(socket_fd), reader(socket_fd) {}
 
 Client::~Client() {
     ShutdownSocket();
@@ -47,8 +45,7 @@ bool Client::Send(const ServerMessage &message) {
 
 bool Client::Receive(ClientMessage **message) {
     ClientMessageType type;
-    ssize_t readSize = read(socket_fd, &type, sizeof(type));
-    if (readSize < sizeof(type)) {
+    if (!reader.readBytes(reinterpret_cast<unsigned char *>(&type), sizeof(type))) {
         perror("Error on reading");
         return false;
     }
@@ -66,5 +63,5 @@ bool Client::Receive(ClientMessage **message) {
             std::cerr << "Incorrect message type: " << (unsigned char) type << std::endl;
             return true;
     }
-    return (*message)->ReadBody(socket_fd);
+    return (*message)->ReadBody(reader);
 }

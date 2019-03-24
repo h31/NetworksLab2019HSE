@@ -2,9 +2,7 @@
 
 #include "serverMessages/ServerMessage.h"
 
-ServerMessage::ServerMessage(ServerMessageType type) {
-    this->type = type;
-}
+ServerMessage::ServerMessage(ServerMessageType type) : type(type) {}
 
 bool ServerMessage::WriteString(int socket_fd, const std::string &value) {
     return write(socket_fd, value.c_str(), value.size() + 1) == value.size() + 1;

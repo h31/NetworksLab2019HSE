@@ -1,4 +1,4 @@
-#Запросы 
+# Запросы 
 ### Добавить пользователя 
 POST /user\
 input: 
@@ -62,7 +62,7 @@ output:
  {
   "status": "OK",
   "description": "",
-  "entityId": "p626u7copf2tha8rc3yz" //идентификатор запроса
+  "entityId": "p626u7copf2tha8rc3yz"
 }
 ```
 
@@ -116,12 +116,12 @@ output:
 [
   {
     "from": "fromLogin",
-    "key": "ulrrp3ebqfq0nsrjdaz1", //идентификатор запроса
+    "key": "ulrrp3ebqfq0nsrjdaz1",
     "count": 30
   },
   {
     "from": "user2",
-    "key": "5sqwz36u0gtf0v91mxfx", //идентификатор запроса
+    "key": "5sqwz36u0gtf0v91mxfx", 
     "count": 20
   }
 ]

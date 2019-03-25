@@ -1,11 +1,17 @@
-cmake_minimum_required(VERSION 3.13)
-project(client)
+cmake_minimum_required(VERSION 2.8)
+project(calculator)
+set(CMAKE_CXX_STANDARD 17)
 
-set(CMAKE_CXX_STANDARD 14)
+file(GLOB SOURCE_FILES "src/*.cpp")
 
-set(SOURCE_FILES
-        src/main.cpp src/login.cpp src/io_util.cpp src/main_cycle.cpp src/client_logic.cpp)
+add_executable(calculator ${SOURCE_FILES} src/CalculatorApp.cpp include/CalculatorApp.hpp src/CalcuatorServerDriver.cpp include/CalcuatorServerDriver.hpp src/main.cpp include/requests.hpp include/ConcurrentQueue.hpp src/requests.cpp)
 
-include_directories(../server/include include)
+target_include_directories(calculator PRIVATE include)
 
-add_executable(client ${SOURCE_FILES})
+find_package(Threads REQUIRED)
+if(THREADS_HAVE_PTHREAD_ARG)
+    target_compile_options(calculator PUBLIC "-pthread")
+endif()
+if(CMAKE_THREAD_LIBS_INIT)
+    target_link_libraries(calculator "${CMAKE_THREAD_LIBS_INIT}")
+endif()

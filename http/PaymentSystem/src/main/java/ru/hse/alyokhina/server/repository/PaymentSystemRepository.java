@@ -10,6 +10,7 @@ import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
 
 public class PaymentSystemRepository {
     private long defaultMoneyCount = 100;
@@ -94,12 +95,32 @@ public class PaymentSystemRepository {
         return new DefaultResponse(Status.OK, "", null);
     }
 
+    @Nonnull
     public WalletInfo getCountMoney(@Nonnull final UserInfo userInfo) throws NotAuthorizedException {
         valid(userInfo.getLogin(), userInfo.getPassword(), null);
         readLockData.lock();
         long countMoney = data.get(userInfo.getLogin()).count;
         readLockData.unlock();
         return new WalletInfo(userInfo.getLogin(), countMoney);
+    }
+
+
+    @Nonnull
+    public List<RequestInfo> getRequests(@Nonnull final UserInfo userInfo) throws NotAuthorizedException {
+        valid(userInfo.getLogin(), userInfo.getPassword(), null);
+        readLockRequest.lock();
+        final Map<String, Request> requestsForUser = requests.get(userInfo.getLogin());
+        readLockRequest.unlock();
+        if (requestsForUser == null) {
+            return new ArrayList<>();
+        }
+        return requestsForUser.entrySet()
+                .stream()
+                .map(entry -> new RequestInfo(entry.getValue().loginFrom,
+                        entry.getKey(),
+                        entry.getValue().count))
+                .collect(Collectors.toList());
+
     }
 
     private String generateKey(@Nonnull final Map<String, ?> map) {

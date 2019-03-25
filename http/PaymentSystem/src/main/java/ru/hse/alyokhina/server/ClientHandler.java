@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.Nonnull;
 
@@ -138,7 +139,18 @@ public class ClientHandler implements Runnable {
             }
             final WalletInfo response = paymentSystem.getCountMoney(userInfo);
             return _J.writeValueAsString(response);
+        } else if (pathParts[0].toLowerCase().equals("post")
+                && pathParts[1].equals("/requests")) {
+            UserInfo userInfo;
+            try {
+                userInfo = _J.readValue(body, UserInfo.class);
+            } catch (IOException e) {
+                throw new IllegalArgumentException("Failed to parse body as UserInfo", e);
+            }
+            final List<RequestInfo> response = paymentSystem.getRequests(userInfo);
+            return _J.writeValueAsString(response);
         }
+
         throw new ClassNotFoundException(pathParts[0] + " " + pathParts[1] + " not found");
     }
 }

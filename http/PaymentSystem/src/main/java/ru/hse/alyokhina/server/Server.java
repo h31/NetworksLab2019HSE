@@ -14,9 +14,12 @@ public class Server {
     }
 
     public void start() throws IOException {
-        final Socket client = serverSocket.accept();
-        final Thread clientThread = new Thread(new ClientHandler(client));
-        clientThread.start();
+        while (true) {
+            final Socket client = serverSocket.accept();
+            final Thread clientThread = new Thread(new ClientHandler(client));
+            clientThread.start();
+        }
+
     }
 
     public int getPort() {

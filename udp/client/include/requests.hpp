@@ -43,5 +43,6 @@ enum RequestType {
     MULT,
     DIV,
     SQRT,
-    FACT
+    FACT,
+    LONG_OP_RESULT
 };

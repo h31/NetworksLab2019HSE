@@ -1,7 +1,6 @@
 package ru.hse
 
 fun main() {
-    val cache = Cache()
-    val acceptor = Acceptor(cache, 111)
+    val acceptor = Acceptor(3030, ClientHandler(Cache(), listOf()))
     acceptor.start()
 }

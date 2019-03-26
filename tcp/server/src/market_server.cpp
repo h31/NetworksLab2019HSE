@@ -35,7 +35,7 @@ MarketServer::WorkWithUnauthorized(int sock_fd, const Message &message, Freelanc
     const std::string &name = message.body;
     ClientStatus status = ClientStatus::NEW;
     if (Message::NEW_CUSTOMER == message.type) {
-        customers_mutex_.lock();
+        std::lock_guard<std::mutex> customers_lock(customers_mutex_);
         if (customers.count(name) == 0 and freelancers.count(name) == 0) {
             *customer = new Customer(name, sock_fd);
             customers[name] = *customer;
@@ -45,9 +45,8 @@ MarketServer::WorkWithUnauthorized(int sock_fd, const Message &message, Freelanc
         } else {
             ans_type = Message::CANT_ADD_CUSTOMER;
         }
-        customers_mutex_.unlock();
     } else if (Message::NEW_FREELANCER == message.type) {
-        freelancers_mutex_.lock();
+        std::lock_guard<std::mutex> freelancers_lock(freelancers_mutex_);
         if (freelancers.count(name) == 0 and customers.count(name) == 0) {
             *freelancer = new Freelancer(name, sock_fd);
             freelancers[name] = *freelancer;
@@ -57,7 +56,6 @@ MarketServer::WorkWithUnauthorized(int sock_fd, const Message &message, Freelanc
         } else {
             ans_type = Message::CANT_ADD_FREELANCER;
         }
-        freelancers_mutex_.unlock();
     } else if (Message::UNDEFINED == message.type) {
         close(sock_fd);
         return ClientStatus::FINISH;
@@ -253,27 +251,27 @@ MarketServer::~MarketServer() {
 }
 
 void MarketServer::DeleteCustomer(MarketServer::Customer *customer) {
-    customers_mutex_.lock();
+    std::lock_guard<std::mutex> customers_lock(customers_mutex_);
     customers.erase(customer->name);
-    customers_mutex_.unlock();
-
     delete customer;
 }
 
 bool MarketServer::BanUser(const std::string &name) {
     bool result = false;
-    freelancers_mutex_.lock();
-    if (freelancers.count(name)) {
-        DeleteFreelancer(freelancers[name]);
-        result = true;
+    {
+        std::lock_guard<std::mutex> freelancers_lock(freelancers_mutex_);
+        if (freelancers.count(name)) {
+            DeleteFreelancer(freelancers[name]);
+            result = true;
+        }
     }
-    freelancers_mutex_.unlock();
-    customers_mutex_.lock();
-    if (customers.count(name)) {
-        DeleteCustomer(customers[name]);
-        result = true;
+    {
+        std::lock_guard<std::mutex> customers_lock(customers_mutex_);
+        if (customers.count(name)) {
+            DeleteCustomer(customers[name]);
+            result = true;
+        }
     }
-    customers_mutex_.unlock();
     return result;
 }
 
@@ -300,12 +298,9 @@ std::string MarketServer::WorkersToString(std::set<std::string> set) {
 }
 
 void MarketServer::DeleteFreelancer(MarketServer::Freelancer *freelancer) {
-    freelancers_mutex_.lock();
-    customers.erase(freelancer->name);
-    freelancers_mutex_.unlock();
-
+    std::lock_guard<std::mutex> freelancers_lock(freelancers_mutex_);
+    freelancers.erase(freelancer->name);
     delete freelancer;
-
 }
 
 MarketServer::Freelancer::Freelancer(const std::string &name, int socket_fd) : name(name),

@@ -10,7 +10,7 @@
 
 class MySocket {
 public:
-  static MySocket* create_socket(std::string &host, std::string port);
+  static MySocket* create_socket(std::string &host, uint16_t port);
 
   virtual int send(void* data, int size) = 0;
   virtual int receive(void* data, int size) = 0;

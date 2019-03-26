@@ -14,7 +14,7 @@ private:
   SOCKET socket_connection;
 
 public:
-  WindowsSocket(std::string &host, std::string &port);
+  WindowsSocket(std::string &host, uint16_t port);
 
   virtual int send(void *data, int size) override;
 

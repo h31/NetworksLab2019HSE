@@ -5,7 +5,7 @@
 #include <thread>
 #include "../public/Communicator.h"
 
-Communicator::Communicator(std::string &host, std::string &port) {
+Communicator::Communicator(std::string &host, uint16_t port) {
   socket = MySocket::create_socket(host, port);
   state = CONNECTED;
 }

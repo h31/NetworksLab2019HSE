@@ -19,7 +19,7 @@ private:
   int socket_connection;
 
 public:
-  LinuxSocket(std::string &host, std::string &port);
+  LinuxSocket(std::string &host, uint16_t port);
 
   virtual int send(void *data, int size) override;
 

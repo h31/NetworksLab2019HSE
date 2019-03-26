@@ -8,8 +8,7 @@ int main(int argc, char** argv) {
     return 1;
   }
   std::string host(argv[1]);
-  std::string port(argv[2]);
-  Communicator communicator(host, port);
+  Communicator communicator(host, (uint16_t) atoi(argv[2]));
   ConsoleChatController chat(communicator);
   chat.startWork();
   return 0;

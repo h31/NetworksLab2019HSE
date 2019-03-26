@@ -22,7 +22,7 @@ private:
   std::thread *listen_thread = nullptr;
 
 public:
-  Communicator(std::string &host, std::string &port);
+  Communicator(std::string &host, uint16_t port);
 
   ~Communicator();
 

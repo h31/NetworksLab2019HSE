@@ -1,11 +1,12 @@
-# cmake_minimum_required(VERSION <specify CMake version here>)
+ cmake_minimum_required(VERSION 3.10)
 project(chat_client)
 
 set(CMAKE_CXX_STANDARD 14)
 
-if (UNIX)
-SET(GCC_COVERAGE_COMPILE_FLAGS "-pthread")
-endif()
+set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+find_package(Threads REQUIRED)
+
 
 
 SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
@@ -22,3 +23,5 @@ add_executable(chat_client private/main.cpp ${PLATFORM_SPECIFIC_SOURCE_FILES} pu
 if(WIN32)
 target_link_libraries(chat_client -lws2_32)
 endif()
+
+target_link_libraries(chat_client Threads::Threads)

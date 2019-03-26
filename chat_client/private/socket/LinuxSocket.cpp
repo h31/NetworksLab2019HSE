@@ -37,6 +37,7 @@ int LinuxSocket::receive(void *data, int size) {
 }
 
 void LinuxSocket::close() {
-  shutdown(socket_connection, SHUT_RDWR);
+  ::shutdown(socket_connection, SHUT_RDWR);
+  ::close(socket_connection);
   socket_connection = -1;
 }

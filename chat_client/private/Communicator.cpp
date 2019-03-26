@@ -50,7 +50,7 @@ ServerMessage::ServerMessageType Communicator::get_type_from_server() {
     perror("Error in message type");
     exit(1);
   }
-  return static_cast<ServerMessage::ServerMessageType>(type);
+  return type;
 }
 
 std::string *Communicator::get_string_from_server() {

@@ -14,12 +14,11 @@ Client::Client(int socketfd) : socketfd(socketfd) {
     commands["add option"] = [this] { return addOption(); };
     commands["show rating"] = [this] { return showRating(); };
     commands["vote"] = [this] { return vote(); };
-    commands["help"] = [this] { help(); return true; };
-    commands["exit"] = [] { return false; };
+    commands["exit"] = [] { return Response::exitResponse(); };
 }
 
 void Client::run() {
-    if (!connect()) {
+    if (authorize().checkExit()) {
         return;
     }
     while (true) {
@@ -33,33 +32,37 @@ void Client::run() {
             std::cout << std::endl;
             continue;
         }
+        if (command == "exit") {
+            break;
+        }
         if (!commands.count(command)) {
-            std::cerr << "Invalid command" << std::endl;
+            if (command != "help") {
+                std::cerr << "Invalid command" << std::endl;
+            }
             help();
             continue;
         }
-        if (!commands[command]()) {
-            break;
+        Response response = commands[command]();
+        response.print();
+        if (response.checkExit()) {
+            return;
         }
     }
 }
 
-bool Client::connect() {
+Response Client::authorize() {
     while (true) {
         std::cout << "Enter your username:" << std::endl;
         std::string username;
         if (!getline(std::cin, username)) {
-            return false;
+            return Response::exitResponse();
         }
-        Response response = performRequest(
-                RequestType::CONNECT, { RequestField(username) });
-        if (response.checkDisconnect()) {
-            return false;
+        Response response = performRequest(RequestType::AUTHORIZE, { RequestField(username) });
+        if (response.isError()) {
+            response.print();
+        } else {
+            return response;
         }
-        if (!response.isError()) {
-            return true;
-        }
-        response.print();
     }
 }
 
@@ -70,147 +73,100 @@ void Client::help() {
     }
 }
 
-bool Client::newRating() {
+Response Client::newRating() {
     std::cout << "Enter rating name:" << std::endl;
     std::string name;
     if (!getline(std::cin, name)) {
-        return false;
+        return Response::exitResponse();
     }
     int options = 0;
     while (true) {
         std::cout << "Enter number of options:" << std::endl;
         if (!(std::cin >> options)) {
-            return false;
+            return Response::exitResponse();
         }
-        if (0 < options && options < 256) {
+        if (options < 1 || 255 < options) {
+            std::cerr << "Invalid number of options. Must be in range [1..255]" << std::endl;
+        } else {
             break;
         }
-        std::cerr << "Invalid number of options. Must be in range [1..255]" << std::endl;
     }
-    Response response = performRequest(
-            RequestType::NEW_RATING, { RequestField(name),RequestField(static_cast<uint8_t>(options)) }
-    );
-    if (response.checkDisconnect()) {
-        return false;
-    }
-    response.print();
-    return true;
+    return performRequest(RequestType::NEW_RATING, { RequestField(name),RequestField(static_cast<uint8_t>(options)) });
 }
 
-bool Client::deleteRating() {
+Response Client::deleteRating() {
     std::cout << "Enter rating id:" << std::endl;
     uint32_t id;
     if (!(std::cin >> id)) {
-        return false;
+        return Response::exitResponse();
     }
-    Response response = performRequest( RequestType::DELETE_RATING, { RequestField(id) });
-    if (response.checkDisconnect()) {
-        return false;
-    }
-    response.print();
-    return true;
+    return performRequest( RequestType::DELETE_RATING, { RequestField(id) });
 }
 
-bool Client::openRating() {
+Response Client::openRating() {
     std::cout << "Enter rating id:" << std::endl;
     uint32_t id;
     if (!(std::cin >> id)) {
-        return false;
+        return Response::exitResponse();
     }
-    Response response = performRequest(RequestType::OPEN_RATING, { RequestField(id) });
-    if (response.checkDisconnect()) {
-        return false;
-    }
-    response.print();
-    return true;
+    return performRequest(RequestType::OPEN_RATING, { RequestField(id) });
 }
 
-bool Client::closeRating() {
+Response Client::closeRating() {
     std::cout << "Enter rating id:" << std::endl;
     uint32_t id;
     if (!(std::cin >> id)) {
-        return false;
+        return Response::exitResponse();
     }
-    Response response = performRequest(RequestType::CLOSE_RATING, { RequestField(id) });
-    if (response.checkDisconnect()) {
-        return false;
-    }
-    if (response.isError()) {
-        std::cerr << "Error: " << response.getError() << std::endl;
-    }
-    return true;
+    return performRequest(RequestType::CLOSE_RATING, { RequestField(id) });
 }
 
-bool Client::addOption() {
+Response Client::addOption() {
     std::cout << "Enter rating id:" << std::endl;
     uint32_t id;
     if (!(std::cin >> id)) {
-        return false;
+        return Response::exitResponse();
     }
     std::cout << "Enter option title:" << std::endl;
     std::string option;
     getline(std::cin, option); // just to skip newline
     if (!getline(std::cin, option)) {
-        return false;
+        return Response::exitResponse();
     }
-    Response response = performRequest(
-            RequestType::ADD_OPTION, { RequestField(id), RequestField(option) }
-    );
-    if (response.checkDisconnect()) {
-        return false;
-    }
-    response.print();
-    return true;
+    return performRequest(RequestType::ADD_OPTION, { RequestField(id), RequestField(option) });
 }
 
-bool Client::listRatings() {
-    Response response = performRequest(RequestType::LIST_RATINGS, { });
-    if (response.checkDisconnect()) {
-        return false;
-    }
-    response.print();
-    return true;
+Response Client::listRatings() {
+    return performRequest(RequestType::LIST_RATINGS, { });
 }
 
-bool Client::showRating() {
+Response Client::showRating() {
     std::cout << "Enter rating id:" << std::endl;
     uint32_t id;
     if (!(std::cin >> id)) {
-        return false;
+        return Response::exitResponse();
     }
-    Response response = performRequest(RequestType::GET_RATING, { RequestField(id) });
-    if (response.checkDisconnect()) {
-        return false;
-    }
-    response.print();
-    return true;
+    return performRequest(RequestType::GET_RATING, { RequestField(id) });
 }
 
-bool Client::vote() {
+Response Client::vote() {
     std::cout << "Enter rating id:" << std::endl;
     uint32_t id;
     if (!(std::cin >> id)) {
-        return false;
+        return Response::exitResponse();
     }
     int option = 0;
     while (true) {
         std::cout << "Enter option index:" << std::endl;
         if (!(std::cin >> option)) {
-            return false;
+            return Response::exitResponse();
         }
         if (0 <= option && option < 256) {
             break;
         }
         std::cerr << "Invalid option index. Must be in range [0..255]" << std::endl;
     }
-    Response response = performRequest(
-            RequestType::VOTE, { RequestField(id), RequestField(static_cast<uint8_t>(option))}
-    );
-    if (response.checkDisconnect()) {
-        return false;
-    }
-    response.print();
-    return true;
+    return performRequest(RequestType::VOTE, { RequestField(id), RequestField(static_cast<uint8_t>(option))});
 }
 
 Response Client::performRequest(Client::RequestType type, std::vector<RequestField> fields) {

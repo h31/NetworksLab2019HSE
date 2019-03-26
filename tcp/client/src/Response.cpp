@@ -39,6 +39,8 @@ Response Response::readResponse(int socketfd) {
             }
             return resp;
         }
+        default:
+            return exitResponse();
     }
 }
 
@@ -90,9 +92,10 @@ void Response::print() {
             }
             std::cout << ":" << std::endl;
             uint32_t cnt = fields[2].getByte();
-            for (uint8_t i = 3; i < 3 + 2 * cnt; i += 2) {
-                std::cout << " #" << (i - 3) / 2 << " " << fields[i].getString() << ": ";
-                std::cout << fields[i + 1].getInt() << std::endl;
+            for (uint8_t i = 0; i < cnt; ++i) {
+                auto index = static_cast<uint8_t>(3 + 2 * i);
+                std::cout << " #" << i << " " << fields[index].getString() << ": ";
+                std::cout << fields[index + 1].getInt() << std::endl;
             }
             break;
         }
@@ -103,13 +106,21 @@ void Response::print() {
     }
 }
 
-bool Response::checkDisconnect() {
+bool Response::checkExit() {
     if (isDisconnect()) {
         std::cerr << "You have been disconnected" << std::endl;
     }
-    return isDisconnect();
+    return isExit() || isDisconnect();
 }
 
 Response Response::ResponseDisconnect() {
     return Response(ResponseType::DISCONNECT);
+}
+
+Response Response::exitResponse() {
+    return Response(ResponseType::EXIT);
+}
+
+bool Response::isExit() {
+    return type == ResponseType::EXIT;
 }

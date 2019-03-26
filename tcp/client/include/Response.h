@@ -14,7 +14,9 @@ private:
         ERROR         = 0x01,
         DISCONNECT    = 0x02,
         RATING_LIST   = 0x03,
-        RATING_STATS  = 0x04
+        RATING_STATS  = 0x04,
+        /* Auxiliary state meaning end of user input */
+        EXIT          = 0xFF
     };
 
     ResponseType type;
@@ -23,14 +25,17 @@ private:
     explicit Response(ResponseType type);
     Response &readField(int socketfd, RequestField::Type rtype);
 
+    bool isDisconnect();
+    bool isExit();
+    std::string getError();
+
 public:
     static Response readResponse(int socketfd);
     static Response ResponseDisconnect();
     bool isError();
-    bool isDisconnect();
-    bool checkDisconnect();
-    std::string getError();
+    bool checkExit();
     void print();
+    static Response exitResponse();
 };
 
 

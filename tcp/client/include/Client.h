@@ -12,7 +12,7 @@ class Client {
 
 private:
     enum class RequestType : uint8_t {
-        CONNECT       = 0x00,
+        AUTHORIZE     = 0x00,
         NEW_RATING    = 0x01,
         DELETE_RATING = 0x02,
         OPEN_RATING   = 0x03,
@@ -23,19 +23,19 @@ private:
         VOTE          = 0x08
     };
 
-    std::unordered_map<std::string, std::function<bool()>> commands;
+    std::unordered_map<std::string, std::function<Response()>> commands;
     int socketfd;
 
     Response performRequest(RequestType type, std::vector<RequestField> fields);
-    bool connect();
-    bool newRating();
-    bool deleteRating();
-    bool openRating();
-    bool closeRating();
-    bool addOption();
-    bool listRatings();
-    bool showRating();
-    bool vote();
+    Response authorize();
+    Response newRating();
+    Response deleteRating();
+    Response openRating();
+    Response closeRating();
+    Response addOption();
+    Response listRatings();
+    Response showRating();
+    Response vote();
     void help();
 
 public:

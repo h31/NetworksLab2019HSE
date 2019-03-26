@@ -77,7 +77,7 @@ void Server::stop() {
 bool Server::kickClient(std::string login) {
     pthread_mutex_lock(&workersMutex);
     for (auto ptr = workers.begin(); ptr < workers.end(); ptr++) {
-        if ((*ptr.base())->login == login) {
+        if ((*ptr)->login == login) {
             delete(*ptr.base());
             workers.erase(ptr);
             pthread_mutex_unlock(&workersMutex);
@@ -136,11 +136,10 @@ void Server::ClientWorker::removeFromVector() {
 
 void Server::ClientWorker::work() {
     log("Started");
-    char buffer[256];
+    char buffer[BUFFER_SIZE];
     while (true) {
         std::string command = "";
-        bzero(buffer, 256);
-        ssize_t n = read(clientSockfd, buffer, 255);
+        ssize_t n = read(clientSockfd, buffer, BUFFER_SIZE - 1);
         if (n < 0) {
             perror("ERROR reading from socket");
             exit(1);

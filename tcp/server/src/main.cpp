@@ -15,7 +15,6 @@ int main(int argc, char *argv[]) {
         port = 8882;
     }
     server = new Server(port, '\n');
-    Server* kek = server;
 
     struct sigaction sigIntHandler;
     sigIntHandler.sa_handler = &handleCtrlC;

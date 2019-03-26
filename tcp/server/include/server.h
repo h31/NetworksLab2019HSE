@@ -112,6 +112,8 @@ public:
 
     void listenClient();
 
+    static int BUFFER_SIZE = 256;
+
 private:
     class ClientWorker {
     public:

@@ -3,6 +3,7 @@ package ru.spb.hse.httpproxy.parser;
 import com.sun.org.apache.bcel.internal.generic.NEW;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class HTTPMessage {
     public static final String NEW_LINE = "\r\n";
@@ -60,6 +61,41 @@ public class HTTPMessage {
         }
         String[] splitted = headers.get("Host").split(":");
         return new Address(splitted[0], splitted.length > 1 ? Integer.parseInt(splitted[1]) : 80);
+    }
+
+    public byte[] getBytes() {
+        String message = requestLine + NEW_LINE;
+        message += headers.entrySet().stream()
+                .map(entry -> entry.getKey() + ": " + entry.getValue())
+                .collect(Collectors.joining(NEW_LINE));
+        message += NEW_LINE + NEW_LINE;
+
+        ArrayList<Byte> result = new ArrayList<>();
+
+        for (byte b : message.getBytes()) {
+            result.add(b);
+        }
+
+        if (getBodyLength() > 0 || isChunked()) {
+            result.addAll(body);
+            for (byte b : NEW_LINE.getBytes()) {
+                result.add(b);
+            }
+        }
+        byte[] answer = new byte[result.size()];
+
+        for(int i = 0; i < answer.length; i++) {
+            answer[i] = result.get(i);
+        }
+        return answer;
+    }
+
+    public boolean canBeCached() {
+        if (!headers.containsKey("Cache-Control")) {
+            return true;
+        }
+        String value = headers.get("Cache-Control");
+        return !value.contains("no-cache") && !value.contains("no-store");
     }
 
     public boolean isSupported() {

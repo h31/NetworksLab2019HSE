@@ -16,8 +16,6 @@ public class HTTPParser {
         message = new HTTPMessage();
         head = new ArrayList<>();
 
-        //readHeader(input);
-
         byte[] buffer = new byte[1024];
         int read = 0;
         while ((read = input.read(buffer)) != -1) {
@@ -75,10 +73,10 @@ public class HTTPParser {
 
     private int findDoubleNewLine() {
         byte[] finish = (HTTPMessage.NEW_LINE + HTTPMessage.NEW_LINE).getBytes();
-        for (int i = 0; i < head.size() - finish.length; i++) {
+        for (int i = 0; i <= head.size() - finish.length; i++) {
             boolean equal = true;
             for (int j = 0; j < finish.length; j++) {
-                if (finish[i] != head.get(i + j)) {
+                if (finish[j] != head.get(i + j)) {
                     equal = false;
                     break;
                 }

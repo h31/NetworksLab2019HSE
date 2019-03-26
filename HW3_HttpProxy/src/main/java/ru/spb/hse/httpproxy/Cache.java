@@ -4,17 +4,19 @@ import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class Cache {
     private Duration expirationTime;
-    private Map<String, CachedObject> cache;
+    private Map<Integer, CachedObject> cache;
 
     public Cache(Duration expirationTime, int cacheSize) {
         this.expirationTime = expirationTime;
-        this.cache = Collections.synchronizedMap(new LinkedHashMap<String, CachedObject>() {
+        this.cache = Collections.synchronizedMap(new LinkedHashMap<Integer,
+                CachedObject>() {
             @Override
             public boolean removeEldestEntry(Map.Entry eldest) {
                 return size() > cacheSize;
@@ -22,30 +24,38 @@ public class Cache {
         });
     }
 
-    public String getResponse(@NotNull String request) {
-        if (!cache.containsKey(request)) {
+    public byte[] getResponse(@NotNull byte[] request) {
+        if (! contains(request)) {
             return null;
         }
-        CachedObject element = cache.get(request);
-        if (Duration.between(cache.get(request).wasCreated, Instant.now())
-                .compareTo(expirationTime) > 0) {
-            cache.remove(request);
-            return null;
-        }
-        return element.response;
+        return cache.get(Arrays.hashCode(request)).response;
     }
 
-    public void add(@NotNull String request, @NotNull String response) {
-        cache.put(request, new CachedObject(response, Instant.now()));
+    public boolean contains(@NotNull byte[] request) {
+        int hash = Arrays.hashCode(request);
+        if (!cache.containsKey(hash)) {
+            return false;
+        }
+        if (Duration.between(cache.get(hash).wasCreated, Instant.now())
+                .compareTo(expirationTime) > 0) {
+            cache.remove(hash);
+            return false;
+        }
+        return true;
+    }
+
+    public void add(@NotNull byte[] request, @NotNull byte[] response) {
+        int hash = Arrays.hashCode(request);
+        cache.put(hash, new CachedObject(response));
     }
 
     private static class CachedObject {
-        private String response;
+        private byte[] response;
         private Instant wasCreated;
 
-        CachedObject(@NotNull String response, @NotNull Instant wasCreated) {
+        CachedObject(@NotNull byte[] response) {
             this.response = response;
-            this.wasCreated = wasCreated;
+            this.wasCreated = Instant.now();
         }
     }
 }

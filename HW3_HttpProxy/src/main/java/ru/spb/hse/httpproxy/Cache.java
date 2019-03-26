@@ -4,18 +4,25 @@ import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class Cache {
     private Duration expirationTime;
-    private Map<String, CachedObject> cache = new HashMap<>();
-    
-    public Cache(Duration expirationTime) {
+    private Map<String, CachedObject> cache;
+
+    public Cache(Duration expirationTime, int cacheSize) {
         this.expirationTime = expirationTime;
+        this.cache = Collections.synchronizedMap(new LinkedHashMap<String, CachedObject>() {
+            @Override
+            public boolean removeEldestEntry(Map.Entry eldest) {
+                return size() > cacheSize;
+            }
+        });
     }
 
-    public String getRequest(@NotNull String request) {
+    public String getResponse(@NotNull String request) {
         if (!cache.containsKey(request)) {
             return null;
         }

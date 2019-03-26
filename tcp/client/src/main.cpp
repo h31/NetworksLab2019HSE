@@ -1,5 +1,4 @@
 #include <iostream>
-#include <thread>
 #include <unistd.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -36,5 +35,6 @@ int main(int argc, char **argv) {
     }
     Client client(socketfd);
     client.run();
+    close(socketfd);
     return 0;
 }

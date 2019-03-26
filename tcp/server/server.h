@@ -1,5 +1,6 @@
 #ifndef TEST_SYS_SERVER_H
 #define TEST_SYS_SERVER_H
+
 #include <netdb.h>
 #include <netinet/in.h>
 #include <vector>
@@ -10,6 +11,7 @@
 #include <mutex>
 #include <unordered_set>
 #include <atomic>
+#include <optional>
 
 
 struct Test {
@@ -26,19 +28,47 @@ struct TestResult {
 
 class Server {
 public:
-    Server(uint16_t portno, const std::vector<Test>& tests);
-    void start();
-    void cancel();
-private:
-    void handleClient(int newsokfd);
-    std::pair<uint32_t, uint32_t> getLastTestResults(std::string user) const;
-    std::string login(int newsokfd) const;
-    std::string registerClient(int newsockfd);
-    void sendTests(int newsockfd) const;
-    void test(int newsockfd, const std::string& user);
+    Server(uint16_t portno, const std::vector<Test> &tests);
 
-    std::vector<std::thread> threadsForClients_;
-    sockaddr_in addr_;
+    void start();
+
+private:
+    enum State {
+        REGISTER_USER = 0,
+        LOG_IN = 1,
+        WANT_TEST = 2,
+        SEND_QUESTION = 3,
+        WANT_QUESTION = 4,
+        END_OF_TEST = 5,
+        EXIT = 6
+    };
+
+    enum ExitCode {
+        OK = 0,
+        INCORRECT_TEST_ID = 1,
+        LOGIN_NOT_FOUND = 2,
+        LOGIN_ALREADY_EXISTS = 3,
+        INCORRECT_ACTION = 4
+    };
+
+    void handleClient(int newsokfd);
+
+    std::pair<uint32_t, uint32_t> getLastTestResults(std::string user) const;
+
+    std::optional<std::string> login(int newsokfd) const;
+
+    std::optional<std::string> registerClient(int newsockfd);
+
+    void sendTests(int newsockfd) const;
+
+    void test(int newsockfd, const std::string &user);
+
+    void handleIncorrectUserInput(ExitCode code_to_send, int newsockfd) const;
+
+    std::pair<uint32_t, uint32_t>
+    processAnswers(uint32_t test_id, const std::vector<std::string> &answers,
+                   const std::string &user);
+
     const std::vector<Test> tests_;
     std::unordered_map<std::string, std::vector<TestResult>> results_;
     mutable std::mutex mutex_;
@@ -47,20 +77,6 @@ private:
     int sockfd_;
     std::vector<std::thread> threads_;
     std::atomic_int is_interrupted_ = {0};
-
-    const static char OK = 0;
-    const static char INCORRECT_TEST_ID = 1;
-    const static char LOGIN_NOT_FOUND = 2;
-    const static char LOGIN_ALREADY_EXISTS = 3;
-    const static char INCORRECT_ACTION = 4;
-
-    const static char EXIT = 6;
-    const static char WANT_TEST = 2;
-    const static char END_OF_TEST = 5;
-    const static char SEND_QUESTION = 3;
-    const static char WANT_QUESTION = 4;
-    const static char REGISTER_USER = 0;
-    const static char LOG_IN = 1;
 };
 
 

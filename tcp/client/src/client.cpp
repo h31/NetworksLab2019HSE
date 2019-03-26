@@ -48,7 +48,7 @@ void client::add_news(const std::string &topic, const std::string &title, const 
 std::string client::get_news_text(int news_id) {
     io->write<int32_t>(static_cast<int>(GET_NEWS_CONTENT));
     io->write<int32_t>(news_id);
-    auto news_text_length = io->read<size_t >();
+    auto news_text_length = io->read<uint64_t >();
     if (news_text_length == 0) {
         return "There is no news with this id.";
     }

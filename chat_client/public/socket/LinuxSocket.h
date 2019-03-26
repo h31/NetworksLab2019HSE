@@ -21,11 +21,23 @@ private:
 public:
   LinuxSocket(std::string &host, uint16_t port);
 
-  virtual int send(void *data, int size) override;
+  ~LinuxSocket();
 
-  virtual int receive(void *data, int size) override;
+  int send(void *data, int size) override;
 
-  virtual void close() override;
+  int receive(void *data, int size) override;
+
+  bool receiveString(std::string &destination);
+
+  void close() override;
+
+private:
+  static const size_t BUFFER_CAPACITY = 4096;
+  char *buffer = new char[BUFFER_CAPACITY];
+  ssize_t buffer_size = 0;
+  ssize_t buffer_position = 0;
+
+  void read_buffer();
 };
 
 

@@ -21,6 +21,8 @@ public:
   virtual int receive(void *data, int size) override;
 
   virtual void close() override;
+
+  bool receiveString(std::string &destination);
 };
 
 

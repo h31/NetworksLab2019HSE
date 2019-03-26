@@ -54,19 +54,11 @@ ServerMessage::ServerMessageType Communicator::get_type_from_server() {
 }
 
 std::string *Communicator::get_string_from_server() {
-  char c;
   auto *result = new std::string;
-  do {
-    int n = socket->receive(&c, 1);
-    if (n != 1) {
-      if (n == 0) {
-        exit(0);
-      }
-      perror("Error in message string");
-      exit(1);
-    }
-    *result += c;
-  } while (c != 0);
+  bool success = socket->receiveString(*result);
+  if (!success) {
+  perror("Error with reading string");
+  }
   return result;
 }
 

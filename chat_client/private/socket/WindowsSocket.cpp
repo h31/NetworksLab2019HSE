@@ -40,3 +40,7 @@ void WindowsSocket::close() {
   closesocket(socket_connection);
   WSACleanup();
 }
+
+bool LinuxSocket::receiveString(std::string &destination) {
+  return false;
+}

@@ -15,6 +15,7 @@ public:
   virtual int send(void* data, int size) = 0;
   virtual int receive(void* data, int size) = 0;
   virtual void close() = 0;
+  virtual bool receiveString(std::string &destination) = 0;
 };
 
 

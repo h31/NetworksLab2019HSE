@@ -7,6 +7,7 @@ import java.io.OutputStreamWriter
 import java.lang.Exception
 import java.net.ServerSocket
 import java.net.Socket
+import java.net.SocketException
 import java.nio.charset.Charset
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
@@ -20,13 +21,15 @@ class Server(port: Int) {
 
     fun run() {
         val acceptClientCycle = {
-            while (true) {
-                val clientSocket = serverSocket.accept()
-                clientsSockets.add(clientSocket)
-                val clientThread = Thread(RequestResponseCycle(clientSocket))
-                serverThreads.add(clientThread)
-                clientThread.start()
-            }
+            try {
+                while (true) {
+                    val clientSocket = serverSocket.accept()
+                    clientsSockets.add(clientSocket)
+                    val clientThread = Thread(RequestResponseCycle(clientSocket))
+                    serverThreads.add(clientThread)
+                    clientThread.start()
+                }
+            } catch (exception: SocketException) {}
         }
 
         val acceptClientsThread = Thread(acceptClientCycle)

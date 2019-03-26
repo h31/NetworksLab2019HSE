@@ -2,7 +2,6 @@
 #include "message.h"
 
 Message::Message(uint32_t type, const char *content) : type(type) {
-    const size_t size = strlen(content);
     this->content = content;
 }
 

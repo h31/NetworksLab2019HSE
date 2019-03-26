@@ -50,24 +50,24 @@ void FileSystemClient::uploadFile(const char *destUrl, const char *sourceUrl) {
     fseek(fp, 0, SEEK_END);
     auto fileSize = static_cast<size_t>(ftell(fp));
     rewind(fp);
-    char buf[fileSize];
-    fread(buf, 1, fileSize, fp);
     // filling content
     size_t destSize = strlen(destUrl);
     size_t size = destSize + fileSize + 2 * sizeof(uint32_t);
-    char data[size + 2 * sizeof(uint32_t)];
+    char* data = new char[size + 2 * sizeof(uint32_t)];
     size_t shift = 0;
-    _writeInt32ToBuffer(data, static_cast<uint32_t>(100), shift);
+    _writeInt32ToBuffer(data, static_cast<uint32_t>(Message::Code::UPLOAD_FILE), shift);
     _writeInt32ToBuffer(data, static_cast<uint32_t>(size), shift);
     _writeInt32ToBuffer(data, static_cast<uint32_t>(destSize), shift);
     _writeToBuffer(data, destUrl, destSize, shift);
     _writeInt32ToBuffer(data, static_cast<uint32_t>(fileSize), shift);
-    _writeToBuffer(data, buf, fileSize, shift);
+    fread(data + shift, 1, fileSize, fp);
+    shift += fileSize;
     _write(data, shift);
+    delete [] data;
     Message response = _getResponse();
-    if (response.type == 101) {
+    if (response.type == Message::Code::UPLOAD_SUCCESS) {
         std::cout << "File was uploaded: " << response.content << '\n';
-    } else if (response.type == 102) {
+    } else if (response.type == Message::Code::UPLOAD_LOCATION_UNAVAILABLE) {
         std::cout << "Failed to upload file: " << response.content << '\n';
     } else {
         processUnknownResponse(response);
@@ -75,10 +75,10 @@ void FileSystemClient::uploadFile(const char *destUrl, const char *sourceUrl) {
 }
 
 void FileSystemClient::downloadFile(const char *sourceUrl) {
-    Message message = Message(200, sourceUrl);
+    Message message = Message(Message::Code::DOWNLOAD_FILE, sourceUrl);
     _sendMessage(message);
     Message response = _getResponse();
-    if (response.type == 201) {
+    if (response.type == Message::Code::DOWNLOAD_SUCCESS) {
         std::cout << "Enter file location:\n";
         std::string filename;
         getline(std::cin, filename);
@@ -87,7 +87,7 @@ void FileSystemClient::downloadFile(const char *sourceUrl) {
         } else {
             std::cout << "Error while saving file: " << filename << '\n';
         };
-    } else if (response.type == 202) {
+    } else if (response.type == Message::Code::DOWNLOAD_FILE_NOT_FOUND) {
         std::cout << "Could not download file: " << response.content << '\n';
     } else {
         processUnknownResponse(response);
@@ -95,11 +95,11 @@ void FileSystemClient::downloadFile(const char *sourceUrl) {
 }
 
 void FileSystemClient::getFilesList() {
-    Message message = Message(300);
+    Message message = Message(Message::Code::FILES_LIST);
     _sendMessage(message);
     uint32_t type;
     _readInt32(&type);
-    if (type == 301) {
+    if (type == Message::Code::FILES_LIST_SUCCESS) {
         uint32_t size, filesNumber, nameSize;
         _readInt32(&size);
         _readInt32(&filesNumber);
@@ -113,7 +113,7 @@ void FileSystemClient::getFilesList() {
         if (filesNumber == 0) {
             std::cout << "There are no files\n";
         }
-    } else if (type == 1) {
+    } else if (type == Message::Code::UNKNOWN_CODE) {
         uint32_t code;
         _readInt32(&code);
         std::cerr << "Illegal server request type " << code << "\n";
@@ -123,12 +123,12 @@ void FileSystemClient::getFilesList() {
 }
 
 void FileSystemClient::moveToUrl(const char *url) {
-    Message message = Message(400, url);
+    Message message = Message(Message::Code::MOVE_ON_FS, url);
     _sendMessage(message);
     Message response = _getResponse();
-    if (response.type == 401) {
+    if (response.type == Message::Code::MOVE_SUCCESS) {
         std::cout << "Current location: " << response.content << '\n';
-    } else if (response.type == 402) {
+    } else if (response.type == Message::Code::MOVE_LOCATION_NOT_FOUND) {
         std::cout << "Location was not found: " << response.content << '\n';
     } else {
         processUnknownResponse(response);
@@ -138,18 +138,20 @@ void FileSystemClient::moveToUrl(const char *url) {
 void FileSystemClient::quit() {
     std::cout << "Closing connection\n";
     shutdown(_sockfd, SHUT_RDWR);
+    close(_sockfd);
     std::cout << "Connection was closed\n";
 }
 
 bool FileSystemClient::_sendMessage(Message message) {
     size_t size = message.content.size();
     size_t buf_size = size + sizeof(uint32_t) * 2;
-    char data[buf_size];
+    char* data = new char[buf_size];
     size_t shift = 0;
     _writeInt32ToBuffer(data, message.type, shift);
     _writeInt32ToBuffer(data, static_cast<uint32_t>(size), shift);
     _writeToBuffer(data, message.content.c_str(), size, shift);
     _write(data, buf_size);
+    delete [] data;
     return true;
 }
 
@@ -218,7 +220,7 @@ bool FileSystemClient::_readInt32(uint32_t *dst) {
 
 bool FileSystemClient::_read(char *dst, size_t size) {
     for (ssize_t read = 0; size; read = ::read(_sockfd, dst, size)) {
-        if (read < 0) {
+        if (read <= 0) {
             std::cerr << "Error while reading\n";
             return false;
         } else {

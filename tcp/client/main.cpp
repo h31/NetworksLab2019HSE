@@ -185,6 +185,7 @@ int main(int argc, char *argv[]) {
 
     shutdown_handler = [sockfd](int s) {
         write_operation_code(sockfd, 6);
+        close(sockfd);
         std::cout << "Shutting down" << std::endl;
         exit(0);
     };

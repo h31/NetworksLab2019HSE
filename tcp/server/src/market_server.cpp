@@ -8,187 +8,201 @@
 
 int MarketServer::Order::task_counter = 0;
 
-void MarketServer::StartWorkingWithClient(int sock_fd) {
-    std::function<void()> workWithClient = nullptr;
-    while (true) {
+void MarketServer::UserInteractionLoop(int sock_fd) {
+    ClientStatus status = ClientStatus::NEW;
+    Freelancer *freelancer;
+    Customer *customer;
+    while (status != ClientStatus::FINISH) {
         Message message = Message::Read(sock_fd);
-        Message::Type ans_type;
-        std::string &name = message.body;
-        if (Message::NEW_CUSTOMER == message.type) {
-            customers_mutex_.lock();
-            if (customers.count(name) == 0 and freelancers.count(name) == 0) {
-                auto *customer = new Customer(name, sock_fd);
-                customers[name] = customer;
-                workWithClient = std::bind(&MarketServer::WorkWithCustomer, this, customer);
-                ans_type = Message::CUSTOMER_ADDED;
-                std::cout << "New customer\n";
-            } else {
-                ans_type = Message::CANT_ADD_CUSTOMER;
-            }
-            customers_mutex_.unlock();
-        } else if (Message::NEW_FREELANCER == message.type) {
-            freelancers_mutex_.lock();
-            if (freelancers.count(name) == 0 and customers.count(name) == 0) {
-                auto *freelancer = new Freelancer(name, sock_fd);
-                freelancers[name] = freelancer;
-                workWithClient = std::bind(&MarketServer::WorkWithFreelancer, this, freelancer);
-                ans_type = Message::FREELANCER_ADDED;
-                std::cout << "New freelancer\n";
-            } else {
-                ans_type = Message::CANT_ADD_FREELANCER;
-            }
-            freelancers_mutex_.unlock();
-        } else {
-            ans_type = Message::UNAUTHORIZED;
+        ClientStatus request_status;
+        if (status == ClientStatus::NEW) {
+            request_status = WorkWithUnauthorized(sock_fd, message, &freelancer, &customer);
+        } else if (status == ClientStatus::FREELANCER) {
+            request_status = WorkWithFreelancer(freelancer, message);
+        } else if (status == ClientStatus::CUSTOMER) {
+            request_status = WorkWithCustomer(customer, message);
         }
 
-        Message ans_message(ans_type);
-        ans_message.Write(sock_fd);
+        if (request_status != UNCHANGED) {
+            status = request_status;
+        }
+    }
+}
 
-        if (workWithClient != nullptr) {
+MarketServer::ClientStatus
+MarketServer::WorkWithUnauthorized(int sock_fd, const Message &message, Freelancer **freelancer, Customer **customer) {
+    Message::Type ans_type;
+    const std::string &name = message.body;
+    ClientStatus status = ClientStatus::NEW;
+    if (Message::NEW_CUSTOMER == message.type) {
+        customers_mutex_.lock();
+        if (customers.count(name) == 0 and freelancers.count(name) == 0) {
+            *customer = new Customer(name, sock_fd);
+            customers[name] = *customer;
+            ans_type = Message::CUSTOMER_ADDED;
+            std::cout << "New customer\n";
+            status = ClientStatus::CUSTOMER;
+        } else {
+            ans_type = Message::CANT_ADD_CUSTOMER;
+        }
+        customers_mutex_.unlock();
+    } else if (Message::NEW_FREELANCER == message.type) {
+        freelancers_mutex_.lock();
+        if (freelancers.count(name) == 0 and customers.count(name) == 0) {
+            *freelancer = new Freelancer(name, sock_fd);
+            freelancers[name] = *freelancer;
+            ans_type = Message::FREELANCER_ADDED;
+            std::cout << "New freelancer\n";
+            status = ClientStatus::FREELANCER;
+        } else {
+            ans_type = Message::CANT_ADD_FREELANCER;
+        }
+        freelancers_mutex_.unlock();
+    } else if (Message::UNDEFINED == message.type) {
+        close(sock_fd);
+        return ClientStatus::FINISH;
+    } else {
+        ans_type = Message::UNAUTHORIZED;
+    }
+
+    Message ans_message(ans_type);
+    ans_message.Write(sock_fd);
+    return status;
+}
+
+MarketServer::ClientStatus MarketServer::WorkWithFreelancer(Freelancer *freelancer, const Message &message) {
+    Message ans_message;
+    switch (message.type) {
+        case Message::GET_OPEN_ORDERS: {
+            ans_message = LookupOpenOrders();
             break;
         }
-    }
-    workWithClient();
-}
-
-void MarketServer::WorkWithFreelancer(Freelancer *freelancer) {
-    while (true) {
-        Message message = Message::Read(freelancer->socket_fd);
-        Message ans_message;
-        switch (message.type) {
-            case Message::GET_OPEN_ORDERS: {
-                ans_message = LookupOpenOrders();
-                break;
+        case Message::TAKE_ORDER: {
+            orders_mutex_.lock();
+            int id = stoi(message.body);
+            if (orders.count(id) and orders[id]->state == Order::OPEN) {
+                orders[id]->workers.insert(freelancer->name);
+                ans_message.type = Message::TAKE_ORDER_SUCCESSFUL;
+            } else {
+                ans_message = Message(Message::TAKE_ORDER_NOT_SUCCESSFUL, "no such open order");
             }
-            case Message::TAKE_ORDER: {
-                orders_mutex_.lock();
-                int id = stoi(message.body);
-                if (orders.count(id) and orders[id]->state == Order::OPEN) {
-                    orders[id]->workers.insert(freelancer->name);
-                    ans_message.type = Message::TAKE_ORDER_SUCCESSFUL;
-                } else {
-                    ans_message = Message(Message::TAKE_ORDER_NOT_SUCCESSFUL, "no such open order");
-                }
-                orders_mutex_.unlock();
-                break;
-            }
-            case Message::WORK_STARTED: {
-                orders_mutex_.lock();
-                int id = stoi(message.body);
-                if (orders.count(id) and
-                    orders[id]->state == Order::ASSIGNED and
-                    orders[id]->workers.count(freelancer->name)) {
-                    orders[id]->state = Order::IN_PROGRESS;
-                    ans_message.type = Message::WORK_STARTED_SUCCESSFUL;
-                } else {
-                    ans_message.type = Message::WORK_STARTED_NOT_SUCCESSFUL;
-                    ans_message.body = "no such work assigned to you";
-                }
-                orders_mutex_.unlock();
-                break;
-            }
-            case Message::WORK_FINISHED: {
-                orders_mutex_.lock();
-                int id = stoi(message.body);
-                if (orders.count(id) and
-                    orders[id]->state == Order::IN_PROGRESS and
-                    orders[id]->workers.count(freelancer->name)) {
-                    orders[id]->state = Order::PENDING;
-                    ans_message.type = Message::WORK_FINISHED_SUCCESSFUL;
-                } else {
-                    ans_message.type = Message::WORK_FINISHED_NOT_SUCCESSFUL;
-                    ans_message.body = "no such work in progress assigned to you";
-                }
-                orders_mutex_.unlock();
-                break;
-            }
-            case Message::UNDEFINED: {
-                DeleteFreelancer(freelancer);
-                std::cout << "Freelancer left\n";
-                return;
-            }
-
-            default: {
-                ans_message = Message(Message::INCORRECT_MESSAGE);
-            }
-
+            orders_mutex_.unlock();
+            break;
         }
-        freelancer->messages_.push(ans_message);
+        case Message::WORK_STARTED: {
+            orders_mutex_.lock();
+            int id = stoi(message.body);
+            if (orders.count(id) and
+                orders[id]->state == Order::ASSIGNED and
+                orders[id]->workers.count(freelancer->name)) {
+                orders[id]->state = Order::IN_PROGRESS;
+                ans_message.type = Message::WORK_STARTED_SUCCESSFUL;
+            } else {
+                ans_message.type = Message::WORK_STARTED_NOT_SUCCESSFUL;
+                ans_message.body = "no such work assigned to you";
+            }
+            orders_mutex_.unlock();
+            break;
+        }
+        case Message::WORK_FINISHED: {
+            orders_mutex_.lock();
+            int id = stoi(message.body);
+            if (orders.count(id) and
+                orders[id]->state == Order::IN_PROGRESS and
+                orders[id]->workers.count(freelancer->name)) {
+                orders[id]->state = Order::PENDING;
+                ans_message.type = Message::WORK_FINISHED_SUCCESSFUL;
+            } else {
+                ans_message.type = Message::WORK_FINISHED_NOT_SUCCESSFUL;
+                ans_message.body = "no such work in progress assigned to you";
+            }
+            orders_mutex_.unlock();
+            break;
+        }
+        case Message::UNDEFINED: {
+            DeleteFreelancer(freelancer);
+            std::cout << "Freelancer left\n";
+            return FINISH;
+        }
+
+        default: {
+            ans_message = Message(Message::INCORRECT_MESSAGE);
+        }
+
     }
+    freelancer->messages_.push(ans_message);
+    return UNCHANGED;
 }
 
-void MarketServer::WorkWithCustomer(Customer *customer) {
-    while (true) {
-        Message message = Message::Read(customer->socket_fd);
-        Message ans_message;
-        switch (message.type) {
-            case Message::NEW_ORDER: {
+MarketServer::ClientStatus MarketServer::WorkWithCustomer(Customer *customer, const Message &message) {
+    Message ans_message;
+    switch (message.type) {
+        case Message::NEW_ORDER: {
+            orders_mutex_.lock();
+            auto *order = new Order(customer->name, message.body);
+            orders[order->task_id] = order;
+            ans_message = Message(Message::ORDER_ACCEPTED, std::to_string(order->task_id));
+            orders_mutex_.unlock_shared();
+            break;
+        }
+        case Message::GET_MY_ORDERS: {
+            ans_message = LookupOrdersOf(customer);
+            break;
+        }
+        case Message::GET_OPEN_ORDERS: {
+            ans_message = LookupOpenOrders();
+            break;
+        }
+        case Message::GIVE_ORDER_TO_FREELANCER: {
+            int id;
+            char name[256];
+            if (sscanf(message.body.c_str(), "%i %s", &id, name) == 2) {
                 orders_mutex_.lock();
-                auto *order = new Order(customer->name, message.body);
-                orders[order->task_id] = order;
-                ans_message = Message(Message::ORDER_ACCEPTED, std::to_string(order->task_id));
-                orders_mutex_.unlock_shared();
-                break;
-            }
-            case Message::GET_MY_ORDERS: {
-                ans_message = LookupOrdersOf(customer);
-                break;
-            }
-            case Message::GET_OPEN_ORDERS: {
-                ans_message = LookupOpenOrders();
-                break;
-            }
-            case Message::GIVE_ORDER_TO_FREELANCER: {
-                int id;
-                char name[256];
-                if (sscanf(message.body.c_str(), "%i %s", &id, name) == 2) {
-                    orders_mutex_.lock();
-                    if (orders.count(id) and
-                        orders[id]->state == Order::OPEN and
-                        orders[id]->customer == customer->name and
-                        orders[id]->workers.count(name)) {
-                        orders[id]->state = Order::ASSIGNED;
-                        orders[id]->workers = {std::string(name)};
-                        ans_message.type = Message::GIVE_ORDER_SUCCESSFUL;
-                    } else {
-                        ans_message.type = Message::GIVE_ORDER_NOT_SUCCESSFUL;
-                        ans_message.body = "no such open order owned by you";
-                    }
-                    orders_mutex_.unlock();
+                if (orders.count(id) and
+                    orders[id]->state == Order::OPEN and
+                    orders[id]->customer == customer->name and
+                    orders[id]->workers.count(name)) {
+                    orders[id]->state = Order::ASSIGNED;
+                    orders[id]->workers = {std::string(name)};
+                    ans_message.type = Message::GIVE_ORDER_SUCCESSFUL;
                 } else {
                     ans_message.type = Message::GIVE_ORDER_NOT_SUCCESSFUL;
-                    ans_message.body = "parsing error: expected <int> <name> got " + message.body;
-                }
-                break;
-            }
-            case Message::WORK_ACCEPTED: {
-                int id = std::stoi(message.body);
-                orders_mutex_.lock();
-                if (orders.count(id) and
-                    orders[id]->state == Order::PENDING and
-                    orders[id]->customer == customer->name) {
-                    orders[id]->state = Order::DONE;
-                    ans_message.type = Message::WORK_ACCEPTED_SUCCESSFUL;
-                } else {
-                    ans_message.type = Message::WORK_ACCEPTED_NOT_SUCCESSFUL;
-                    ans_message.body = "no such work in progress owned by you";
+                    ans_message.body = "no such open order owned by you";
                 }
                 orders_mutex_.unlock();
-                break;
+            } else {
+                ans_message.type = Message::GIVE_ORDER_NOT_SUCCESSFUL;
+                ans_message.body = "parsing error: expected <int> <name> got " + message.body;
             }
-            case Message::UNDEFINED: {
-                DeleteCustomer(customer);
-                std::cout << "Customer left\n";
-                return;
-            }
-
-            default: {
-                ans_message = Message(Message::INCORRECT_MESSAGE);
-            }
+            break;
         }
-        customer->messages_.push(ans_message);
+        case Message::WORK_ACCEPTED: {
+            int id = std::stoi(message.body);
+            orders_mutex_.lock();
+            if (orders.count(id) and
+                orders[id]->state == Order::PENDING and
+                orders[id]->customer == customer->name) {
+                orders[id]->state = Order::DONE;
+                ans_message.type = Message::WORK_ACCEPTED_SUCCESSFUL;
+            } else {
+                ans_message.type = Message::WORK_ACCEPTED_NOT_SUCCESSFUL;
+                ans_message.body = "no such work in progress owned by you";
+            }
+            orders_mutex_.unlock();
+            break;
+        }
+        case Message::UNDEFINED: {
+            DeleteCustomer(customer);
+            std::cout << "Customer left\n";
+            return FINISH;
+        }
+
+        default: {
+            ans_message = Message(Message::INCORRECT_MESSAGE);
+        }
     }
+    customer->messages_.push(ans_message);
+    return UNCHANGED;
 }
 
 Message MarketServer::LookupOpenOrders() {

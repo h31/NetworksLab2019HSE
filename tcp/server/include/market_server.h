@@ -43,6 +43,14 @@ private:
         boost::sync_queue<Message> messages_;
     };
 
+    enum ClientStatus {
+        NEW,
+        FREELANCER,
+        CUSTOMER,
+        FINISH,
+        UNCHANGED
+    };
+
     class Order {
     public:
         enum State {
@@ -78,11 +86,14 @@ private:
 
     std::shared_timed_mutex orders_mutex_;
 
-    void StartWorkingWithClient(int sock_fd) override;
+    void UserInteractionLoop(int sock_fd) override;
 
-    void WorkWithFreelancer(Freelancer *freelancer);
+    MarketServer::ClientStatus
+    WorkWithUnauthorized(int sock_fd, const Message &message, Freelancer **freelancer, Customer **customer);
 
-    void WorkWithCustomer(Customer *customer);
+    MarketServer::ClientStatus WorkWithFreelancer(Freelancer *freelancer, const Message &message);
+
+    MarketServer::ClientStatus WorkWithCustomer(Customer *customer, const Message &message);
 
     Message LookupOrdersOf(Customer *customer);
 

@@ -7,6 +7,7 @@
 
 #include "Response.h"
 #include "request/RequestField.h"
+#include "SocketReader.h"
 
 class Client {
 
@@ -25,6 +26,7 @@ private:
 
     std::unordered_map<std::string, std::function<Response()>> commands;
     int socketfd;
+    SocketReader reader;
 
     Response performRequest(RequestType type, std::vector<RequestField> fields);
     Response authorize();

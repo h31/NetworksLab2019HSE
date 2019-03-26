@@ -23,14 +23,14 @@ private:
     std::vector<RequestField> fields;
 
     explicit Response(ResponseType type);
-    Response &readField(int socketfd, RequestField::Type rtype);
+    Response &readField(SocketReader &reader, RequestField::Type rtype);
 
     bool isDisconnect();
     bool isExit();
     std::string getError();
 
 public:
-    static Response readResponse(int socketfd);
+    static Response readResponse(SocketReader &reader);
     static Response ResponseDisconnect();
     bool isError();
     bool checkExit();

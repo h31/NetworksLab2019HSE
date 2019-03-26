@@ -5,7 +5,7 @@
 
 #include "Client.h"
 
-Client::Client(int socketfd) : socketfd(socketfd) {
+Client::Client(int socketfd) : socketfd(socketfd), reader(SocketReader(socketfd)) {
     commands["new rating"] = [this] { return newRating(); };
     commands["delete rating"] = [this] { return deleteRating(); };
     commands["open rating"] = [this] { return openRating(); };
@@ -176,5 +176,5 @@ Response Client::performRequest(Client::RequestType type, std::vector<RequestFie
     for (auto &field : fields) {
         field.write(socketfd);
     }
-    return Response::readResponse(socketfd);
+    return Response::readResponse(reader);
 }

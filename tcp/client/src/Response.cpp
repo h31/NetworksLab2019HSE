@@ -6,9 +6,9 @@
 
 Response::Response(Response::ResponseType type) : type(type) {  }
 
-Response Response::readResponse(int socketfd) {
+Response Response::readResponse(SocketReader &reader) {
     ResponseType type;
-    if (read(socketfd, &type, sizeof(type)) != sizeof(type)) {
+    if (!reader.readBytes(&type, sizeof(type))) {
         return Response(ResponseType::DISCONNECT);
     }
     Response resp(type);
@@ -17,25 +17,25 @@ Response Response::readResponse(int socketfd) {
         case ResponseType::DISCONNECT:
             return resp;
         case ResponseType::ERROR:
-            return resp.readField(socketfd, RequestField::Type::STRING);
+            return resp.readField(reader, RequestField::Type::STRING);
         case ResponseType::RATING_LIST: {
-            resp.readField(socketfd, RequestField::Type::INT);
+            resp.readField(reader, RequestField::Type::INT);
             uint32_t cnt = resp.fields.back().getInt();
             for (uint8_t i = 0; i < cnt && !resp.isDisconnect(); ++i) {
-                resp.readField(socketfd, RequestField::Type::STRING)
-                        .readField(socketfd, RequestField::Type::INT)
-                        .readField(socketfd, RequestField::Type::BYTE);
+                resp.readField(reader, RequestField::Type::STRING)
+                        .readField(reader, RequestField::Type::INT)
+                        .readField(reader, RequestField::Type::BYTE);
             }
             return resp;
         }
         case ResponseType::RATING_STATS:  {
-            resp.readField(socketfd, RequestField::Type::STRING)
-                    .readField(socketfd, RequestField::Type::BYTE)
-                    .readField(socketfd, RequestField::Type::BYTE);
+            resp.readField(reader, RequestField::Type::STRING)
+                    .readField(reader, RequestField::Type::BYTE)
+                    .readField(reader, RequestField::Type::BYTE);
             uint32_t cnt = resp.fields.back().getByte();
             for (uint8_t i = 0; i < cnt && !resp.isDisconnect(); ++i) {
-                resp.readField(socketfd, RequestField::Type::STRING)
-                    .readField(socketfd, RequestField::Type::INT);
+                resp.readField(reader, RequestField::Type::STRING)
+                    .readField(reader, RequestField::Type::INT);
             }
             return resp;
         }
@@ -44,12 +44,12 @@ Response Response::readResponse(int socketfd) {
     }
 }
 
-Response &Response::readField(int socketfd, RequestField::Type rtype) {
+Response &Response::readField(SocketReader &reader, RequestField::Type rtype) {
     RequestField field(rtype);
     if (isDisconnect()) {
         return *this;
     }
-    if (!field.read(socketfd)) {
+    if (!field.read(reader)) {
         type = ResponseType::DISCONNECT;
         fields.clear();
     } else {

@@ -10,4 +10,5 @@ add_executable(client
         src/Client.cpp
         src/Response.cpp
         src/request/RequestField.cpp
+        src/SocketReader.cpp
         )

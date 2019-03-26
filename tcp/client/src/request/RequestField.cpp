@@ -5,9 +5,9 @@ bool RequestField::writeInt(int socketfd) {
     return ::write(socketfd, &nval, sizeof(nval)) == sizeof(nval);
 }
 
-bool RequestField::readInt(int socketfd) {
+bool RequestField::readInt(SocketReader &reader) {
     uint32_t nval;
-    bool result = ::read(socketfd, &nval, sizeof(nval)) == sizeof(nval);
+    bool result = reader.readBytes(&nval, sizeof(nval));
     if (result) {
         int_value = ntohl(nval);
     }
@@ -18,27 +18,17 @@ bool RequestField::writeByte(int socketfd) {
     return ::write(socketfd, &byte_value, sizeof(byte_value)) == sizeof(byte_value);
 }
 
-bool RequestField::readByte(int socketfd) {
-    return ::read(socketfd, &byte_value, sizeof(byte_value)) == sizeof(byte_value);
+bool RequestField::readByte(SocketReader &reader) {
+    return reader.readBytes(&byte_value, sizeof(byte_value));
 }
 
 bool RequestField::writeString(int socketfd) {
     return ::write(socketfd, string_value.c_str(), string_value.size() + 1) == string_value.size() + 1;
 }
 
-bool RequestField::readString(int socketfd) {
+bool RequestField::readString(SocketReader &reader) {
     string_value = std::string();
-    uint8_t next_char;
-    do {
-        if (::read(socketfd, &next_char, sizeof(next_char)) < sizeof(next_char)) {
-            return false;
-        }
-        if (next_char == 0) {
-            break;
-        }
-        string_value += next_char;
-    } while (next_char != 0);
-    return true;
+    return reader.readString(string_value);
 }
 
 RequestField::RequestField(RequestField::Type type) : type(type) { }
@@ -66,14 +56,14 @@ bool RequestField::write(int socketfd) {
     }
 }
 
-bool RequestField::read(int socketfd) {
+bool RequestField::read(SocketReader &reader) {
     switch (type) {
         case Type::INT:
-            return readInt(socketfd);
+            return readInt(reader);
         case Type::BYTE:
-            return readByte(socketfd);
+            return readByte(reader);
         case Type::STRING:
-            return readString(socketfd);
+            return readString(reader);
     }
 }
 

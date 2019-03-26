@@ -6,6 +6,7 @@
 #include <string>
 #include <netinet/in.h>
 #include <unistd.h>
+#include "SocketReader.h"
 
 class RequestField {
 
@@ -21,11 +22,11 @@ private:
     std::string string_value;
 
     bool writeInt(int socketfd);
-    bool readInt(int socketfd);
+    bool readInt(SocketReader &reader);
     bool writeByte(int socketfd);
-    bool readByte(int socketfd);
+    bool readByte(SocketReader &reader);
     bool writeString(int socketfd);
-    bool readString(int socketfd);
+    bool readString(SocketReader &reader);
 
 public:
     explicit RequestField(Type type);
@@ -33,7 +34,7 @@ public:
     explicit RequestField(uint32_t val);
     explicit RequestField(const std::string &val);
     bool write(int socketfd);
-    bool read(int socketfd);
+    bool read(SocketReader &reader);
     std::string getString() const;
     uint32_t getInt() const;
     uint8_t getByte() const;

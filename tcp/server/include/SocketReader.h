@@ -16,13 +16,13 @@ private:
     ssize_t buffer_size = 0;
     unsigned char buffer[BUFFER_SIZE];
 
-    bool isEmpty();
-    bool fill();
+    bool IsEmpty();
+    bool Fill();
 
 public:
     explicit SocketReader(int socket_fd);
 
-    bool readBytes(unsigned char *destination, size_t size);
+    bool ReadBytes(unsigned char *destination, size_t size);
     bool ReadString(std::string &destination);
 };
 

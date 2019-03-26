@@ -45,7 +45,7 @@ bool Client::Send(const ServerMessage &message) {
 
 bool Client::Receive(ClientMessage **message) {
     ClientMessageType type;
-    if (!reader.readBytes(reinterpret_cast<unsigned char *>(&type), sizeof(type))) {
+    if (!reader.ReadBytes(reinterpret_cast<unsigned char *>(&type), sizeof(type))) {
         perror("Error on reading");
         return false;
     }

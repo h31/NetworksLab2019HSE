@@ -3,10 +3,10 @@
 
 SocketReader::SocketReader(int socket_fd) : socket_fd(socket_fd) {}
 
-bool SocketReader::readBytes(unsigned char *destination, size_t size) {
+bool SocketReader::ReadBytes(unsigned char *destination, size_t size) {
     auto remaining_size = static_cast<ssize_t>(size);
     while (remaining_size > 0) {
-        if (isEmpty() && !fill()) {
+        if (IsEmpty() && !Fill()) {
             return false;
         }
         auto copy_size = static_cast<size_t>(std::min(remaining_size, buffer_size - buffer_position));
@@ -21,7 +21,7 @@ bool SocketReader::readBytes(unsigned char *destination, size_t size) {
 bool SocketReader::ReadString(std::string &destination) {
     unsigned char next_char;
     do {
-        if (isEmpty() && !fill()) {
+        if (IsEmpty() && !Fill()) {
             return false;
         }
         next_char = buffer[buffer_position++];
@@ -31,12 +31,12 @@ bool SocketReader::ReadString(std::string &destination) {
     return true;
 }
 
-bool SocketReader::isEmpty() {
+bool SocketReader::IsEmpty() {
     return buffer_position >= buffer_size;
 }
 
-bool SocketReader::fill() {
+bool SocketReader::Fill() {
     buffer_size = read(socket_fd, buffer, BUFFER_SIZE);
     buffer_position = 0;
-    return !isEmpty();
+    return !IsEmpty();
 }

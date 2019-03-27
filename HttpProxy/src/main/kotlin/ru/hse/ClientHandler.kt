@@ -24,17 +24,18 @@ class ClientHandler(private val cache: Cache<String, String>, private val blackL
                         return@use
                     }
                     if (request.method == "GET") {
-                        if (Cache.canBeCached(request.data.split("\n"))) {
-                            val cached = cache.lookUp(request.host)
-                            if (cached != null) {
-                                logger.info("Cached copy of response from ${request.host} was sent")
-                                responseWith(cached, it)
-                            }
+                        val cached = cache.lookUp(request.host)
+                        val canCache = Cache.canBeCached(request.data.split("\n"))
+                        if (canCache && cached != null) {
+                            logger.info("Cached copy of response from ${request.host} was sent")
+                            responseWith(cached, it)
                         } else {
                             logger.info("Fresh HTTP response from ${request.host}")
                             val response = retrieveResponse(request)
                             logger.info(response)
-                            cache.addPage(request.host, response)
+                            if (canCache) {
+                                cache.addPage(request.host, response)
+                            }
                             responseWith(response, it)
                         }
 

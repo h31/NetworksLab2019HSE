@@ -13,6 +13,10 @@ public:
     void run() const;
 
 private:
+    const static int32_t MAX_NUMBER = 0;
+    const static int32_t LAST_NUMBERS = 1;
+    const static int32_t BOUND_FOR_CALCULATION = 2;
+    const static int32_t ADD_PRIME_NUMBERS = 3;
     int client_sockfd;
     PrimeNumbersConcurrent &prime_numbers;
 

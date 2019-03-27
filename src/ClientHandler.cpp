@@ -56,16 +56,16 @@ void ClientHandler::run() const {
             int32_t command = read_command();
 
             switch (command) {
-                case 0:
+                case MAX_NUMBER:
                     process_max_number();
                     break;
-                case 1:
+                case LAST_NUMBERS:
                     process_last_numbers();
                     break;
-                case 2:
+                case BOUND_FOR_CALCULATION:
                     process_bound_for_calculation();
                     break;
-                case 3:
+                case ADD_PRIME_NUMBERS:
                     process_add_prime_numbers();
                     break;
                 default:

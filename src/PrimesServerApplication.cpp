@@ -13,6 +13,10 @@ int main(int argc, char *argv[]) {
     }
     if (argc == 2) {
         auto portno = static_cast<uint16_t>(strtol(argv[1], nullptr, 10));
+        if (portno == 0) {
+            std::cerr << "Port must be integer strictly greater than 0";
+            exit(1);
+        }
         PrimesServerApplication(portno).run();
     } else {
         PrimesServerApplication().run();

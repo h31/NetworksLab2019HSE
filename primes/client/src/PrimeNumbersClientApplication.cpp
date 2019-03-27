@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
         return 0;
     }
     string hostname = argv[1];
-    long portNumber = strtol(argv[1], nullptr, 10);
+    long portNumber = strtol(argv[2], nullptr, 10);
     
     if (portNumber <= 0 || portNumber > UINT16_MAX) {
         fprintf(stderr, "illegal port number\n");

@@ -16,11 +16,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-public class ProxyServer implements AutoCloseable{
+public class ProxyServer implements AutoCloseable {
     private static final Logger LOGGER = Logger.getLogger("Server");
     private ServerSocket socket;
     private Cache cache;
-    private List<Thread> threads = new ArrayList<>();
 
     public ProxyServer(int port, int expirationTimeInSec, int cacheTime)
             throws IOException {
@@ -47,18 +46,18 @@ public class ProxyServer implements AutoCloseable{
                 HTTPMessage message = parser.getMessage();
                 byte[] request = message.getBytes();
                 LOGGER.info("Got request: " + new String(request));
+                byte[] response;
                 if (cache.contains(request)) {
-                    byte[] response = cache.getResponse(request);
-                    out.write(response);
-                    out.flush();
-                    return;
-                }
-                HTTPMessage responseFromHost = sendMessage(message);
-                byte[] response = responseFromHost.getBytes();
-                if (message.canBeCached()) {
-                    cache.add(request, response);
+                    response = cache.getResponse(request);
+                } else {
+                    HTTPMessage responseFromHost = sendMessage(message);
+                    response = responseFromHost.getBytes();
+                    if (message.canBeCached()) {
+                        cache.add(request, response);
+                    }
                 }
                 out.write(response);
+                out.flush();
                 LOGGER.info("Send response: " + new String(response));
             } catch (IOException e) {
                 LOGGER.warning("Exception while processing client: " + e
@@ -71,7 +70,6 @@ public class ProxyServer implements AutoCloseable{
             }
         });
         thread.setDaemon(true);
-        threads.add(thread);
         thread.start();
     }
 
@@ -81,7 +79,7 @@ public class ProxyServer implements AutoCloseable{
         Address address = request.getAddress();
         LOGGER.info("Host: " + address.getHost() + " port: " + address
                 .getPort());
-        try(Socket socket = new Socket(address.getHost(), address.getPort())) {
+        try (Socket socket = new Socket(address.getHost(), address.getPort())) {
             OutputStream outputStream = socket.getOutputStream();
             outputStream.write(request.getBytes());
             HTTPParser parser = new HTTPParser(socket.getInputStream());

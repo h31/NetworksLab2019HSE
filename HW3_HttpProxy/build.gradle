@@ -16,3 +16,6 @@ dependencies {
     // https://mvnrepository.com/artifact/org.jetbrains/annotations
     compile group: 'org.jetbrains', name: 'annotations', version: '13.0'
 }
+
+apply plugin: 'application'
+applicationDefaultJvmArgs = ["-Djava.net.preferIPv4Stack=true"]

@@ -36,6 +36,7 @@ void Socket::shutdown() {
     return;
   }
   ::shutdown(socket, SHUT_RDWR);
+  ::close(socket);
   socket = -1;
 }
 

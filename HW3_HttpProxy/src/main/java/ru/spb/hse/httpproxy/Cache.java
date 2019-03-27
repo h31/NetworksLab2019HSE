@@ -24,7 +24,6 @@ public class Cache {
                 return size() > cacheSize;
             }
         });
-        LOGGER.info("Initialized cache");
     }
 
     public synchronized byte[] getResponse(@NotNull byte[] request) {
@@ -37,7 +36,7 @@ public class Cache {
     public synchronized boolean contains(@NotNull byte[] request) {
         int hash = Arrays.hashCode(request);
         if (!cache.containsKey(hash)) {
-            LOGGER.info("The request " + " is not in " +
+            LOGGER.info("The request is not in " +
                     "cache");
             return false;
         }

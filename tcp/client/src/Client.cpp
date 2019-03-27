@@ -13,31 +13,38 @@ void Client::start(char *host, uint16_t port) {
         std::cin >> messageType;
         switch (messageType) {
             case 0: {
-                getTopics(messageType);
+                respond(256, messageType, nullptr);
+                printAllTopics();
                 break;
             }
             case 1: {
-                voicesCount(messageType);
+                respond(256, messageType, &voicesCount);
+                printTop();
                 break;
             }
             case 2: {
-                createTopic(messageType);
+                respond(1024, messageType, &createTopic);
+                printDefaultResponse();
                 break;
             }
             case 3: {
-                removeTopic(messageType);
+                respond(256, messageType, &removeTopic);
+                printDefaultResponse();
                 break;
             }
             case 4: {
-                createAlternative(messageType);
+                respond(256, messageType, &createAlternative);
+                printDefaultResponse();
                 break;
             }
             case 5: {
-                closeTopic(messageType);
+                respond(256, messageType, &closeTopic);
+                printDefaultResponse();
                 break;
             }
             case 6: {
-                vote(messageType);
+                respond(256, messageType, &vote);
+                printDefaultResponse();
                 break;
             }
             case 7: {
@@ -89,77 +96,45 @@ void Client::connect(char *host, uint16_t port) {
     }
 }
 
-void Client::getTopics(uint32_t type) {
-    uint8_t buffer[256];
-    bzero(buffer, 256);
+uint8_t *Client::respond(size_t size, uint32_t type, void (*addParams)(uint8_t *, int &)) {
+    auto *buffer = new uint8_t[size];
+    bzero(buffer, size);
     int writeOffset = 0;
     addType(buffer, writeOffset, type);
+    if (addParams != nullptr) {
+        addParams(buffer, writeOffset);
+    }
     sendMessage(buffer, 256);
-    printAllTopics();
+    return buffer;
 }
 
-void Client::voicesCount(uint32_t type) {
-    uint8_t buffer[256];
-    bzero(buffer, 256);
-    int writeOffset = 0;
-    addType(buffer, writeOffset, type);
+
+void Client::voicesCount(uint8_t *buffer, int &writeOffset) {
     addTopicId(buffer, writeOffset);
-    sendMessage(buffer, 256);
-    printTop();
 }
 
-void Client::createTopic(uint32_t type) {
-    uint8_t buffer[1024];
-    bzero(buffer, 1024);
-    int writeOffset = 0;
-    addType(buffer, writeOffset, type);
+void Client::createTopic(uint8_t *buffer, int &writeOffset) {
     addTopicName(buffer, writeOffset);
     addAlternatives(buffer, writeOffset, 1024);
-    sendMessage(buffer, 256);
-    printDefaultResponse();
 }
 
-void Client::removeTopic(uint32_t type) {
-    uint8_t buffer[256];
-    bzero(buffer, 256);
-    int writeOffset = 0;
-    addType(buffer, writeOffset, type);
+void Client::removeTopic(uint8_t *buffer, int &writeOffset) {
     addTopicId(buffer, writeOffset);
-    sendMessage(buffer, 256);
-    printDefaultResponse();
 }
 
-void Client::createAlternative(uint32_t type) {
-    uint8_t buffer[256];
-    bzero(buffer, 256);
-    int writeOffset = 0;
-    addType(buffer, writeOffset, type);
+void Client::createAlternative(uint8_t *buffer, int &writeOffset) {
     addTopicId(buffer, writeOffset);
     addAlternative(buffer, writeOffset);
-    sendMessage(buffer, 256);
-    printDefaultResponse();
 }
 
-void Client::closeTopic(uint32_t type) {
-    uint8_t buffer[256];
-    bzero(buffer, 256);
-    int writeOffset = 0;
-    addType(buffer, writeOffset, type);
+void Client::closeTopic(uint8_t *buffer, int &writeOffset) {
     addTopicId(buffer, writeOffset);
     addTopicStatus(buffer, writeOffset);
-    sendMessage(buffer, 256);
-    printDefaultResponse();
 }
 
-void Client::vote(uint32_t type) {
-    uint8_t buffer[256];
-    bzero(buffer, 256);
-    int writeOffset = 0;
-    addType(buffer, writeOffset, type);
+void Client::vote(uint8_t *buffer, int &writeOffset) {
     addTopicId(buffer, writeOffset);
     addAlternativeId(buffer, writeOffset);
-    sendMessage(buffer, 256);
-    printDefaultResponse();
 }
 
 void Client::printDefaultResponse() {

@@ -23,23 +23,22 @@ public:
 
 private:
     void connect(char* host, uint16_t port);
-    void getTopics(uint32_t type);
-    void voicesCount(uint32_t type);
-    void createTopic(uint32_t type);
-    void removeTopic(uint32_t type);
-    void createAlternative(uint32_t type);
-    void closeTopic(uint32_t type);
-    void vote(uint32_t type);
+    static void Client::voicesCount(uint8_t * buffer, int & writeOffset);
+    static void Client::createTopic(uint8_t *buffer, int &writeOffset);
+    static void Client::removeTopic(uint8_t *buffer, int &writeOffset);
+    static void createAlternative(uint8_t *buffer, int &writeOffset);
+    static void closeTopic(uint8_t *buffer, int &writeOffset);
+    static void vote(uint8_t *buffer, int &writeOffset);
     void printDefaultResponse();
-    void addTopicId(uint8_t *buffer, int &writeOffset);
-    void addType(uint8_t *buffer, int &writeOffset, uint32_t type);
-    void addTopicName(uint8_t *buffer, int &writeOffset);
-    void addAlternatives(uint8_t *buffer, int &writeOffset, int maxSize);
-    void addAlternative(uint8_t *buffer, int &writeOffset);
-    void addTopicStatus(uint8_t *buffer, int &writeOffset);
-    void addAlternativeId(uint8_t *buffer, int &writeOffset);
+    static void addTopicId(uint8_t *buffer, int &writeOffset);
+    static void addType(uint8_t *buffer, int &writeOffset, uint32_t type);
+    static void addTopicName(uint8_t *buffer, int &writeOffset);
+    static void addAlternatives(uint8_t *buffer, int &writeOffset, int maxSize);
+    static void addAlternative(uint8_t *buffer, int &writeOffset);
+    static void addTopicStatus(uint8_t *buffer, int &writeOffset);
+    static void addAlternativeId(uint8_t *buffer, int &writeOffset);
     void sendMessage(uint8_t *buffer, size_t size);
-
+    uint8_t* respond(size_t size, uint32_t type, void (*addParams)(uint8_t*, int&));
     void printAllTopics();
     void printTop();
     void printHelp();

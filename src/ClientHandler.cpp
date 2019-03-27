@@ -22,24 +22,17 @@ void check_connection_status(ssize_t read_bytes_number) {
     }
 }
 
-int64_t read_int64(int sockfd) {
-    int64_t int_value = 0;
-    check_connection_status(read(sockfd, &int_value, sizeof(int_value)));
-    return int_value;
+template <class T>
+T read_T(int sockfd) {
+    int8_t bytes[sizeof(T)];
+    size_t read_bytes = 0;
+    while (read_bytes != sizeof(T)) {
+        ssize_t n = read(sockfd, bytes + read_bytes, sizeof(T) - read_bytes);
+        check_connection_status(n);
+        read_bytes += n;
+    }
+    return *((T *)bytes);
 }
-
-int32_t read_int32(int sockfd) {
-    int32_t int_value = 0;
-    check_connection_status(read(sockfd, &int_value, sizeof(int_value)));
-    return int_value;
-}
-
-int16_t read_int16(int sockfd) {
-    int16_t int_value = 0;
-    check_connection_status(read(sockfd, &int_value, sizeof(int_value)));
-    return int_value;
-}
-
 
 void write_int64(int64_t value, int sockfd) {
     check_connection_status(write(sockfd, &value, sizeof(int64_t)));
@@ -50,7 +43,7 @@ void write_int8(int8_t value, int sockfd) {
 }
 
 int16_t ClientHandler::read_message_end() const {
-    return read_int16(client_sockfd);
+    return read_T<int16_t>(client_sockfd);
 }
 
 ClientHandler::ClientHandler(int client_sockfd, PrimeNumbersConcurrent &prime_numbers) :
@@ -86,7 +79,7 @@ void ClientHandler::run() const {
 }
 
 int32_t ClientHandler::read_command() const {
-    return read_int32(client_sockfd);
+    return read_T<int32_t>(client_sockfd);
 }
 
 void ClientHandler::process_max_number() const {
@@ -96,7 +89,7 @@ void ClientHandler::process_max_number() const {
 }
 
 void ClientHandler::process_last_numbers() const {
-    int64_t primes_number_to_return = read_int64(client_sockfd);
+    auto primes_number_to_return = read_T<int64_t>(client_sockfd);
     read_message_end();
     std::vector<int64_t> numbers_to_return = prime_numbers.get_last((size_t) primes_number_to_return);
     write_int64(numbers_to_return.size(), client_sockfd);
@@ -107,17 +100,17 @@ void ClientHandler::process_last_numbers() const {
 }
 
 void ClientHandler::process_bound_for_calculation() const {
-    read_int64(client_sockfd);
+    read_T<int64_t>(client_sockfd);
     read_message_end();
     write_int64(prime_numbers.get_bound_for_calculation(), client_sockfd);
     write_message_end();
 }
 
 void ClientHandler::process_add_prime_numbers() const {
-    int64_t n = read_int64(client_sockfd);
+    auto n = read_T<int64_t>(client_sockfd);
     std::vector<int64_t> numbers_to_add;
     for (int64_t i = 0; i < n; i++) {
-        numbers_to_add.push_back(read_int64(client_sockfd));
+        numbers_to_add.push_back(read_T<int64_t>(client_sockfd));
     }
     read_message_end();
     write_int8(prime_numbers.add_prime_numbers(numbers_to_add), client_sockfd);

@@ -109,6 +109,7 @@ void Server::shutdown_socket() {
     return;
   }
   shutdown(server_socket_fd, SHUT_RDWR);
+  close(server_socket_fd);
   server_socket_fd = -1;
 }
 

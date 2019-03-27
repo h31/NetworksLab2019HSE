@@ -54,7 +54,9 @@ class ClientHandler(private val cache: Cache<Request, String>, private val black
                 writer.flush()
                 logger.info("Sent ${request.data}")
 
-                return extractResponse(it)
+                val response = extractResponse(it)
+                logger.info("Received $response")
+                return response
             }
         } catch (e: Exception) {
             logger.severe("Request to ${request.host} failed: ${e.message}")
@@ -78,7 +80,7 @@ class ClientHandler(private val cache: Cache<Request, String>, private val black
         val protocol = url.protocol
         val port = if (url.port == -1) 80 else url.port
         val authB64 = lines.find { it.contains("Authorization") }?.split(' ')?.get(2)
-        val details = Request(
+        return Request(
             method = headerLine[0],
             host = url.host,
             port = port,
@@ -87,27 +89,28 @@ class ClientHandler(private val cache: Cache<Request, String>, private val black
             data = joinLines(lines),
             auth = authB64
         )
-        return details
     }
 
     private fun extractResponse(socket: Socket): String {
-        val lines = readLines(socket)
+        val lines = readLines(socket, 2)
         return joinLines(lines)
     }
 
-    private fun joinLines(lines: MutableList<String>) =
-        lines.joinToString(separator = "\r\n", postfix = "\r\n\r\n")
-
-    private fun readLines(socket: Socket): MutableList<String> {
+    private fun readLines(socket: Socket, times: Int = 1): List<String> {
         val lines = mutableListOf<String>()
         val reader = BufferedReader(InputStreamReader(socket.inputStream))
-        reader.use {
+        repeat(times) {
             do {
-                val line = it.readLine()
+                val line: String = reader.readLine() ?: return@repeat
                 lines.add(line)
-            } while (lines.size < 2 || !lines.last().trim().isEmpty() || !line.trim().isEmpty())
+                logger.info(line)
+            } while (!line.isEmpty())
         }
         return lines
+    }
+
+    private fun joinLines(lines: List<String>): String {
+        return lines.joinToString(separator = SEPARATOR, postfix = SEPARATOR + SEPARATOR)
     }
 
     companion object {
@@ -115,9 +118,9 @@ class ClientHandler(private val cache: Cache<Request, String>, private val black
                 "Content-Length: 11\r\n" +
                 "\r\n" +
                 "Error\r\n" +
-                "\r\n" +
                 "\r\n"
+        const val SEPARATOR = "\r\n"
 
-        val logger = Logger.getLogger(ClientHandler::class.java.name)
+        val logger = Logger.getLogger(ClientHandler::class.java.name)!!
     }
 }

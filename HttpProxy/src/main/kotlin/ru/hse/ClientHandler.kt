@@ -9,7 +9,7 @@ import java.net.URL
 import java.util.logging.Logger
 import kotlin.concurrent.thread
 
-class ClientHandler(private val cache: Cache<Request, String>, private val blackList: List<String>) {
+class ClientHandler(private val cache: Cache<String, String>, private val blackList: List<String>) {
 
     fun run(clientSocket: Socket): Thread {
         return thread {
@@ -24,15 +24,17 @@ class ClientHandler(private val cache: Cache<Request, String>, private val black
                         return@use
                     }
                     if (request.method == "GET") {
-                        val cached = cache.lookUp(request)
-                        if (cached != null) {
-                            logger.info("Cached copy of response from ${request.host} was sent")
-                            responseWith(cached, it)
+                        if (Cache.canBeCached(request.data.split("\n"))) {
+                            val cached = cache.lookUp(request.host)
+                            if (cached != null) {
+                                logger.info("Cached copy of response from ${request.host} was sent")
+                                responseWith(cached, it)
+                            }
                         } else {
                             logger.info("Fresh HTTP response from ${request.host}")
                             val response = retrieveResponse(request)
                             logger.info(response)
-                            cache.addPage(request, response)
+                            cache.addPage(request.host, response)
                             responseWith(response, it)
                         }
 

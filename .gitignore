@@ -264,7 +264,7 @@ TSWLatexianTemp*
 # KBibTeX
 *~[0-9]*
 
-# auto folder when using emacs and auctex
+# auto data_folder when using emacs and auctex
 /auto/*
 
 # expex forward references with \gathertags
@@ -435,7 +435,7 @@ AutoTest.Net/
 # Web workbench (sass)
 .sass-cache/
 
-# Installshield output folder
+# Installshield output data_folder
 [Ee]xpress/
 
 # DocProject is a documentation generator add-in
@@ -468,7 +468,7 @@ PublishScripts/
 
 # NuGet Packages
 *.nupkg
-# The packages folder can be ignored because of Package Restore
+# The packages data_folder can be ignored because of Package Restore
 **/packages/*
 # except build/, which is used as an MSBuild target.
 !**/packages/build/

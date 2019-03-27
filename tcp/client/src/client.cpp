@@ -174,10 +174,9 @@ bool Client::sendRequest(std::string request) {
 
 void Client::getResponse() {
     std::string response = "";
-    char buffer[256];
+    char buffer[BUFFER_SIZE];
     while (!stop) {
-        bzero(buffer, 256);
-        ssize_t n = read(sockfd, buffer, 255);
+        ssize_t n = read(sockfd, buffer, BUFFER_SIZE - 1);
         if (n < 0) {
             perror("ERROR reading from socket");
             exit(1);

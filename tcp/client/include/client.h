@@ -23,6 +23,7 @@ public:
     Client(const std::string&, uint16_t port);
     void start();
     ~Client();
+    const static int BUFFER_SIZE = 256;
 private:
     void workingCycle();
     std::string getRequest();

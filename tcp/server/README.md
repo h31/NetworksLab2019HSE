@@ -1,34 +1,44 @@
-# Электронный магазин
+# Система поиска/публикации новостей
 
-
-## Добавление товара
-Формат собщения:  
-* <**1**: int><**size**: size_t><**name**: string><**price**: size_t><**amount**: size_t>
-* **size** — длинна строки **name**
-* **name** — наименование товара
-* **price** — цена за единицу товара
-* **amount** — количество добавляемого товара
-
-
-## Получение информации о товарах
+## Получение списка тем
 Формат запроса:
-* <**2**: int>
+* <**1**: int32_t>
 
-Формат ответа:  
-* <**products_amount**: size_t>(<**id**: int><**size**: size_t><**name**: string><**price**: size_t><**amount**: size_t>)*
-* **products_amount** — количество различных товаров
-* **id** — идентификатор товара
-* **size** — длинна строки **name**
-* **name** — наименование товара
-* **price** — цена за единицу товара
-* **amount** — количество товара
+Формат ответа:
+* <**topics_amount**: uint64_t>(<**topic_length**: uint64_t><**topic**: string>)*
+* **topics_amount** — количество тем
+* **topic_length** — длина строки **topic**
+* **topic** — название темы
 
-
-## Покупка товара
+## Получение новостей по теме
 Формат запроса:
-* <**3**: int><**id**: int>
-* **id** — идентификатор товара
+* <**2**: int32_t><**topic_length**: uint64_t><**topic**: string>
+* **topic_length** — длина строки **topic**
+* **topic** — название темы
 
-Формат ответа:  
-* <**response**: int>
-* **response**: `1` при подтвержденной покупке, `0` при недостаточном количестве товара, `-1` при несуществующем **id**
+Формат ответа:
+* <**news_amount**: uint64_t>(<**id**: int32_t><**news_title_length**: uint64_t><**news_title**: string>)*
+* **news_amount** — количество новостей по теме **topic**
+* **id** — идентификатор новости
+* **news_title_length** — длина строки **news_title**
+* **news_title** — тема новости
+
+## Получение текста новости
+Формат запроса:
+* <**3**: int32_t><**id**: int32_t>
+* **id** — идентификатор новости
+
+Формат ответа:
+* <**news_content_length**: uint64_t><**news_content**: string>
+* **news_content_length** — длина строки **news_content**, если новость с таким **id** существует, и `0` иначе
+* **news_content** — текст новости
+
+## Добавление новости
+Формат сообщения:
+* <**4**: int32_t><**topic_length**: uint64_t><**topic**: string><**news_title_length**: uint64_t><**news_title**: string><**news_content_length**: uint64_t><**news_content**: string>
+* **topic_length** — длина строки **topic**
+* **topic** — название темы
+* **news_title_length** — длина строки **news_title**
+* **news_title** — тема новости
+* **news_content_length** — длина строки **news_content**
+* **news_content** — текст новости

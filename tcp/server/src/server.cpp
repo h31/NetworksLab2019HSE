@@ -60,6 +60,7 @@ void server::client_accept_cycle(int server_socket_fd) {
         } else {
             for (int client_socket : client_sockets) {
                 shutdown(client_socket, SHUT_RDWR);
+                close(client_socket);
             }
             break;
         }
@@ -71,7 +72,7 @@ void server::request_response_cycle(int client_socket_fd) {
 
     try {
         while (true) {
-            int command = io.read_int();
+            int command = io.read_data<int32_t>();
             switch (command) {
                 case 1:
                     output_topics_list(io);
@@ -90,7 +91,7 @@ void server::request_response_cycle(int client_socket_fd) {
             }
         }
     } catch (...) {
-        shutdown(client_socket_fd, SHUT_RDWR);
+        close(client_socket_fd);
     }
 }
 
@@ -102,15 +103,15 @@ void server::output_topics_list(socket_io &io) {
         topics.insert(news.topic);
     }
 
-    io.write_size_t(topics.size());
+    io.write_data<uint64_t>(topics.size());
     for (auto& topic : topics) {
-        io.write_size_t(topic.size());
-        io.write_string(topic);
+        io.write_data<uint64_t>(topic.size());
+        io.write_data(topic);
     }
 }
 
 void server::output_news_by_topic(socket_io& io) {
-    size_t topic_length = io.read_size_t();
+    auto topic_length = io.read_data<uint64_t>();
     std::string topic = io.read_string(topic_length);
 
     boost::shared_lock<boost::shared_mutex> lock(news_access);
@@ -122,37 +123,37 @@ void server::output_news_by_topic(socket_io& io) {
         }
     }
 
-    io.write_size_t(news_by_topic_ids.size());
+    io.write_data<uint64_t>(news_by_topic_ids.size());
     for (int id : news_by_topic_ids) {
-        io.write_int(id);
+        io.write_data<int32_t>(id);
         auto& news_title = news_list[id].title;
-        io.write_size_t(news_title.size());
-        io.write_string(news_title);
+        io.write_data<uint64_t>(news_title.size());
+        io.write_data(news_title);
 
     }
 }
 
 void server::output_news_content(socket_io &io) {
-    int id = io.read_int();
+    int id = io.read_data<int32_t >();
 
     boost::shared_lock<boost::shared_mutex> lock(news_access);
 
     if (id < 0 || id >= news_list.size()) {
-        io.write_size_t(0);
+        io.write_data<uint64_t>(0);
         return;
     }
 
     auto& news_content = news_list[id].content;
-    io.write_size_t(news_content.size());
-    io.write_string(news_content);
+    io.write_data<uint64_t>(news_content.size());
+    io.write_data(news_content);
 }
 
 void server::add_news(socket_io &io) {
-    size_t topic_length = io.read_size_t();
+    auto topic_length = io.read_data<uint64_t>();
     std::string topic = io.read_string(topic_length);
-    size_t news_title_length = io.read_size_t();
+    auto news_title_length = io.read_data<uint64_t>();
     std::string news_title = io.read_string(news_title_length);
-    size_t news_content_length = io.read_size_t();
+    auto news_content_length = io.read_data<uint64_t>();
     std::string news_content = io.read_string(news_content_length);
 
     boost::upgrade_lock<boost::shared_mutex> lock(news_access);

@@ -16,7 +16,7 @@ public:
 
     std::vector<int64_t> get_last(size_t N);
 
-    int64_t get_bound_for_calculation();
+    int64_t get_bound_for_calculation(int64_t N);
 
     bool add_prime_numbers(std::vector<int64_t> numbers);
 

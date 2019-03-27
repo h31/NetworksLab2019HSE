@@ -22,9 +22,9 @@ std::vector<int64_t> PrimeNumbersConcurrent::get_last(size_t N) {
     return result;
 }
 
-int64_t PrimeNumbersConcurrent::get_bound_for_calculation() {
+int64_t PrimeNumbersConcurrent::get_bound_for_calculation(int64_t N) {
     prime_numbers_mutex.lock();
-    int64_t result = prime_numbers.get_bound_for_calculation();
+    int64_t result = prime_numbers.get_bound_for_calculation(N);
     prime_numbers_mutex.unlock();
     return result;
 }

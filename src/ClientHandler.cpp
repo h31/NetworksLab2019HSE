@@ -100,9 +100,9 @@ void ClientHandler::process_last_numbers() const {
 }
 
 void ClientHandler::process_bound_for_calculation() const {
-    read_T<int64_t>(client_sockfd);
+    auto N = read_T<int64_t>(client_sockfd);
     read_message_end();
-    write_int64(prime_numbers.get_bound_for_calculation(), client_sockfd);
+    write_int64(prime_numbers.get_bound_for_calculation(N), client_sockfd);
     write_message_end();
 }
 

@@ -1,5 +1,6 @@
 package ru.hse.spb.kazakov.server.http
 
+import com.sun.xml.internal.messaging.saaj.util.TeeInputStream
 import java.io.*
 import java.net.MalformedURLException
 import java.util.*
@@ -21,21 +22,21 @@ fun parseHttpRequest(inputStream: DataInputStream): HttpRequest {
 
 private fun getHeaderStream(inputStream: DataInputStream): InputStream {
     val output = ByteArrayOutputStream()
+    val input = TeeInputStream(inputStream, output)
     val slidingWindow = ArrayDeque<Int>()
 
-    var ch = inputStream.read()
+    var ch = input.read()
     while (ch != -1) {
-        if (slidingWindow.size == 4) {
+        if (slidingWindow.size == "\r\n\r\n".length) {
             slidingWindow.removeFirst()
         }
         slidingWindow.addLast(ch)
-        output.write(ch)
 
-        val buffer = slidingWindow.toIntArray()
-        if (isContainsEmptyLine(buffer)) {
+        val stringVal = slidingWindow.toIntArray().joinToString("") { it.toChar().toString() }
+        if (stringVal == "\r\n\r\n") {
             break
         }
-            ch = inputStream.read()
+        ch = input.read()
     }
 
     if (ch == -1) {
@@ -44,9 +45,6 @@ private fun getHeaderStream(inputStream: DataInputStream): InputStream {
 
     return ByteArrayInputStream(output.toByteArray())
 }
-
-private fun isContainsEmptyLine(array: IntArray): Boolean =
-    array.size == 4 && array[0] == '\r'.toInt() && array[1] == '\n'.toInt() && array[2] == '\r'.toInt() && array[3] == '\n'.toInt()
 
 private val requestLineRegexp = Regex("""([^\s]+)\s+([^\s]+)\s+HTTP/(\d+)\.(\d+)""")
 private fun parseRequestLine(inputStream: BufferedReader): RequestLine {

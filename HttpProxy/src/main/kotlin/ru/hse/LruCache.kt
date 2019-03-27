@@ -3,7 +3,7 @@ package ru.hse
 import java.util.*
 
 
-class LruCache<K, V>(val expirationTime: Int = 1000, val cacheSize: Int = 1000) : Cache<K, V> {
+class LruCache<K, V>(private val expirationTime: Int = 1000, private val cacheSize: Int = 1000) : Cache<K, V> {
     private val cache = Collections.synchronizedMap(LinkedHashMap<K, PageData<V>>())
     override fun lookUp(request: K): V? {
         val data = cache[request] ?: return null

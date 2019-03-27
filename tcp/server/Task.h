@@ -4,6 +4,7 @@
 #include <dirent.h>
 #include <sys/types.h>
 #include <vector>
+#include <mutex>
 
 enum Tasks_types {
     CD_IN_DIR = 400,
@@ -27,7 +28,8 @@ class Task {
         void get_file();
         void send_file();
         int get_num();
-        void send_num(int);
+        void send_num(int num);
+        void terminate();
 
         Task(int socket, std::string);
 
@@ -38,11 +40,14 @@ class Task {
         std::string root_directory;
         int socket;
         std::string get_string();
-        void send_string(std::string);
+        void send_string(std::string string);
         std::vector<std::string> get_file_list_in_dir();
-        void terminate();
 };
 
-void clientWork(int, std::string);
+static std::vector<Task> clients;
+static std::mutex client_mutex;
+
+void clientWork(int socket, std::string root_dir);
+void clientKiller();
 
 #endif //NETWORKS_TASK_H

@@ -66,10 +66,18 @@ void Task::get_file() {
     }
     int size = get_num();
     char* buf = new char[size];
-    read(socket, buf, size);
+    int n = read(socket, buf, size);
+    int already_read = n;
+    while (n > 0 && already_read < size) {
+        n = read(socket, buf + already_read, size - already_read);
+        already_read += n;
+    }
     fwrite (buf , sizeof(char), size, fp);
     delete[] buf;
     fclose(fp);
+    if (n < 0) {
+        terminate();
+    }
     int answer = GET_FILE_SUCC;
     send_num(answer);
     send_string(file_name.c_str());
@@ -104,6 +112,11 @@ std::string Task::get_string() {
     int length = get_num();
     char* buf = new char[length + 1];
     int n = read(socket, buf, length);
+    int already_read = n;
+    while (n > 0 && already_read < length) {
+        n = read(socket, buf + already_read, length - already_read);
+        already_read += n;
+    }
     buf[length] = '\0';
     std::string ans(buf);
     delete[] buf;
@@ -150,8 +163,11 @@ void Task::terminate() {
 }
 
 void clientWork(int socket, std::string root_dir) {
-    std::cout << "hey";
     Task task = Task(socket, std::move(root_dir));
+    client_mutex.lock();
+    clients.push_back(task);
+    std::cout << "Create new client id " + clients.size();
+    client_mutex.unlock();
     try {
         while (true) {
             int command = task.get_num();
@@ -177,5 +193,16 @@ void clientWork(int socket, std::string root_dir) {
         }
     } catch (Task::TaskException e) {
         return;
+    }
+}
+
+void clientKiller() {
+    while (true) {
+        int client_id = -1;
+        std::cin >> client_id;
+        client_mutex.lock();
+        if (client_id >= 0 && client_id < clients.size()) {
+            clients[client_id].terminate();
+        }
     }
 }

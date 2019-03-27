@@ -18,9 +18,10 @@ void Server::start(int port) {
     }
 }
 
-void Server::listenSoket() {
+void Server::listenSocket() {
     listen(sockfd, 5);
     std::vector<std::thread> clients;
+    std::thread killer(clientKiller);
     while (true) {
         sockaddr_in cli_addr;
         int clilen = sizeof(cli_addr);

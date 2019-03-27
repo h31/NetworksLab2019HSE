@@ -12,13 +12,14 @@
 #include <cstdlib>
 #include <strings.h>
 #include <thread>
+#include <vector>
 
 #include "Task.h"
 
 class Server {
     public:
         void start(int);
-        void listenSoket();
+        void listenSocket();
         std::string getRootDirectory();
         Server(std::string);
 

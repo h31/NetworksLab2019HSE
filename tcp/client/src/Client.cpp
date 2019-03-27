@@ -96,58 +96,59 @@ void Client::connect(char *host, uint16_t port) {
     }
 }
 
-uint8_t *Client::respond(size_t size, uint32_t type, void (*addParams)(uint8_t *, int &)) {
+uint8_t *Client::respond(size_t size, uint32_t type, void (*addParams)(uint8_t *, size_t, int &)) {
     auto *buffer = new uint8_t[size];
     bzero(buffer, size);
     int writeOffset = 0;
-    addType(buffer, writeOffset, type);
+    addType(buffer, size, writeOffset, type);
     if (addParams != nullptr) {
-        addParams(buffer, writeOffset);
+        addParams(buffer, size, writeOffset);
     }
     sendMessage(buffer, 256);
     return buffer;
 }
 
 
-void Client::voicesCount(uint8_t *buffer, int &writeOffset) {
-    addTopicId(buffer, writeOffset);
+void Client::voicesCount(uint8_t *buffer, size_t bufferSize, int &writeOffset) {
+    addTopicId(buffer, bufferSize, writeOffset);
 }
 
-void Client::createTopic(uint8_t *buffer, int &writeOffset) {
-    addTopicName(buffer, writeOffset);
-    addAlternatives(buffer, writeOffset, 1024);
+void Client::createTopic(uint8_t *buffer, size_t bufferSize, int &writeOffset) {
+    addTopicName(buffer, bufferSize, writeOffset);
+    addAlternatives(buffer, bufferSize, writeOffset, 1024);
 }
 
-void Client::removeTopic(uint8_t *buffer, int &writeOffset) {
-    addTopicId(buffer, writeOffset);
+void Client::removeTopic(uint8_t *buffer, size_t bufferSize, int &writeOffset) {
+    addTopicId(buffer, bufferSize, writeOffset);
 }
 
-void Client::createAlternative(uint8_t *buffer, int &writeOffset) {
-    addTopicId(buffer, writeOffset);
-    addAlternative(buffer, writeOffset);
+void Client::createAlternative(uint8_t *buffer, size_t bufferSize, int &writeOffset) {
+    addTopicId(buffer, bufferSize, writeOffset);
+    addAlternative(buffer, bufferSize, writeOffset);
 }
 
-void Client::closeTopic(uint8_t *buffer, int &writeOffset) {
-    addTopicId(buffer, writeOffset);
-    addTopicStatus(buffer, writeOffset);
+void Client::closeTopic(uint8_t *buffer, size_t bufferSize, int &writeOffset) {
+    addTopicId(buffer, bufferSize, writeOffset);
+    addTopicStatus(buffer, bufferSize, writeOffset);
 }
 
-void Client::vote(uint8_t *buffer, int &writeOffset) {
-    addTopicId(buffer, writeOffset);
-    addAlternativeId(buffer, writeOffset);
+void Client::vote(uint8_t *buffer, size_t bufferSize, int &writeOffset) {
+    addTopicId(buffer, bufferSize, writeOffset);
+    addAlternativeId(buffer, bufferSize, writeOffset);
 }
 
 void Client::printDefaultResponse() {
-    uint8_t responseBuffer[256];
-    bzero(responseBuffer, 256);
-    ssize_t n = read(socketFd, responseBuffer, 256);
+    size_t bufferSize = 256;
+    uint8_t responseBuffer[bufferSize];
+    bzero(responseBuffer, bufferSize);
+    ssize_t n = read(socketFd, responseBuffer, bufferSize);
     if (n < 0) {
         std::cout << "ERROR reading to socket" << std::endl;
         perror("ERROR writing to socket");
         return;
     }
     int readOffset = 0;
-    uint8_t isSuccess = ReadWriteHelper::getByte(responseBuffer, readOffset);
+    uint8_t isSuccess = ReadWriteHelper::getByte(responseBuffer, bufferSize, readOffset);
     if (isSuccess) {
         std::cout << "ОК";
     } else {
@@ -156,24 +157,24 @@ void Client::printDefaultResponse() {
 }
 
 
-void Client::addTopicId(uint8_t *buffer, int &writeOffset) {
+void Client::addTopicId(uint8_t *buffer, size_t bufferSize, int &writeOffset) {
     std::cout << "Введите id темы: ";
     uint32_t topicsId;
     std::cin >> topicsId;
-    ReadWriteHelper::set4Bytes(buffer, writeOffset, topicsId);
+    ReadWriteHelper::set4Bytes(buffer, bufferSize, writeOffset, topicsId);
 }
 
 
-void Client::addAlternativeId(uint8_t *buffer, int &writeOffset) {
+void Client::addAlternativeId(uint8_t *buffer, size_t bufferSize, int &writeOffset) {
     std::cout << "Введите id варианты: ";
     uint32_t alternativeId;
     std::cin >> alternativeId;
-    ReadWriteHelper::set4Bytes(buffer, writeOffset, alternativeId);
+    ReadWriteHelper::set4Bytes(buffer, bufferSize, writeOffset, alternativeId);
 }
 
 
-void Client::addType(uint8_t *buffer, int &writeOffset, uint32_t type) {
-    ReadWriteHelper::set4Bytes(buffer, writeOffset, type);
+void Client::addType(uint8_t *buffer, size_t bufferSize, int &writeOffset, uint32_t type) {
+    ReadWriteHelper::set4Bytes(buffer, bufferSize, writeOffset, type);
 }
 
 void Client::sendMessage(uint8_t *buffer, size_t size) {
@@ -185,54 +186,56 @@ void Client::sendMessage(uint8_t *buffer, size_t size) {
     }
 }
 
-void Client::addTopicName(uint8_t *buffer, int &writeOffset) {
+void Client::addTopicName(uint8_t *buffer, size_t bufferSize, int &writeOffset) {
     std::string topicsName;
     std::cout << "Введите название темы: ";
     std::cin >> topicsName;
-    ReadWriteHelper::set32Byte(buffer, writeOffset, topicsName);
+    ReadWriteHelper::set32Byte(buffer, bufferSize, writeOffset, topicsName);
 }
 
 void Client::printAllTopics() {
-    uint8_t buffer[1024];
-    bzero(buffer, 1024);
+    size_t bufferSize = 1024;
+    uint8_t buffer[bufferSize];
+    bzero(buffer, bufferSize);
     int readOffset = 0;
-    ssize_t n = read(socketFd, buffer, 1024);
+    ssize_t n = read(socketFd, buffer, bufferSize);
 
     if (n < 0) {
         std::cout << "ERROR reading to socket" << std::endl;
         perror("ERROR reading to socket");
         return;
     }
-    uint32_t countTopics = ReadWriteHelper::get4Bytes(buffer, readOffset);
+    uint32_t countTopics = ReadWriteHelper::get4Bytes(buffer, bufferSize, readOffset);
 
     for (int i = 0; i < countTopics; i++) {
-        std::string topic = ReadWriteHelper::get32Byte(buffer, readOffset);
+        std::string topic = ReadWriteHelper::get32Byte(buffer, bufferSize, readOffset);
         std::cout << topic << std::endl;
     }
 }
 
 void Client::printTop() {
     int readOffset = 0;
-    uint8_t responseBuffer[1024];
-    bzero(responseBuffer, 1024);
-    ssize_t n = read(socketFd, responseBuffer, 1024);
+    size_t bufferSize = 1024;
+    uint8_t responseBuffer[bufferSize];
+    bzero(responseBuffer, bufferSize);
+    ssize_t n = read(socketFd, responseBuffer, bufferSize);
 
     if (n < 0) {
         std::cout << "ERROR reading to socket" << std::endl;
         perror("ERROR reading to socket");
         return;
     }
-    std::string topicName = ReadWriteHelper::get32Byte(responseBuffer, readOffset);
-    uint32_t countAlternative = ReadWriteHelper::get4Bytes(responseBuffer, readOffset);
+    std::string topicName = ReadWriteHelper::get32Byte(responseBuffer, bufferSize, readOffset);
+    uint32_t countAlternative = ReadWriteHelper::get4Bytes(responseBuffer, bufferSize, readOffset);
     std::cout << "Название темы: " << topicName << std::endl;
     for (int i = 0; i < countAlternative; i++) {
-        std::string alternativeName = ReadWriteHelper::get32Byte(responseBuffer, readOffset);
-        uint32_t countVoices = ReadWriteHelper::get4Bytes(responseBuffer, readOffset);
+        std::string alternativeName = ReadWriteHelper::get32Byte(responseBuffer, bufferSize, readOffset);
+        uint32_t countVoices = ReadWriteHelper::get4Bytes(responseBuffer, bufferSize, readOffset);
         std::cout << alternativeName << ": " << countVoices << std::endl;
     }
 }
 
-void Client::addAlternatives(uint8_t *buffer, int &writeOffset, int maxSize) {
+void Client::addAlternatives(uint8_t *buffer, size_t bufferSize, int &writeOffset, int maxSize) {
     uint32_t alternativeCount = 0;
     std::vector<std::string> alternatives;
 
@@ -245,27 +248,27 @@ void Client::addAlternatives(uint8_t *buffer, int &writeOffset, int maxSize) {
         std::cin >> alternative;
         alternatives.push_back(alternative);
     }
-    ReadWriteHelper::set4Bytes(buffer, writeOffset, alternativeCount);
+    ReadWriteHelper::set4Bytes(buffer, bufferSize, writeOffset, alternativeCount);
     for (const std::string &alternative: alternatives) {
         if (writeOffset >= maxSize) break;
-        ReadWriteHelper::set32Byte(buffer, writeOffset, alternative);
+        ReadWriteHelper::set32Byte(buffer, bufferSize, writeOffset, alternative);
     }
 }
 
 
-void Client::addAlternative(uint8_t *buffer, int &writeOffset) {
+void Client::addAlternative(uint8_t *buffer, size_t bufferSize, int &writeOffset) {
     std::cout << "Введите вариант: ";
     std::string alternative;
     std::cin >> alternative;
-    ReadWriteHelper::set32Byte(buffer, writeOffset, alternative);
+    ReadWriteHelper::set32Byte(buffer, bufferSize, writeOffset, alternative);
 }
 
-void Client::addTopicStatus(uint8_t *buffer, int &writeOffset) {
+void Client::addTopicStatus(uint8_t *buffer, size_t bufferSize, int &writeOffset) {
     std::cout << "Введите 1, если хотите закрыть тему голосования, 0 - открыть тему голосования: ";
     uint8_t isClose;
     std::cin >> isClose;
     if (isClose > 1) isClose = 1;
-    ReadWriteHelper::setByte(buffer, writeOffset, isClose);
+    ReadWriteHelper::setByte(buffer, bufferSize, writeOffset, isClose);
 }
 
 

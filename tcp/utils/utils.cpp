@@ -19,13 +19,35 @@ bool WriteString(int sockfd, std::string* str) {
     return true;
 }
 
+int readn( SOCKET fd, char *bp, size_t len)
+{
+    int cnt;
+    int rc
+    cnt = len;
+    while ( cnt > 0 )
+    {
+        rc = recv( fd, bp, cnt, 0 ) ;
+        if ( rc < 0 )
+        {
+            if ( errno == EINTR )
+            continue;
+            return -1;
+        }
+        if ( rc == 0 )
+        return len - cnt; /* Вернуть неполный счетчик. */
+        bp + = rc;
+        cnt -= rc;
+    }
+    return len;
+}
+
 std::string ReadString(int sockfd) {
     int len;
     int n = read(sockfd, &len, sizeof(size_t));
     if (n <= 0)
         throw std::ios_base::failure("Error reading string");
     std::string result(len, ' ');
-    n = read(sockfd, &result[0], len);
+    n = readn(sockfd, &result[0], len);
     if (n <= 0)
         throw std::ios_base::failure("Error reading string");
     return result;

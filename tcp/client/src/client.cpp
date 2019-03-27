@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <netdb.h>
 #include <string.h>
-
+#include <mutex>
 #include <netinet/in.h>
 #include <unistd.h>
 
@@ -45,21 +45,19 @@ bool Client::Start() {
 void Client::Connect() {
     if (is_running_)
         return;
-    connection_lock_.lock();
+    std::lock_guard<std::mutex> lock(connection_lock_);
     is_running_ = 1;
     WriteRequestMessage(sockfd_, RequestMessage::CONNECT());
     main_thread_ = std::move(std::thread(&Client::process_incoming_messages, this));
-    connection_lock_.unlock();
 }
 
 void Client::Disconnect() {
     if (!is_running_)
         return;
-    connection_lock_.lock();
+    std::lock_guard<std::mutex> lock(connection_lock_);
     is_running_ = 0;
     WriteRequestMessage(sockfd_, RequestMessage::DISCONNECT());
     main_thread_.join();
-    connection_lock_.unlock();
 }
 
 void Client::SendMessageToAll(const std::string& message) {
@@ -96,9 +94,8 @@ Client::~Client() {
 }
 
 void Client::print_message(const std::string& message) {
-    writing_lock_.lock();
+    std::lock_guard<std::mutex> lock(writing_lock_);
     std::cout << message;
-    writing_lock_.unlock();
 }
 
 void Client::SetHostname(const std::string& hostname) {

@@ -72,7 +72,7 @@ void server::request_response_cycle(int client_socket_fd) {
 
     try {
         while (true) {
-            int command = io.read_data<int32_t>();
+            auto command = io.read_data<int32_t>();
             switch (command) {
                 case 1:
                     output_topics_list(io);
@@ -134,7 +134,7 @@ void server::output_news_by_topic(socket_io& io) {
 }
 
 void server::output_news_content(socket_io &io) {
-    int id = io.read_data<int32_t >();
+    auto id = io.read_data<int32_t >();
 
     boost::shared_lock<boost::shared_mutex> lock(news_access);
 

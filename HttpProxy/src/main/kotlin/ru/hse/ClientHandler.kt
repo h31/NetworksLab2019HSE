@@ -4,12 +4,10 @@ import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
-import java.lang.Exception
 import java.net.Socket
 import java.net.URL
 import java.util.logging.Logger
 import kotlin.concurrent.thread
-import kotlin.math.log
 
 class ClientHandler(private val cache: Cache<Request, String>, private val blackList: List<String>) {
 
@@ -19,7 +17,7 @@ class ClientHandler(private val cache: Cache<Request, String>, private val black
             logger.info("Handling client $clientAddress")
             try {
                 clientSocket.use {
-                    val request = extractDetails(it)
+                    val request = extractRequestDetails(it)
                     if (blackList.contains(request.host)) {
                         logger.severe("Host ${request.host} is blacklisted")
                         responseWithError(it)
@@ -56,7 +54,7 @@ class ClientHandler(private val cache: Cache<Request, String>, private val black
                 writer.flush()
                 logger.info("Sent ${request.data}")
 
-                return extractDetails(it).data
+                return extractResponse(it)
             }
         } catch (e: Exception) {
             logger.severe("Request to ${request.host} failed: ${e.message}")
@@ -72,15 +70,8 @@ class ClientHandler(private val cache: Cache<Request, String>, private val black
 
     private fun responseWithError(socket: Socket) = responseWith(ERROR_RESPONSE, socket)
 
-    private fun extractDetails(it: Socket): Request {
-        val lines = mutableListOf<String>()
-        val reader = BufferedReader(InputStreamReader(it.inputStream))
-        reader.use {
-            do {
-                val line = it.readLine()
-                lines.add(line)
-            } while (lines.size < 2 || !lines.last().trim().isEmpty() || !line.trim().isEmpty())
-        }
+    private fun extractRequestDetails(socket: Socket): Request {
+        val lines = readLines(socket)
 
         val headerLine = lines[0].split(' ')
         val url = URL(headerLine[1])
@@ -93,10 +84,30 @@ class ClientHandler(private val cache: Cache<Request, String>, private val black
             port = port,
             protocol = protocol,
             url = url.toString(),
-            data = lines.joinToString(separator = "\r\n"),
+            data = joinLines(lines),
             auth = authB64
         )
         return details
+    }
+
+    private fun extractResponse(socket: Socket): String {
+        val lines = readLines(socket)
+        return joinLines(lines)
+    }
+
+    private fun joinLines(lines: MutableList<String>) =
+        lines.joinToString(separator = "\r\n", postfix = "\r\n\r\n")
+
+    private fun readLines(socket: Socket): MutableList<String> {
+        val lines = mutableListOf<String>()
+        val reader = BufferedReader(InputStreamReader(socket.inputStream))
+        reader.use {
+            do {
+                val line = it.readLine()
+                lines.add(line)
+            } while (lines.size < 2 || !lines.last().trim().isEmpty() || !line.trim().isEmpty())
+        }
+        return lines
     }
 
     companion object {

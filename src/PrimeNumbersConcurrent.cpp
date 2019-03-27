@@ -9,36 +9,31 @@
 #include "PrimeNumbersConcurrent.h"
 
 int64_t PrimeNumbersConcurrent::get_max() {
-    prime_numbers_mutex.lock();
+    std::lock_guard<std::mutex> lock(prime_numbers_mutex);
     int64_t result = prime_numbers.get_max();
-    prime_numbers_mutex.unlock();
     return result;
 }
 
 std::vector<int64_t> PrimeNumbersConcurrent::get_last(size_t N) {
-    prime_numbers_mutex.lock();
+    std::lock_guard<std::mutex> lock(prime_numbers_mutex);
     std::vector<int64_t> result = prime_numbers.get_last(N);
-    prime_numbers_mutex.unlock();
     return result;
 }
 
 int64_t PrimeNumbersConcurrent::get_bound_for_calculation(int64_t N) {
-    prime_numbers_mutex.lock();
+    std::lock_guard<std::mutex> lock(prime_numbers_mutex);
     int64_t result = prime_numbers.get_bound_for_calculation(N);
-    prime_numbers_mutex.unlock();
     return result;
 }
 
 bool PrimeNumbersConcurrent::add_prime_numbers(std::vector<int64_t> numbers) {
-    prime_numbers_mutex.lock();
+    std::lock_guard<std::mutex> lock(prime_numbers_mutex);
     bool result = prime_numbers.add_prime_numbers(std::move(numbers));
-    prime_numbers_mutex.unlock();
     return result;
 }
 
 std::vector<int64_t> PrimeNumbersConcurrent::get_all() {
-    prime_numbers_mutex.lock();
+    std::lock_guard<std::mutex> lock(prime_numbers_mutex);
     std::vector<int64_t> result = prime_numbers.get_all();
-    prime_numbers_mutex.unlock();
     return result;
 }
